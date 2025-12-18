@@ -2,7 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import Table from '@tiptap/extension-table';
+import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
@@ -16,7 +16,6 @@ import Superscript from '@tiptap/extension-superscript';
 import { 
   Bold, Italic, Strikethrough, Code, List, ListOrdered, 
   Quote, Undo, Redo, Heading1, Heading2, Heading3,
-  Link as LinkIcon, Image as ImageIcon, Table as TableIcon,
   CheckSquare, Highlighter, AlignLeft, AlignCenter, AlignRight
 } from 'lucide-react';
 import { useEffect } from 'react';

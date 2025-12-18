@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Editor from './Editor';
 import MessagingPanel from './MessagingPanel';
@@ -15,7 +14,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [currentDocument, setCurrentDocument] = useState<any>(null);
   const [showMessaging, setShowMessaging] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadDocuments();

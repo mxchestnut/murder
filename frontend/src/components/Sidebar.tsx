@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Download, Trash2 } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2 } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface SidebarProps {
