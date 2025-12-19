@@ -18,7 +18,7 @@ import {
   Quote, Undo, Redo, Heading1, Heading2, Heading3,
   CheckSquare, Highlighter, AlignLeft, AlignCenter, AlignRight, Share2
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 interface EditorProps {
   document: any;
