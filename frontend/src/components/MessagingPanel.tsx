@@ -79,17 +79,16 @@ export default function MessagingPanel() {
         padding: '1rem',
         borderBottom: `1px solid var(--border-color)`
       }}>
-        <h3 style={{ color: 'var(--text-primary)' }}>Messages</h3>
+        <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>Messages</h3>
         
         {/* Test Message Button */}
         <button
           onClick={sendTestMessage}
           style={{
             width: '100%',
-            marginTop: '1rem',
-            padding: '0.75rem',
-            borderRadius: '4px',
-            border: 'none',
+            padding: '1rem',
+            borderRadius: '6px',
+            border: '2px solid var(--accent-2)',
             background: 'var(--accent-2)',
             color: 'var(--text-primary)',
             cursor: 'pointer',
@@ -97,10 +96,12 @@ export default function MessagingPanel() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}
         >
-          <TestTube size={18} />
+          <TestTube size={20} />
           Send Test to Group
         </button>
         
