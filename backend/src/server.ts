@@ -9,8 +9,10 @@ import authRoutes from './routes/auth';
 import documentRoutes from './routes/documents';
 import messageRoutes from './routes/messages';
 import { setupPassport } from './config/passport';
+import path from 'path';
 
-dotenv.config();
+// Load .env from project root (two directories up from dist/server.js)
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
