@@ -28,7 +28,10 @@ interface EditorProps {
 export default function Editor({ document, onSave }: EditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable extensions we're configuring separately
+        link: false,
+      }),
       Link.configure({ openOnClick: false }),
       Image,
       Table.configure({ resizable: true }),
