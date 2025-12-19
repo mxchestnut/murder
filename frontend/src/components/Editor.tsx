@@ -16,16 +16,17 @@ import Superscript from '@tiptap/extension-superscript';
 import { 
   Bold, Italic, Strikethrough, Code, List, ListOrdered, 
   Quote, Undo, Redo, Heading1, Heading2, Heading3,
-  CheckSquare, Highlighter, AlignLeft, AlignCenter, AlignRight
+  CheckSquare, Highlighter, AlignLeft, AlignCenter, AlignRight, Share2
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface EditorProps {
   document: any;
   onSave: (content: string) => void;
+  onShare?: (document: any) => void;
 }
 
-export default function Editor({ document, onSave }: EditorProps) {
+export default function Editor({ document, onSave, onShare }: EditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -218,6 +219,30 @@ export default function Editor({ document, onSave }: EditorProps) {
         <MenuButton onClick={() => editor.chain().focus().redo().run()}>
           <Redo size={18} />
         </MenuButton>
+
+        {onShare && (
+          <>
+            <div style={{ width: '1px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
+            <button
+              onClick={() => onShare(document)}
+              style={{
+                padding: '0.5rem 1rem',
+                border: 'none',
+                background: 'var(--accent-2)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontWeight: 'bold'
+              }}
+            >
+              <Share2 size={18} />
+              Share
+            </button>
+          </>
+        )}
       </div>
 
       {/* Editor Content */}
