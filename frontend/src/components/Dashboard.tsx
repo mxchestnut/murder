@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import Editor from './Editor';
 import MessagingPanel from './MessagingPanel';
 import { api } from '../utils/api';
-import { FileText, MessageSquare, LogOut } from 'lucide-react';
+import { FileText, MessageSquare, LogOut, Sun, Moon } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -14,10 +14,23 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [currentDocument, setCurrentDocument] = useState<any>(null);
   const [showMessaging, setShowMessaging] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved as 'light' | 'dark') || 'light';
+  });
 
   useEffect(() => {
     loadDocuments();
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   const loadDocuments = async (parentId?: number) => {
     try {
@@ -55,20 +68,38 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '1rem',
-          borderBottom: '1px solid #4a4a4a',
-          background: '#2d2d2d'
+          borderBottom: `1px solid var(--border-color)`,
+          background: 'var(--bg-secondary)'
         }}>
-          <h2>{currentDocument?.name || 'Cyarika'}</h2>
+          <h2 style={{ color: 'var(--text-primary)' }}>{currentDocument?.name || 'Cyarika'}</h2>
           
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <button
+              onClick={toggleTheme}
+              style={{
+                padding: '0.5rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: 'var(--accent-2)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+
             <button
               onClick={() => setShowMessaging(!showMessaging)}
               style={{
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
                 border: 'none',
-                background: showMessaging ? '#5865f2' : '#4a4a4a',
-                color: 'white',
+                background: showMessaging ? 'var(--accent-2)' : 'var(--accent-1)',
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -79,7 +110,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               Messages
             </button>
 
-            <span>{user.username}</span>
+            <span style={{ color: 'var(--text-primary)' }}>{user.username}</span>
             
             <button
               onClick={handleLogout}
@@ -87,7 +118,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
                 border: 'none',
-                background: '#f04747',
+                background: '#c74444',
                 color: 'white',
                 cursor: 'pointer',
                 display: 'flex',

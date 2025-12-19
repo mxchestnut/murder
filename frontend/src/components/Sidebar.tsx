@@ -75,13 +75,13 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
   return (
     <div style={{
       width: '250px',
-      background: '#2d2d2d',
-      borderRight: '1px solid #4a4a4a',
+      background: 'var(--bg-secondary)',
+      borderRight: `1px solid var(--border-color)`,
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <div style={{ padding: '1rem', borderBottom: '1px solid #4a4a4a' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Documents</h3>
+      <div style={{ padding: '1rem', borderBottom: `1px solid var(--border-color)` }}>
+        <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Documents</h3>
         
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
@@ -90,8 +90,8 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
               padding: '0.5rem',
               borderRadius: '4px',
               border: 'none',
-              background: '#4a4a4a',
-              color: 'white',
+              background: 'var(--accent-1)',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -109,8 +109,8 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
               padding: '0.5rem',
               borderRadius: '4px',
               border: 'none',
-              background: '#4a4a4a',
-              color: 'white',
+              background: 'var(--accent-1)',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -125,8 +125,8 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
           <label style={{
             padding: '0.5rem',
             borderRadius: '4px',
-            background: '#4a4a4a',
-            color: 'white',
+            background: 'var(--accent-1)',
+            color: 'var(--text-primary)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -154,9 +154,9 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
                 width: '100%',
                 padding: '0.5rem',
                 borderRadius: '4px',
-                border: '1px solid #4a4a4a',
-                background: '#1e1e1e',
-                color: '#dcddde',
+                border: `1px solid var(--border-color)`,
+                background: 'var(--bg-primary)',
+                color: 'var(--text-primary)',
                 marginBottom: '0.5rem'
               }}
               autoFocus
@@ -169,8 +169,8 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
                   padding: '0.5rem',
                   borderRadius: '4px',
                   border: 'none',
-                  background: '#5865f2',
-                  color: 'white',
+                  background: 'var(--accent-2)',
+                  color: 'var(--text-primary)',
                   cursor: 'pointer'
                 }}
               >
@@ -186,8 +186,8 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
                   padding: '0.5rem',
                   borderRadius: '4px',
                   border: 'none',
-                  background: '#4a4a4a',
-                  color: 'white',
+                  background: 'var(--accent-1)',
+                  color: 'var(--text-primary)',
                   cursor: 'pointer'
                 }}
               >
@@ -207,12 +207,13 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
               padding: '0.75rem',
               borderRadius: '4px',
               cursor: 'pointer',
-              background: currentDocument?.id === doc.id ? '#5865f2' : 'transparent',
+              background: currentDocument?.id === doc.id ? 'var(--accent-2)' : 'transparent',
               marginBottom: '0.25rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              color: 'var(--text-primary)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
@@ -232,7 +233,7 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
                 borderRadius: '3px',
                 border: 'none',
                 background: 'transparent',
-                color: '#f04747',
+                color: '#c74444',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center'

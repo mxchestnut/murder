@@ -36,22 +36,24 @@ export default function Login({ onLogin }: LoginProps) {
       justifyContent: 'center',
       alignItems: 'center',
       height: '100vh',
-      background: '#1e1e1e'
+      background: 'var(--bg-primary)'
     }}>
       <div style={{
-        background: '#2d2d2d',
+        background: 'var(--bg-secondary)',
         padding: '2rem',
         borderRadius: '8px',
         width: '100%',
-        maxWidth: '400px'
+        maxWidth: '400px',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
       }}>
-        <h1 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+        <h1 style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--text-primary)' }}>
           {isRegister ? 'Register' : 'Login'} to Cyarika
         </h1>
         
         {error && (
           <div style={{
-            background: '#ff4444',
+            background: '#c74444',
+            color: 'white',
             padding: '0.75rem',
             borderRadius: '4px',
             marginBottom: '1rem'
@@ -62,7 +64,7 @@ export default function Login({ onLogin }: LoginProps) {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
               Username
             </label>
             <input
@@ -73,16 +75,16 @@ export default function Login({ onLogin }: LoginProps) {
                 width: '100%',
                 padding: '0.75rem',
                 borderRadius: '4px',
-                border: '1px solid #4a4a4a',
-                background: '#1e1e1e',
-                color: '#dcddde'
+                border: `1px solid var(--border-color)`,
+                background: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
               required
             />
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
               Password
             </label>
             <input
@@ -93,9 +95,9 @@ export default function Login({ onLogin }: LoginProps) {
                 width: '100%',
                 padding: '0.75rem',
                 borderRadius: '4px',
-                border: '1px solid #4a4a4a',
-                background: '#1e1e1e',
-                color: '#dcddde'
+                border: `1px solid var(--border-color)`,
+                background: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
               required
             />
@@ -108,8 +110,8 @@ export default function Login({ onLogin }: LoginProps) {
               padding: '0.75rem',
               borderRadius: '4px',
               border: 'none',
-              background: '#5865f2',
-              color: 'white',
+              background: 'var(--accent-2)',
+              color: 'var(--text-primary)',
               fontSize: '1rem',
               cursor: 'pointer',
               fontWeight: 'bold'
@@ -125,7 +127,7 @@ export default function Login({ onLogin }: LoginProps) {
             style={{
               background: 'none',
               border: 'none',
-              color: '#5865f2',
+              color: 'var(--accent-2)',
               cursor: 'pointer',
               textDecoration: 'underline'
             }}

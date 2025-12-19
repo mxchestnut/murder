@@ -68,8 +68,8 @@ export default function Editor({ document, onSave }: EditorProps) {
       style={{
         padding: '0.5rem',
         border: 'none',
-        background: active ? '#5865f2' : 'transparent',
-        color: 'white',
+        background: active ? 'var(--accent-2)' : 'transparent',
+        color: 'var(--text-primary)',
         cursor: 'pointer',
         borderRadius: '4px',
         display: 'flex',
@@ -85,8 +85,8 @@ export default function Editor({ document, onSave }: EditorProps) {
       {/* Toolbar */}
       <div style={{
         padding: '0.5rem',
-        borderBottom: '1px solid #4a4a4a',
-        background: '#2d2d2d',
+        borderBottom: `1px solid var(--border-color)`,
+        background: 'var(--bg-secondary)',
         display: 'flex',
         gap: '0.25rem',
         flexWrap: 'wrap'
@@ -126,7 +126,7 @@ export default function Editor({ document, onSave }: EditorProps) {
           <Code size={18} />
         </MenuButton>
 
-        <div style={{ width: '1px', background: '#4a4a4a', margin: '0 0.25rem' }} />
+        <div style={{ width: '1px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
 
         <MenuButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -149,7 +149,7 @@ export default function Editor({ document, onSave }: EditorProps) {
           <Heading3 size={18} />
         </MenuButton>
 
-        <div style={{ width: '1px', background: '#4a4a4a', margin: '0 0.25rem' }} />
+        <div style={{ width: '1px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
 
         <MenuButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -179,7 +179,7 @@ export default function Editor({ document, onSave }: EditorProps) {
           <Quote size={18} />
         </MenuButton>
 
-        <div style={{ width: '1px', background: '#4a4a4a', margin: '0 0.25rem' }} />
+        <div style={{ width: '1px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
 
         <MenuButton
           onClick={() => editor.chain().focus().toggleHighlight().run()}
@@ -224,8 +224,9 @@ export default function Editor({ document, onSave }: EditorProps) {
       <div style={{
         flex: 1,
         overflow: 'auto',
-        background: '#1e1e1e',
-        padding: '1rem'
+        background: 'var(--bg-primary)',
+        padding: '1rem',
+        color: 'var(--text-primary)'
       }}>
         <EditorContent editor={editor} />
       </div>
