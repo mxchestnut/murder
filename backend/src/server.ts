@@ -1,18 +1,19 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env from project root FIRST, before any other imports that use env vars
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
 import express from 'express';
 import session from 'express-session';
 import passport from 'passport';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import documentRoutes from './routes/documents';
 import messageRoutes from './routes/messages';
 import { setupPassport } from './config/passport';
-import path from 'path';
-
-// Load .env from project root (two directories up from dist/server.js)
-dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
