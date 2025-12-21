@@ -236,12 +236,13 @@ router.get('/discord-settings', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
     const [user] = await db.select({ 
-      webhookUrl: users.discordWebhookUrl 
+      botToken: users.discordBotToken 
     })
     .from(users)
     .where(eq(users.id, userId));
 
-    res.json({ webhookUrl: user?.webhookUrl || '' });
+    // Don't send the full token, just indicate if it's configured
+    res.json({ hasToken: !!user?.botToken });
   } catch (error) {
     console.error('Failed to get Discord settings:', error);
     res.status(500).json({ error: 'Failed to load Discord settings' });
@@ -252,18 +253,18 @@ router.get('/discord-settings', isAuthenticated, async (req, res) => {
 router.post('/discord-settings', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const { webhookUrl } = req.body;
+    const { botToken } = req.body;
 
-    // Validate webhook URL format if provided
-    if (webhookUrl && !webhookUrl.startsWith('https://discord.com/api/webhooks/')) {
-      return res.status(400).json({ error: 'Invalid Discord webhook URL' });
+    // Validate bot token format if provided (basic check)
+    if (botToken && botToken.length < 50) {
+      return res.status(400).json({ error: 'Invalid Discord bot token format' });
     }
 
     await db.update(users)
-      .set({ discordWebhookUrl: webhookUrl || null })
+      .set({ discordBotToken: botToken || null })
       .where(eq(users.id, userId));
 
-    res.json({ message: 'Discord settings saved successfully' });
+    res.json({ message: 'Discord settings saved successfully', hasToken: !!botToken });
   } catch (error) {
     console.error('Failed to save Discord settings:', error);
     res.status(500).json({ error: 'Failed to save Discord settings' });

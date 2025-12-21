@@ -15,9 +15,13 @@ import documentRoutes from './routes/documents';
 import characterRoutes from './routes/characters';
 import pathcompanionRoutes from './routes/pathcompanion';
 import { setupPassport } from './config/passport';
+import { initializeDiscordBot } from './services/discordBot';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Discord bot
+initializeDiscordBot(process.env.DISCORD_BOT_TOKEN || '');
 
 // Trust proxy (nginx)
 app.set('trust proxy', 1);

@@ -13,7 +13,7 @@ export const users = pgTable('users', {
   pathCompanionPlayfabId: text('path_companion_playfab_id'),
   pathCompanionConnectedAt: timestamp('path_companion_connected_at'),
   // Discord integration
-  discordWebhookUrl: text('discord_webhook_url'),
+  discordBotToken: text('discord_bot_token'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
@@ -125,6 +125,26 @@ export const sharedDocumentsRelations = relations(sharedDocuments, ({ one }) => 
 export const characterSheetsRelations = relations(characterSheets, ({ one }) => ({
   user: one(users, {
     fields: [characterSheets.userId],
+    references: [users.id]
+  })
+}));
+
+export const channelCharacterMappings = pgTable('channel_character_mappings', {
+  id: serial('id').primaryKey(),
+  channelId: text('channel_id').notNull(),
+  guildId: text('guild_id').notNull(),
+  characterId: integer('character_id').notNull().references(() => characterSheets.id),
+  userId: integer('user_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const channelCharacterMappingsRelations = relations(channelCharacterMappings, ({ one }) => ({
+  character: one(characterSheets, {
+    fields: [channelCharacterMappings.characterId],
+    references: [characterSheets.id]
+  }),
+  user: one(users, {
+    fields: [channelCharacterMappings.userId],
     references: [users.id]
   })
 }));

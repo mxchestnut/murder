@@ -8,7 +8,8 @@ interface PathCompanionConnectionStatus {
 }
 
 interface DiscordSettings {
-  webhookUrl: string;
+  hasToken: boolean;
+  botToken?: string;
 }
 
 export default function Settings() {
@@ -20,7 +21,7 @@ export default function Settings() {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
-  const [discordSettings, setDiscordSettings] = useState<DiscordSettings>({ webhookUrl: '' });
+  const [discordSettings, setDiscordSettings] = useState<DiscordSettings>({ hasToken: false, botToken: '' });
   const [isSavingDiscord, setIsSavingDiscord] = useState(false);
   const [discordMessage, setDiscordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -44,7 +45,7 @@ export default function Settings() {
   const loadDiscordSettings = async () => {
     try {
       const response = await api.get('/auth/discord-settings');
-      setDiscordSettings({ webhookUrl: response.data.webhookUrl || '' });
+      setDiscordSettings({ hasToken: response.data.hasToken || false, botToken: '' });
     } catch (error) {
       console.error('Failed to load Discord settings:', error);
     }
@@ -56,8 +57,9 @@ export default function Settings() {
     setDiscordMessage(null);
 
     try {
-      await api.post('/auth/discord-settings', discordSettings);
-      setDiscordMessage({ type: 'success', text: 'Discord webhook URL saved successfully!' });
+      await api.post('/auth/discord-settings', { botToken: discordSettings.botToken });
+      setDiscordMessage({ type: 'success', text: 'Discord bot token saved successfully!' });
+      setDiscordSettings({ ...discordSettings, hasToken: true, botToken: '' });
     } catch (error: any) {
       setDiscordMessage({ 
         type: 'error', 
@@ -200,9 +202,10 @@ export default function Settings() {
         </section>
 
         <section className="settings-section">
-          <h2>Discord Integration</h2>
+          <h2>Discord Bot Integration</h2>
           <p className="section-description">
-            Configure a Discord webhook to receive dice roll notifications when rolling from your character sheets.
+            Set up a Discord bot to enable dice rolling commands and channel-based character linking. 
+            Your rolls will automatically post to channels you've linked with !setchar.
           </p>
 
           {discordMessage && (
@@ -212,22 +215,45 @@ export default function Settings() {
           )}
 
           <div className="connection-form">
+            {discordSettings.hasToken && (
+              <div className="info-box" style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                <p style={{ margin: 0, color: 'var(--success)' }}>✓ Discord bot is configured</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                  Bot commands: !setchar, !char, !roll, !help
+                </p>
+              </div>
+            )}
+
+            <div className="setup-instructions" style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+              <h4 style={{ marginTop: 0 }}>Setup Instructions:</h4>
+              <ol style={{ fontSize: '0.9rem', paddingLeft: '1.5rem' }}>
+                <li>Go to <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a></li>
+                <li>Create a "New Application" and give it a name (e.g., "Cyarika Dice Bot")</li>
+                <li>Go to "Bot" tab → Reset Token → Copy the bot token</li>
+                <li>Paste the bot token below</li>
+                <li>Go to "OAuth2" → "URL Generator"</li>
+                <li>Select scopes: "bot", permissions: "Send Messages", "Embed Links"</li>
+                <li>Copy the generated URL and invite the bot to your server</li>
+                <li>In Discord, use !setchar &lt;character name&gt; to link a channel</li>
+              </ol>
+            </div>
+
             <form onSubmit={handleSaveDiscord}>
               <div className="form-group">
-                <label htmlFor="discord-webhook">Discord Webhook URL</label>
+                <label htmlFor="discord-token">Discord Bot Token</label>
                 <input
-                  id="discord-webhook"
-                  type="url"
-                  value={discordSettings.webhookUrl}
-                  onChange={(e) => setDiscordSettings({ webhookUrl: e.target.value })}
-                  placeholder="https://discord.com/api/webhooks/..."
+                  id="discord-token"
+                  type="password"
+                  value={discordSettings.botToken}
+                  onChange={(e) => setDiscordSettings({ ...discordSettings, botToken: e.target.value })}
+                  placeholder="Your Discord bot token (will be stored securely)"
                 />
                 <p style={{ 
                   fontSize: '0.85rem', 
                   color: 'var(--text-secondary)', 
                   marginTop: '0.5rem' 
                 }}>
-                  Get a webhook URL from your Discord server: Server Settings → Integrations → Webhooks
+                  Your bot token is encrypted and never shared.
                 </p>
               </div>
               <button 
@@ -243,7 +269,7 @@ export default function Settings() {
                 ) : (
                   <>
                     <Save size={18} />
-                    Save Discord Settings
+                    Save Bot Token
                   </>
                 )}
               </button>

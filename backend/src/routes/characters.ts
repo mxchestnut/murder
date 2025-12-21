@@ -3,6 +3,7 @@ import { db } from '../db';
 import { characterSheets, users } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
+import { sendRollToDiscord } from '../services/discordBot';
 
 const router = Router();
 
@@ -373,8 +374,8 @@ router.post('/:id/roll', async (req, res) => {
     }
 
     // Get user's Discord webhook
-    const [user] = await db.select({ webhookUrl: users.discordWebhookUrl }).from(users).where(eq(users.id, userId));
-    const discordWebhookUrl = user?.webhookUrl;
+    const [user] = await db.select({ botToken: users.discordBotToken }).from(users).where(eq(users.id, userId));
+    const hasBotToken = !!user?.botToken;
 
     let diceRoll: number;
     let total: number;
@@ -435,30 +436,19 @@ router.post('/:id/roll', async (req, res) => {
       rollDescription = stat ? `${stat.toUpperCase()} check` : 'Check';
     }
 
-    // Prepare Discord message
-    const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
-    const message = {
-      content: `🎲 **${username}** rolled for **${sheet.name}**'s **${rollDescription}**\n` +
-               `Roll: ${diceRoll} ${modifierStr} = **${total}**`
-    };
-
-    // Send to Discord if webhook is configured
-    if (discordWebhookUrl) {
+    // Send to Discord via bot if configured
+    let sentToDiscord = false;
+    if (hasBotToken) {
       try {
-        const response = await fetch(discordWebhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(message),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to send to Discord:', await response.text());
-        }
+        const rollData = {
+          rollDescription,
+          diceRoll,
+          modifier,
+          total
+        };
+        sentToDiscord = await sendRollToDiscord(sheetId, rollData);
       } catch (error) {
-        console.error('Error sending to Discord:', error);
-        // Continue anyway - we'll still return the roll result
+        console.error('Error sending to Discord via bot:', error);
       }
     }
 
@@ -471,7 +461,7 @@ router.post('/:id/roll', async (req, res) => {
       modifier,
       diceRoll,
       total,
-      sentToDiscord: !!discordWebhookUrl
+      sentToDiscord
     });
   } catch (error) {
     console.error('Error rolling dice:', error);
