@@ -337,12 +337,12 @@ export function extractCharacterLevel(characterData: any): number {
  * PathCompanion uses Pathfinder 2e, which has the same core abilities as D&D
  */
 export function extractAbilityScores(characterData: any) {
-  // PathCompanion structure: characterInfo.stats with complex score objects
-  const stats = characterData.characterInfo?.stats || 
-                characterData.stats || 
-                characterData.abilities || 
-                characterData.abilityScores || 
-                {};
+  // PathCompanion stores abilities at the root level
+  const abilities = characterData.abilities || 
+                    characterData.characterInfo?.stats ||
+                    characterData.stats || 
+                    characterData.abilityScores || 
+                    {};
   
   // Helper to extract score from PathCompanion's complex structure
   const extractScore = (stat: any): number => {
@@ -354,12 +354,12 @@ export function extractAbilityScores(characterData: any) {
   };
   
   return {
-    strength: extractScore(stats.strength || stats.str),
-    dexterity: extractScore(stats.dexterity || stats.dex),
-    constitution: extractScore(stats.constitution || stats.con),
-    intelligence: extractScore(stats.intelligence || stats.int),
-    wisdom: extractScore(stats.wisdom || stats.wis),
-    charisma: extractScore(stats.charisma || stats.cha),
+    strength: extractScore(abilities.strength || abilities.str),
+    dexterity: extractScore(abilities.dexterity || abilities.dex),
+    constitution: extractScore(abilities.constitution || abilities.con),
+    intelligence: extractScore(abilities.intelligence || abilities.int),
+    wisdom: extractScore(abilities.wisdom || abilities.wis),
+    charisma: extractScore(abilities.charisma || abilities.cha),
   };
 }
 
@@ -374,27 +374,24 @@ export function calculateModifier(score: number): number {
  * Extract combat stats from PathCompanion character data
  */
 export function extractCombatStats(characterData: any) {
-  const charInfo = characterData.characterInfo || {};
-  const stats = charInfo.stats || {};
-  
-  console.log('Extracting combat stats from:', {
-    hasCharInfo: !!characterData.characterInfo,
-    hasStats: !!charInfo.stats,
-    charInfoKeys: Object.keys(charInfo).slice(0, 10)
-  });
+  // PathCompanion stores combat data at root level in combat/defense/offense objects
+  const combat = characterData.combat || {};
+  const defense = characterData.defense || {};
+  const offense = characterData.offense || {};
+  const pools = characterData.pools || {};
   
   return {
-    currentHp: charInfo.currentHp || charInfo.hitPoints?.current || 0,
-    maxHp: charInfo.maxHp || charInfo.hitPoints?.max || 0,
-    tempHp: charInfo.tempHp || charInfo.hitPoints?.temp || 0,
-    armorClass: charInfo.ac || charInfo.armorClass || stats.armorClass?.total || 10,
-    touchAc: charInfo.touchAc || stats.armorClass?.touch || 10,
-    flatFootedAc: charInfo.flatFootedAc || stats.armorClass?.flatFooted || 10,
-    initiative: charInfo.initiative || stats.initiative?.total || 0,
-    speed: charInfo.speed || charInfo.baseSpeed || 30,
-    baseAttackBonus: charInfo.bab || charInfo.baseAttackBonus || 0,
-    cmb: charInfo.cmb || stats.cmb?.total || 0,
-    cmd: charInfo.cmd || stats.cmd?.total || 10,
+    currentHp: pools.hp?.current || combat.currentHp || 0,
+    maxHp: pools.hp?.max || combat.maxHp || 0,
+    tempHp: pools.hp?.temp || combat.tempHp || 0,
+    armorClass: defense.ac?.total || defense.armorClass || 10,
+    touchAc: defense.ac?.touch || defense.touchAc || 10,
+    flatFootedAc: defense.ac?.flatFooted || defense.flatFootedAc || 10,
+    initiative: offense.initiative?.total || offense.initiative || 0,
+    speed: combat.speed?.total || combat.baseSpeed || 30,
+    baseAttackBonus: offense.bab?.total || offense.baseAttackBonus || 0,
+    cmb: offense.cmb?.total || offense.cmb || 0,
+    cmd: defense.cmd?.total || defense.cmd || 10,
   };
 }
 
@@ -402,8 +399,9 @@ export function extractCombatStats(characterData: any) {
  * Extract saving throws from PathCompanion character data
  */
 export function extractSavingThrows(characterData: any) {
-  const charInfo = characterData.characterInfo || {};
-  const saves = charInfo.savingThrows || charInfo.saves || {};
+  // PathCompanion stores saves in the defense object
+  const defense = characterData.defense || {};
+  const saves = defense.saves || defense.savingThrows || {};
   
   return {
     fortitudeSave: saves.fortitude?.total || saves.fort?.total || saves.fortitude || 0,
@@ -416,15 +414,9 @@ export function extractSavingThrows(characterData: any) {
  * Extract skills from PathCompanion character data
  */
 export function extractSkills(characterData: any) {
-  const charInfo = characterData.characterInfo || {};
-  const skillsData = charInfo.skills || {};
+  // PathCompanion stores skills at root level
+  const skillsData = characterData.skills || {};
   const skills: any = {};
-  
-  console.log('Extracting skills from:', { 
-    hasCharInfo: !!characterData.characterInfo,
-    hasSkills: !!charInfo.skills,
-    skillsKeys: Object.keys(skillsData).slice(0, 5)
-  });
   
   // PathCompanion stores skills as objects with ranks, modifiers, etc.
   for (const [skillName, skillValue] of Object.entries(skillsData)) {
@@ -449,25 +441,22 @@ export function extractSkills(characterData: any) {
  */
 export function extractFeats(characterData: any) {
   const charInfo = characterData.characterInfo || {};
-  const featsData = charInfo.feats || [];
+  const feats: string[] = [];
   
-  if (Array.isArray(featsData)) {
-    return featsData.map((feat: any) => {
-      if (typeof feat === 'string') return feat;
-      return feat.name || feat.featName || 'Unknown Feat';
-    });
+  // PathCompanion stores feats in levelInfo[level].Feats
+  if (charInfo.levelInfo) {
+    for (const level of Object.keys(charInfo.levelInfo)) {
+      const levelData = charInfo.levelInfo[level];
+      if (levelData.Feats && Array.isArray(levelData.Feats)) {
+        feats.push(...levelData.Feats.map((feat: any) => {
+          if (typeof feat === 'string') return feat;
+          return feat.name || feat.featName || 'Unknown Feat';
+        }));
+      }
+    }
   }
   
-  // If feats is an object, convert to array
-  if (typeof featsData === 'object') {
-    return Object.keys(featsData).map(key => {
-      const feat = featsData[key];
-      if (typeof feat === 'string') return feat;
-      return feat.name || feat.featName || key;
-    });
-  }
-  
-  return [];
+  return [...new Set(feats)]; // Remove duplicates
 }
 
 /**
@@ -503,19 +492,20 @@ export function extractSpecialAbilities(characterData: any) {
  * Extract weapons from PathCompanion character data
  */
 export function extractWeapons(characterData: any) {
-  const charInfo = characterData.characterInfo || {};
-  const weaponsData = charInfo.weapons || charInfo.equipment?.weapons || [];
+  const equipment = characterData.equipment || {};
+  const offense = characterData.offense || {};
+  const weaponsData = equipment.weapons || offense.weapons || [];
   
   if (!Array.isArray(weaponsData)) return [];
   
   return weaponsData.map((weapon: any) => ({
-    name: weapon.name || weapon.weaponName || 'Unknown Weapon',
-    attackBonus: weapon.attackBonus || weapon.attack || 0,
-    damage: weapon.damage || weapon.damageRoll || '1d6',
-    critical: weapon.critical || weapon.crit || '×2',
-    range: weapon.range || weapon.rangeIncrement || 0,
-    type: weapon.type || weapon.damageType || 'S',
-    notes: weapon.notes || weapon.description || ''
+    name: weapon.name || weapon.weaponName || weapon.Name || 'Unknown Weapon',
+    attackBonus: weapon.attackBonus || weapon.attack || weapon.AttackBonus || 0,
+    damage: weapon.damage || weapon.damageRoll || weapon.Damage || '1d6',
+    critical: weapon.critical || weapon.crit || weapon.Critical || '×2',
+    range: weapon.range || weapon.rangeIncrement || weapon.Range || 0,
+    type: weapon.type || weapon.damageType || weapon.Type || 'S',
+    notes: weapon.notes || weapon.description || weapon.Notes || ''
   }));
 }
 
@@ -523,18 +513,19 @@ export function extractWeapons(characterData: any) {
  * Extract armor from PathCompanion character data
  */
 export function extractArmor(characterData: any) {
-  const charInfo = characterData.characterInfo || {};
-  const armorData = charInfo.armor || charInfo.equipment?.armor || {};
+  const equipment = characterData.equipment || {};
+  const defense = characterData.defense || {};
+  const armorData = equipment.armor || defense.armor || {};
   
   if (typeof armorData !== 'object' || armorData === null) return {};
   
   return {
-    name: armorData.name || armorData.armorName || 'No Armor',
-    acBonus: armorData.acBonus || armorData.bonus || 0,
-    maxDex: armorData.maxDex || armorData.maxDexBonus || 99,
-    checkPenalty: armorData.checkPenalty || armorData.armorCheckPenalty || 0,
-    spellFailure: armorData.spellFailure || armorData.arcaneSpellFailure || 0,
-    type: armorData.type || 'light'
+    name: armorData.name || armorData.armorName || armorData.Name || 'No Armor',
+    acBonus: armorData.acBonus || armorData.bonus || armorData.ACBonus || 0,
+    maxDex: armorData.maxDex || armorData.maxDexBonus || armorData.MaxDex || 99,
+    checkPenalty: armorData.checkPenalty || armorData.armorCheckPenalty || armorData.CheckPenalty || 0,
+    spellFailure: armorData.spellFailure || armorData.arcaneSpellFailure || armorData.SpellFailure || 0,
+    type: armorData.type || armorData.Type || 'light'
   };
 }
 
@@ -542,20 +533,17 @@ export function extractArmor(characterData: any) {
  * Extract spells from PathCompanion character data
  */
 export function extractSpells(characterData: any) {
-  const charInfo = characterData.characterInfo || {};
-  const spellsData = charInfo.spells || {};
+  const spellsData = characterData.spells || {};
   const spells: any = {};
   
   // PathCompanion might organize spells by level
   for (let level = 0; level <= 9; level++) {
     const levelKey = `level${level}`;
-    if (spellsData[levelKey] || spellsData[level.toString()]) {
-      const levelSpells = spellsData[levelKey] || spellsData[level.toString()];
-      if (Array.isArray(levelSpells)) {
-        spells[level] = levelSpells.map((spell: any) => 
-          typeof spell === 'string' ? spell : spell.name || spell.spellName || 'Unknown Spell'
-        );
-      }
+    const levelSpells = spellsData[levelKey] || spellsData[level.toString()] || spellsData[level];
+    if (levelSpells && Array.isArray(levelSpells)) {
+      spells[level] = levelSpells.map((spell: any) => 
+        typeof spell === 'string' ? spell : spell.name || spell.spellName || spell.Name || 'Unknown Spell'
+      );
     }
   }
   
