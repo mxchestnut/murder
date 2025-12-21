@@ -694,12 +694,17 @@ export default function CharacterSheets() {
                 const defense = pcData.defense || {};
                 console.log('Defense object:', defense);
                 console.log('RAW defense.sr value:', defense.sr, 'Type:', typeof defense.sr);
-                console.log('characterInfo:', pcData.characterInfo);
-                console.log('Special abilities:', selectedSheet.specialAbilities);
-                console.log('Race info:', pcData.race);
+                if (defense.sr && typeof defense.sr === 'object') {
+                  console.log('SR bonuses:', defense.sr.bonuses);
+                  console.log('SR total:', defense.sr.total);
+                }
                 
                 const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
-                const hasSR = defense.sr && (defense.sr.total || defense.sr) > 0;
+                // SR can be: number, object with .total, or object with .bonuses array
+                const hasSR = defense.sr && (
+                  (typeof defense.sr === 'number' && defense.sr > 0) ||
+                  (typeof defense.sr === 'object' && (defense.sr.total > 0 || (defense.sr.bonuses && defense.sr.bonuses.length > 0)))
+                );
                 const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
                 const hasImmunities = defense.immunities && defense.immunities.length > 0;
                 console.log('Defensive abilities check:', { hasDR, hasSR, hasResistances, hasImmunities });
@@ -712,7 +717,13 @@ export default function CharacterSheets() {
                         {hasSR && (
                           <div className="stat-inline">
                             <span className="label">SR:</span>
-                            <span className="value">{defense.sr.total || defense.sr}</span>
+                            <span className="value">
+                              {typeof defense.sr === 'number' 
+                                ? defense.sr 
+                                : defense.sr.total || (defense.sr.bonuses && defense.sr.bonuses.length > 0 
+                                  ? `${11 + selectedSheet.level}` 
+                                  : 'Yes')}
+                            </span>
                           </div>
                         )}
                         {hasDR && (
