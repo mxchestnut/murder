@@ -904,6 +904,11 @@ export default function CharacterSheets() {
           max-height: 80vh;
           overflow-y: auto;
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          color: #1a202c;
+        }
+
+        .pathcompanion-modal-content * {
+          color: #1a202c;
         }
 
         .pathcompanion-modal-header {
@@ -949,11 +954,23 @@ export default function CharacterSheets() {
           color: white;
           font-weight: 600;
           padding: 0.75rem;
+          border: none;
+          cursor: pointer;
+          border-radius: 6px;
+          font-size: 1rem;
+          transition: all 0.2s;
+        }
+
+        .pathcompanion-login-form .button.primary:hover:not(:disabled) {
+          background-color: #3182ce;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .pathcompanion-login-form .button.primary:disabled {
           background-color: #cbd5e0;
           cursor: not-allowed;
+          color: #718096;
         }
 
         .pathcompanion-characters-list {
