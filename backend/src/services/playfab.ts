@@ -378,34 +378,14 @@ export function extractCombatStats(characterData: any) {
   const combat = characterData.combat || {};
   const defense = characterData.defense || {};
   const offense = characterData.offense || {};
-  const pools = characterData.pools || {};
-  const social = characterData.social || {};
-  const characterInfo = characterData.characterInfo || {};
-  
-  console.log('Combat extraction debug:', {
-    socialKeys: Object.keys(social),
-    socialHp: social.hp,
-    socialHitPoints: social.hitPoints,
-    defenseKeys: Object.keys(defense).slice(0, 10),
-    defenseHp: defense.hp,
-    characterInfoHp: characterInfo.hp,
-    characterInfoHitPoints: characterInfo.hitPoints,
-    offenseBab: offense.bab,
-  });
   
   // BAB can be a number or an object with total
   const bab = typeof offense.bab === 'number' ? offense.bab : (offense.bab?.total || 0);
   
-  // Try multiple possible locations for HP
-  const currentHp = social.hp?.current || social.hitPoints?.current || 
-                    characterInfo.hp?.current || characterInfo.hitPoints?.current ||
-                    defense.hp?.current || combat.currentHp || 0;
-  const maxHp = social.hp?.max || social.hitPoints?.max || 
-                characterInfo.hp?.max || characterInfo.hitPoints?.max ||
-                defense.hp?.max || combat.maxHp || 0;
-  const tempHp = social.hp?.temp || social.hitPoints?.temp || 
-                 characterInfo.hp?.temp || characterInfo.hitPoints?.temp ||
-                 defense.hp?.temp || combat.tempHp || 0;
+  // HP is in defense.hp
+  const currentHp = defense.hp?.current || 0;
+  const maxHp = defense.hp?.total || 0;
+  const tempHp = defense.hp?.temp || 0;
   
   return {
     currentHp,
@@ -591,6 +571,43 @@ export function extractBasicInfo(characterData: any) {
   };
 }
 
+/**
+ * Extract defensive abilities (DR, SR, resistances, immunities)
+ */
+export function extractDefensiveAbilities(characterData: any) {
+  const defense = characterData.defense || {};
+  
+  return {
+    damageReduction: defense.dr || [],
+    spellResistance: defense.sr?.total || defense.sr || 0,
+    resistances: defense.resistances || {},
+    immunities: defense.immunities || []
+  };
+}
+
+/**
+ * Extract caster information (caster level, spell DC, concentration)
+ */
+export function extractCasterInfo(characterData: any) {
+  const spells = characterData.spells || {};
+  const characterInfo = characterData.characterInfo || {};
+  
+  // Caster level is often stored per class
+  const casterLevel = spells.casterLevel || spells.CL || 0;
+  
+  // Spell DC base (10 + spell level + stat mod) - we'll need to calc stat mod on frontend
+  const spellDCBase = spells.dcBase || 10;
+  
+  // Concentration bonus
+  const concentration = spells.concentration?.total || spells.concentration || 0;
+  
+  return {
+    casterLevel,
+    spellDCBase,
+    concentration
+  };
+}
+
 export default {
   loginToPlayFab,
   getUserData,
@@ -608,4 +625,6 @@ export default {
   extractArmor,
   extractSpells,
   extractBasicInfo,
+  extractDefensiveAbilities,
+  extractCasterInfo,
 };
