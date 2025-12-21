@@ -130,28 +130,37 @@ export async function getCharacterList(sessionTicket: string): Promise<PathCompa
   try {
     const userData = await getUserData(sessionTicket);
     
+    console.log('Fetching character list, userData keys:', Object.keys(userData));
+    
     // PathCompanion might store character list in user data
     // The exact structure depends on how PathCompanion implements it
-    // This is a reasonable assumption - we may need to adjust based on actual data structure
     const characters: PathCompanionCharacter[] = [];
 
     // Look for character data keys
     for (const [key, value] of Object.entries(userData)) {
-      if (key.startsWith('Character_') || key.includes('character')) {
+      if (key.startsWith('Character_') || key.toLowerCase().includes('character')) {
         try {
-          const charData = typeof value === 'string' ? JSON.parse(value as string) : value;
+          console.log(`Processing character key: ${key}, value type:`, typeof value, 'value:', value);
+          
+          // PlayFab UserData has structure: { Value: "json string", LastUpdated: "date" }
+          const rawValue = (value as any).Value || value;
+          const charData = typeof rawValue === 'string' ? JSON.parse(rawValue) : rawValue;
+          
+          console.log(`Parsed character data for ${key}:`, JSON.stringify(charData).substring(0, 200));
+          
           characters.push({
             characterId: key,
-            characterName: charData.name || charData.characterName || 'Unnamed Character',
+            characterName: charData.name || charData.characterName || charData.Name || 'Unnamed Character',
             data: charData,
-            lastModified: new Date(charData.lastModified || Date.now()),
+            lastModified: new Date((value as any).LastUpdated || charData.lastModified || Date.now()),
           });
         } catch (e) {
-          console.error('Failed to parse character data:', e);
+          console.error(`Failed to parse character data for ${key}:`, e);
         }
       }
     }
 
+    console.log(`Found ${characters.length} characters:`, characters.map(c => ({ id: c.characterId, name: c.characterName })));
     return characters;
   } catch (error) {
     throw new Error(`Failed to get character list: ${error}`);
