@@ -37,7 +37,7 @@ export async function loginToPlayFab(username: string, password: string): Promis
       }
     };
 
-    PlayFabClient.LoginWithPlayFab(usernameRequest, (result: any, error: any) => {
+    PlayFabClient.LoginWithPlayFab(usernameRequest, (error: any, result: any) => {
       if (error) {
         // If username login fails with "User not found", try email login
         if (error.error === 'AccountNotFound' || error.errorCode === 1001) {
@@ -52,7 +52,7 @@ export async function loginToPlayFab(username: string, password: string): Promis
             }
           };
           
-          PlayFabClient.LoginWithEmailAddress(emailRequest, (emailResult: any, emailError: any) => {
+          PlayFabClient.LoginWithEmailAddress(emailRequest, (emailError: any, emailResult: any) => {
             if (emailError) {
               console.error('PlayFab email login error:', JSON.stringify(emailError, null, 2));
               const errorMsg = emailError.errorMessage || emailError.error || 'PlayFab login failed';
