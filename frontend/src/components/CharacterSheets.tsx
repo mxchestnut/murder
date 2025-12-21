@@ -887,7 +887,7 @@ export default function CharacterSheets() {
           left: 0;
           right: 0;
           bottom: 0;
-          background-color: rgba(0, 0, 0, 0.5);
+          background-color: rgba(0, 0, 0, 0.7);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -895,14 +895,15 @@ export default function CharacterSheets() {
         }
 
         .pathcompanion-modal-content {
-          background-color: var(--bg-color);
-          border: 1px solid var(--border-color);
+          background-color: #ffffff;
+          border: 2px solid #4a5568;
           border-radius: 8px;
           padding: 2rem;
           max-width: 600px;
           width: 90%;
           max-height: 80vh;
           overflow-y: auto;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
 
         .pathcompanion-modal-header {
@@ -910,10 +911,14 @@ export default function CharacterSheets() {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 1.5rem;
+          border-bottom: 2px solid #e2e8f0;
+          padding-bottom: 1rem;
         }
 
         .pathcompanion-modal-header h3 {
           margin: 0;
+          color: #1a202c;
+          font-size: 1.5rem;
         }
 
         .pathcompanion-login-form {
@@ -923,33 +928,72 @@ export default function CharacterSheets() {
           margin-bottom: 1.5rem;
         }
 
+        .pathcompanion-login-form label {
+          color: #2d3748;
+          font-weight: 600;
+        }
+
+        .pathcompanion-login-form input {
+          background-color: #f7fafc;
+          border: 2px solid #cbd5e0;
+          color: #1a202c;
+        }
+
+        .pathcompanion-login-form input:focus {
+          border-color: #4299e1;
+          outline: none;
+        }
+
+        .pathcompanion-login-form .button.primary {
+          background-color: #4299e1;
+          color: white;
+          font-weight: 600;
+          padding: 0.75rem;
+        }
+
+        .pathcompanion-login-form .button.primary:disabled {
+          background-color: #cbd5e0;
+          cursor: not-allowed;
+        }
+
         .pathcompanion-characters-list {
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
         }
 
+        .pathcompanion-characters-list > p {
+          color: #2d3748;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+        }
+
         .pathcompanion-character-item {
-          border: 1px solid var(--border-color);
+          border: 2px solid #cbd5e0;
           border-radius: 6px;
           padding: 1rem;
           cursor: pointer;
           transition: all 0.2s;
+          background-color: #f7fafc;
         }
 
         .pathcompanion-character-item:hover {
-          background-color: var(--hover-bg);
-          border-color: var(--primary-color);
+          background-color: #edf2f7;
+          border-color: #4299e1;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .pathcompanion-character-name {
-          font-weight: 600;
+          font-weight: 700;
           margin-bottom: 0.25rem;
+          color: #1a202c;
+          font-size: 1.1rem;
         }
 
         .pathcompanion-character-details {
           font-size: 0.875rem;
-          color: var(--text-muted);
+          color: #4a5568;
         }
 
         .pathcompanion-badge {
