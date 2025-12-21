@@ -213,10 +213,14 @@ export default function CharacterSheets() {
     }
   };
 
-  const handleRoll = async (stat: string) => {
+  const handleRoll = async (stat: string, rollType: string = 'ability', skillName?: string) => {
     if (!selectedSheet) return;
     try {
-      const response = await api.post(`/characters/${selectedSheet.id}/roll`, { stat });
+      const response = await api.post(`/characters/${selectedSheet.id}/roll`, { 
+        stat, 
+        rollType,
+        skillName 
+      });
       setRollResult(response.data);
       setTimeout(() => setRollResult(null), 5000);
     } catch (error) {
@@ -415,21 +419,19 @@ export default function CharacterSheets() {
     const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
     
     return (
-      <div className="stat-block">
+      <div 
+        className="stat-block clickable"
+        onClick={() => handleRoll(stat, 'ability')}
+        style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
         <div className="stat-header">
           <Icon size={18} />
           <span>{stat.toUpperCase()}</span>
         </div>
         <div className="stat-value">{value}</div>
         <div className="stat-modifier">{modifierStr}</div>
-        <button 
-          className="roll-button"
-          onClick={() => handleRoll(stat)}
-          disabled={!selectedSheet}
-        >
-          <Dices size={16} />
-          Roll
-        </button>
       </div>
     );
   };
@@ -605,7 +607,7 @@ export default function CharacterSheets() {
               <div className="roll-result">
                 <Dices size={24} />
                 <div className="roll-info">
-                  <div className="roll-stat">{rollResult.stat.toUpperCase()}</div>
+                  <div className="roll-stat">{rollResult.rollDescription || rollResult.stat?.toUpperCase()}</div>
                   <div className="roll-calculation">
                     {rollResult.diceRoll} {rollResult.modifier >= 0 ? '+' : ''}{rollResult.modifier} = <strong>{rollResult.total}</strong>
                   </div>
@@ -664,19 +666,37 @@ export default function CharacterSheets() {
             <div className="sheet-section">
               <h3>Saving Throws</h3>
               <div className="saves-grid">
-                <div className="save-box">
+                <div 
+                  className="save-box clickable"
+                  onClick={() => handleRoll('fortitude', 'save')}
+                  style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
                   <div className="save-label">Fortitude</div>
                   <div className="save-value">
                     {(selectedSheet.fortitudeSave || 0) >= 0 ? '+' : ''}{selectedSheet.fortitudeSave || 0}
                   </div>
                 </div>
-                <div className="save-box">
+                <div 
+                  className="save-box clickable"
+                  onClick={() => handleRoll('reflex', 'save')}
+                  style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
                   <div className="save-label">Reflex</div>
                   <div className="save-value">
                     {(selectedSheet.reflexSave || 0) >= 0 ? '+' : ''}{selectedSheet.reflexSave || 0}
                   </div>
                 </div>
-                <div className="save-box">
+                <div 
+                  className="save-box clickable"
+                  onClick={() => handleRoll('will', 'save')}
+                  style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
                   <div className="save-label">Will</div>
                   <div className="save-value">
                     {(selectedSheet.willSave || 0) >= 0 ? '+' : ''}{selectedSheet.willSave || 0}
@@ -834,7 +854,14 @@ export default function CharacterSheets() {
                 <h3>Skills</h3>
                 <div className="skills-grid">
                   {Object.entries(selectedSheet.skills).map(([skillName, skillData]: [string, any]) => (
-                    <div key={skillName} className="skill-item">
+                    <div 
+                      key={skillName} 
+                      className="skill-item clickable"
+                      onClick={() => handleRoll('', 'skill', skillName)}
+                      style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
                       <span className="skill-name">{skillName}</span>
                       <span className="skill-value">
                         {skillData.total >= 0 ? '+' : ''}{skillData.total || 0}
