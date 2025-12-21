@@ -688,16 +688,8 @@ export default function CharacterSheets() {
             {/* Defensive Abilities */}
             {selectedSheet.pathCompanionData && (() => {
               try {
-                console.log('PathCompanion Data exists, parsing...');
                 const pcData = JSON.parse(selectedSheet.pathCompanionData);
-                console.log('Parsed PathCompanion data:', pcData);
                 const defense = pcData.defense || {};
-                console.log('Defense object:', defense);
-                console.log('RAW defense.sr value:', defense.sr, 'Type:', typeof defense.sr);
-                if (defense.sr && typeof defense.sr === 'object') {
-                  console.log('SR bonuses:', defense.sr.bonuses);
-                  console.log('SR total:', defense.sr.total);
-                }
                 
                 const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
                 // SR can be: number, object with .total, or object with .bonuses array
@@ -707,7 +699,6 @@ export default function CharacterSheets() {
                 );
                 const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
                 const hasImmunities = defense.immunities && defense.immunities.length > 0;
-                console.log('Defensive abilities check:', { hasDR, hasSR, hasResistances, hasImmunities });
                 
                 if (hasDR || hasSR || hasResistances || hasImmunities) {
                   return (

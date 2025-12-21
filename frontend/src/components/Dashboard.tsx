@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Sidebar from './Sidebar';
+import HamburgerSidebar from './HamburgerSidebar';
 import Editor from './Editor';
 import MessagingPanel from './MessagingPanel';
 import Settings from './Settings';
@@ -96,8 +96,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {/* Sidebar */}
-      <Sidebar
+      {/* Hamburger Sidebar */}
+      <HamburgerSidebar
         documents={documents}
         onSelectDocument={handleSelectDocument}
         onSelectCharacter={handleSelectCharacter}
@@ -114,6 +114,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '1rem',
+          paddingLeft: '5rem', // Make room for hamburger button
           borderBottom: `1px solid var(--border-color)`,
           background: 'var(--bg-secondary)'
         }}>
