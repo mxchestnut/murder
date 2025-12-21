@@ -380,16 +380,25 @@ export function extractCombatStats(characterData: any) {
   const offense = characterData.offense || {};
   const pools = characterData.pools || {};
   
+  console.log('Combat extraction debug:', {
+    hasPoolsHp: !!pools.hp,
+    poolsKeys: Object.keys(pools).slice(0, 5),
+    hasOffenseBab: !!offense.bab,
+    offenseKeys: Object.keys(offense).slice(0, 5),
+    poolsHp: pools.hp,
+    offenseBab: offense.bab
+  });
+  
   return {
-    currentHp: pools.hp?.current || combat.currentHp || 0,
-    maxHp: pools.hp?.max || combat.maxHp || 0,
-    tempHp: pools.hp?.temp || combat.tempHp || 0,
+    currentHp: pools.hp?.current || pools.hitPoints?.current || combat.currentHp || 0,
+    maxHp: pools.hp?.max || pools.hitPoints?.max || combat.maxHp || 0,
+    tempHp: pools.hp?.temp || pools.hitPoints?.temp || combat.tempHp || 0,
     armorClass: defense.ac?.total || defense.armorClass || 10,
     touchAc: defense.ac?.touch || defense.touchAc || 10,
     flatFootedAc: defense.ac?.flatFooted || defense.flatFootedAc || 10,
     initiative: offense.initiative?.total || offense.initiative || 0,
     speed: combat.speed?.total || combat.baseSpeed || 30,
-    baseAttackBonus: offense.bab?.total || offense.baseAttackBonus || 0,
+    baseAttackBonus: offense.bab?.total || offense.bab || offense.baseAttackBonus || 0,
     cmb: offense.cmb?.total || offense.cmb || 0,
     cmd: defense.cmd?.total || defense.cmd || 10,
   };
