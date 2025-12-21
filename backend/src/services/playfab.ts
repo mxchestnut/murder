@@ -21,12 +21,14 @@ export interface PathCompanionCharacter {
 }
 
 /**
- * Login to PlayFab using username and password
+ * Login to PlayFab using username/email and password
  * This gets a session ticket that can be used for subsequent requests
+ * Tries username first, then email if username fails
  */
 export async function loginToPlayFab(username: string, password: string): Promise<PathCompanionAuth> {
   return new Promise((resolve, reject) => {
-    const loginRequest = {
+    // First try login with username
+    const usernameRequest = {
       TitleId: TITLE_ID,
       Username: username,
       Password: password,
@@ -35,11 +37,47 @@ export async function loginToPlayFab(username: string, password: string): Promis
       }
     };
 
-    PlayFabClient.LoginWithPlayFab(loginRequest, (result: any, error: any) => {
+    PlayFabClient.LoginWithPlayFab(usernameRequest, (result: any, error: any) => {
       if (error) {
-        console.error('PlayFab login error details:', JSON.stringify(error, null, 2));
-        const errorMsg = error.errorMessage || error.error || 'PlayFab login failed';
-        reject(new Error(errorMsg));
+        // If username login fails with "User not found", try email login
+        if (error.error === 'AccountNotFound' || error.errorCode === 1001) {
+          console.log('Username login failed, trying email login...');
+          
+          const emailRequest = {
+            TitleId: TITLE_ID,
+            Email: username, // Try using the input as email
+            Password: password,
+            InfoRequestParameters: {
+              GetUserAccountInfo: true,
+            }
+          };
+          
+          PlayFabClient.LoginWithEmailAddress(emailRequest, (emailResult: any, emailError: any) => {
+            if (emailError) {
+              console.error('PlayFab email login error:', JSON.stringify(emailError, null, 2));
+              const errorMsg = emailError.errorMessage || emailError.error || 'PlayFab login failed';
+              reject(new Error(errorMsg));
+              return;
+            }
+            
+            if (!emailResult || !emailResult.data) {
+              console.error('PlayFab email login - no result data. Result:', emailResult);
+              reject(new Error('No data returned from PlayFab'));
+              return;
+            }
+            
+            console.log('PlayFab email login successful for:', username);
+            resolve({
+              playfabId: emailResult.data.PlayFabId,
+              sessionTicket: emailResult.data.SessionTicket,
+              entityToken: emailResult.data.EntityToken?.EntityToken || '',
+            });
+          });
+        } else {
+          console.error('PlayFab login error details:', JSON.stringify(error, null, 2));
+          const errorMsg = error.errorMessage || error.error || 'PlayFab login failed';
+          reject(new Error(errorMsg));
+        }
         return;
       }
 

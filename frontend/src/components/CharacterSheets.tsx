@@ -486,7 +486,7 @@ export default function CharacterSheets() {
             {!pathCompanionSession ? (
               <div className="pathcompanion-login-form">
                 <div className="form-group">
-                  <label htmlFor="pc-username">PathCompanion Username</label>
+                  <label htmlFor="pc-username">PathCompanion Username or Email</label>
                   <input
                     id="pc-username"
                     type="text"
@@ -495,7 +495,7 @@ export default function CharacterSheets() {
                       ...prev,
                       username: e.target.value
                     }))}
-                    placeholder="Enter your username"
+                    placeholder="Enter username or email"
                   />
                 </div>
                 <div className="form-group">
