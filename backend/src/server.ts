@@ -54,6 +54,7 @@ app.use(session({
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.cyarika.com' : undefined, // Share cookie across www and apex domain
     path: '/'
   }
 }));
