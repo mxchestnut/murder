@@ -466,7 +466,18 @@ async function handleSyncAll(message: Message) {
 
   } catch (error) {
     console.error('Error in handleSyncAll:', error);
-    await message.reply('❌ Failed to sync characters. Your PathCompanion session may have expired. Please log into the Cyarika Portal.');
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    
+    if (errorMsg.includes('Must be logged in') || errorMsg.includes('session')) {
+      await message.reply('❌ **PathCompanion session expired.**\n\n' +
+        '**To fix this:**\n' +
+        '1. Go to http://54.242.214.56 (Cyarika Portal)\n' +
+        '2. Click **Settings** (gear icon)\n' +
+        '3. Re-enter your PathCompanion credentials and click **Connect**\n' +
+        '4. Come back to Discord and try `!syncall` again');
+    } else {
+      await message.reply('❌ Failed to sync characters. Error: ' + errorMsg);
+    }
   }
 }
 
