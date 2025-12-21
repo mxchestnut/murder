@@ -1,9 +1,10 @@
-import { Client, GatewayIntentBits, Message, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel } from 'discord.js';
 import { db } from '../db';
 import { channelCharacterMappings, characterSheets, users } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 
 let botClient: Client | null = null;
+const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
 
 export function initializeDiscordBot(token: string) {
   if (!token) {
@@ -25,9 +26,35 @@ export function initializeDiscordBot(token: string) {
 
   botClient.on('messageCreate', async (message: Message) => {
     if (message.author.bot) return;
-    if (!message.content.startsWith('!')) return;
 
-    const args = message.content.slice(1).trim().split(/ +/);
+    const content = message.content.trim();
+
+    // Check for character proxying patterns: "CharName: message" or "!CharName: message"
+    const proxyMatch = content.match(/^!?([A-Za-z0-9\s]+):\s*(.+)$/);
+    if (proxyMatch) {
+      await handleProxy(message, proxyMatch[1].trim(), proxyMatch[2]);
+      return;
+    }
+
+    // Check for name-based rolling: "!CharName stat"
+    const nameRollMatch = content.match(/^!([A-Za-z0-9\s]+)\s+(.+)$/);
+    if (nameRollMatch) {
+      const potentialName = nameRollMatch[1].trim();
+      const potentialStat = nameRollMatch[2].trim();
+      
+      // Check if this is a known command first
+      const knownCommands = ['setchar', 'char', 'roll', 'help'];
+      if (!knownCommands.includes(potentialName.toLowerCase())) {
+        // Try to handle as name-based roll
+        const handled = await handleNameRoll(message, potentialName, potentialStat);
+        if (handled) return;
+      }
+    }
+
+    // Standard command handling
+    if (!content.startsWith('!')) return;
+
+    const args = content.slice(1).trim().split(/ +/);
     const command = args.shift()?.toLowerCase();
 
     try {
@@ -251,17 +278,165 @@ async function handleHelp(message: Message) {
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle('📖 Cyarika Bot Commands')
-    .setDescription('Roll dice and manage your Pathfinder characters!')
+    .setDescription('Roll dice, proxy as characters, and manage your Pathfinder characters!')
     .addFields(
       { name: '!setchar <name>', value: 'Link this channel to a character', inline: false },
       { name: '!char', value: 'Show which character is linked to this channel', inline: false },
       { name: '!roll <stat/save/skill>', value: 'Roll a check for the linked character', inline: false },
+      { name: '!CharName <stat/save/skill>', value: 'Roll a check for any character by name\nExample: `!Ogun strength`', inline: false },
+      { name: 'CharName: message', value: 'Speak as a character (proxying)\nExample: `Ogun: Hello everyone!`', inline: false },
       { name: '!help', value: 'Show this help message', inline: false }
     )
     .setFooter({ text: 'Cyarika Portal v1.0' });
 
   await message.reply({ embeds: [embed] });
 }
+
+async function handleProxy(message: Message, characterName: string, messageText: string) {
+  try {
+    // Find character by name (case-insensitive)
+    const characters = await db
+      .select()
+      .from(characterSheets)
+      .where(sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`);
+
+    if (characters.length === 0) {
+      // Silently ignore if character not found (might just be regular text)
+      return;
+    }
+
+    const character = characters[0];
+    const channel = message.channel;
+
+    // Only work in text channels
+    if (!(channel instanceof TextChannel || channel instanceof NewsChannel)) {
+      return;
+    }
+
+    // Get or create webhook for this channel
+    let webhook = webhookCache.get(channel.id);
+    
+    if (!webhook) {
+      // Check if a webhook already exists
+      const webhooks = await channel.fetchWebhooks();
+      webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Cyarika Proxy');
+      
+      if (!webhook) {
+        // Create new webhook
+        webhook = await channel.createWebhook({
+          name: 'Cyarika Proxy',
+          reason: 'Character proxying for Cyarika Portal'
+        });
+      }
+      
+      webhookCache.set(channel.id, webhook);
+    }
+
+    // Delete the original message
+    await message.delete().catch(() => {});
+
+    // Send message as character
+    const avatarUrl = character.avatarUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(character.name) + '&size=256&background=random';
+    
+    await webhook.send({
+      content: messageText,
+      username: character.name,
+      avatarURL: avatarUrl
+    });
+
+  } catch (error) {
+    console.error('Error in handleProxy:', error);
+  }
+}
+
+async function handleNameRoll(message: Message, characterName: string, rollParam: string): Promise<boolean> {
+  try {
+    // Find character by name (case-insensitive)
+    const characters = await db
+      .select()
+      .from(characterSheets)
+      .where(sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`);
+
+    if (characters.length === 0) {
+      return false; // Not a character name
+    }
+
+    const character = characters[0];
+
+    // Determine roll type and calculate
+    let rollType = 'ability';
+    let modifier = 0;
+    let rollDescription = '';
+    let statName = rollParam.toLowerCase();
+
+    // Check if it's an ability score
+    const abilityScores = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
+    const matchedAbility = abilityScores.find(stat => statName.includes(stat));
+    
+    if (matchedAbility) {
+      modifier = Math.floor(((character as any)[matchedAbility] - 10) / 2);
+      rollDescription = `${matchedAbility.charAt(0).toUpperCase() + matchedAbility.slice(1)} Check`;
+    } 
+    // Check if it's a save
+    else if (statName.includes('fortitude') || statName === 'fort') {
+      rollType = 'save';
+      modifier = character.fortitudeSave || 0;
+      rollDescription = 'Fortitude Save';
+    } else if (statName.includes('reflex') || statName === 'ref') {
+      rollType = 'save';
+      modifier = character.reflexSave || 0;
+      rollDescription = 'Reflex Save';
+    } else if (statName.includes('will')) {
+      rollType = 'save';
+      modifier = character.willSave || 0;
+      rollDescription = 'Will Save';
+    }
+    // Check if it's a skill
+    else {
+      rollType = 'skill';
+      const skills = character.skills as any;
+      if (skills && typeof skills === 'object') {
+        const skillKey = Object.keys(skills).find(k => k.toLowerCase().includes(statName));
+        if (skillKey && skills[skillKey]) {
+          modifier = skills[skillKey].total || 0;
+          rollDescription = `${skillKey} Check`;
+        } else {
+          await message.reply(`❌ Skill "${rollParam}" not found on ${character.name}.`);
+          return true;
+        }
+      } else {
+        await message.reply(`❌ "${rollParam}" not recognized. Try an ability, save, or skill name.`);
+        return true;
+      }
+    }
+
+    // Roll the dice
+    const diceRoll = Math.floor(Math.random() * 20) + 1;
+    const total = diceRoll + modifier;
+
+    // Create embed
+    const embed = new EmbedBuilder()
+      .setColor(diceRoll === 20 ? 0x00ff00 : diceRoll === 1 ? 0xff0000 : 0x0099ff)
+      .setTitle(`🎲 ${character.name} - ${rollDescription}`)
+      .setDescription(`**${diceRoll}** ${modifier >= 0 ? '+' : ''}${modifier} = **${total}**`)
+      .setFooter({ text: `Rolled by ${message.author.username}` })
+      .setTimestamp();
+
+    if (diceRoll === 20) {
+      embed.addFields({ name: '🎉', value: 'Natural 20!', inline: true });
+    } else if (diceRoll === 1) {
+      embed.addFields({ name: '💀', value: 'Natural 1!', inline: true });
+    }
+
+    await message.reply({ embeds: [embed] });
+    return true;
+
+  } catch (error) {
+    console.error('Error in handleNameRoll:', error);
+    return false;
+  }
+}
+
 
 export async function sendRollToDiscord(characterId: number, rollData: any) {
   if (!botClient) {

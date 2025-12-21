@@ -53,6 +53,7 @@ interface CharacterSheet {
   feats?: string[];
   specialAbilities?: string[];
   spells?: any;
+  avatarUrl?: string;
   isPathCompanion?: boolean;
   pathCompanionId?: string;
   pathCompanionData?: string;
@@ -121,6 +122,7 @@ export default function CharacterSheets() {
     feats: string[];
     specialAbilities: string[];
     spells: any;
+    avatarUrl: string;
   }>({
     name: '',
     characterClass: '',
@@ -154,7 +156,8 @@ export default function CharacterSheets() {
     armor: {},
     feats: [],
     specialAbilities: [],
-    spells: {}
+    spells: {},
+    avatarUrl: ''
   });
   const [rollResult, setRollResult] = useState<any>(null);
 
@@ -262,7 +265,8 @@ export default function CharacterSheets() {
       armor: {},
       feats: [],
       specialAbilities: [],
-      spells: {}
+      spells: {},
+      avatarUrl: ''
     });
   };
 
@@ -301,7 +305,8 @@ export default function CharacterSheets() {
       armor: selectedSheet.armor || {},
       feats: selectedSheet.feats || [],
       specialAbilities: selectedSheet.specialAbilities || [],
-      spells: selectedSheet.spells || {}
+      spells: selectedSheet.spells || {},
+      avatarUrl: selectedSheet.avatarUrl || ''
     });
     setIsEditing(true);
   };
@@ -565,6 +570,18 @@ export default function CharacterSheets() {
                   />
                 </div>
               ))}
+            </div>
+
+            <h3>Discord Avatar</h3>
+            <div className="form-group">
+              <label>Avatar URL (optional)</label>
+              <input
+                type="text"
+                value={formData.avatarUrl}
+                onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                placeholder="https://example.com/avatar.png"
+              />
+              <small>URL for character avatar when using Discord proxying. Leave empty for auto-generated avatar.</small>
             </div>
 
             <div className="form-actions">

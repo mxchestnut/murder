@@ -129,7 +129,8 @@ router.post('/', async (req, res) => {
       armor,
       feats,
       specialAbilities,
-      spells
+      spells,
+      avatarUrl
     } = req.body;
 
     if (!name) {
@@ -170,7 +171,8 @@ router.post('/', async (req, res) => {
       armor: armor ? JSON.stringify(armor) : null,
       feats: feats ? JSON.stringify(feats) : null,
       specialAbilities: specialAbilities ? JSON.stringify(specialAbilities) : null,
-      spells: spells ? JSON.stringify(spells) : null
+      spells: spells ? JSON.stringify(spells) : null,
+      avatarUrl: avatarUrl || null
     }).returning();
 
     // Add computed modifiers and parse JSON fields
@@ -250,7 +252,8 @@ router.put('/:id', async (req, res) => {
       armor,
       feats,
       specialAbilities,
-      spells
+      spells,
+      avatarUrl
     } = req.body;
 
     const [updatedSheet] = await db.update(characterSheets)
@@ -288,6 +291,7 @@ router.put('/:id', async (req, res) => {
         ...(feats !== undefined && { feats: JSON.stringify(feats) }),
         ...(specialAbilities !== undefined && { specialAbilities: JSON.stringify(specialAbilities) }),
         ...(spells !== undefined && { spells: JSON.stringify(spells) }),
+        ...(avatarUrl !== undefined && { avatarUrl }),
         updatedAt: new Date()
       })
       .where(eq(characterSheets.id, sheetId))

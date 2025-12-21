@@ -87,6 +87,8 @@ export const characterSheets = pgTable('character_sheets', {
   pathCompanionData: text('path_companion_data'), // JSON string of full character data
   pathCompanionSession: text('path_companion_session'), // Session ticket for syncing
   lastSynced: timestamp('last_synced'),
+  // Discord proxying
+  avatarUrl: text('avatar_url'), // Avatar URL for Discord webhooks
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
