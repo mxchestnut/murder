@@ -40,34 +40,40 @@ router.post('/login', async (req, res) => {
 });
 
 /**
- * Get list of characters from PathCompanion
+ * Get list of characters from PathCompanion (deprecated - use share key instead)
  * POST /api/pathcompanion/characters
  * Body: { sessionTicket }
  */
 router.post('/characters', async (req, res) => {
   try {
-    const { sessionTicket } = req.body;
-
-    if (!sessionTicket) {
-      return res.status(400).json({ error: 'Session ticket is required' });
-    }
-
-    const characters = await PlayFabService.getCharacterList(sessionTicket);
-
-    res.json({
-      characters: characters.map(char => ({
-        characterId: char.characterId,
-        name: char.characterName,
-        lastModified: char.lastModified,
-        // Don't send full data yet, just summary
-      }))
-    });
+    res.status(410).json({ error: 'This endpoint is deprecated. Please use the share key method instead.' });
   } catch (error) {
     console.error('Failed to fetch PathCompanion characters:', error);
     res.status(500).json({ 
       error: 'Failed to fetch characters',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+/**
+ * Import a character from a share key
+ * POST /api/pathcompanion/character/share
+ * Body: { shareKey }
+ */
+router.post('/character/share', async (req, res) => {
+  try {
+    const { shareKey } = req.body;
+    
+    if (!shareKey) {
+      return res.status(400).json({ error: 'Share key required' });
+    }
+
+    const character = await PlayFabService.getCharacterFromShareKey(shareKey);
+    res.json({ character });
+  } catch (error) {
+    console.error('Failed to get shared character:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to get character' });
   }
 });
 

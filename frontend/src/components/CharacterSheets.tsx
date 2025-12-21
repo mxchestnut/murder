@@ -57,9 +57,7 @@ export default function CharacterSheets() {
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPathCompanionImport, setShowPathCompanionImport] = useState(false);
-  const [pathCompanionLogin, setPathCompanionLogin] = useState({ username: '', password: '' });
-  const [pathCompanionSession, setPathCompanionSession] = useState('');
-  const [pathCompanionCharacters, setPathCompanionCharacters] = useState<any[]>([]);
+  const [shareKey, setShareKey] = useState('');
   const [importingPC, setImportingPC] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -171,44 +169,34 @@ export default function CharacterSheets() {
   };
 
   // PathCompanion integration handlers
-  const handlePathCompanionLogin = async () => {
-    try {
-      const response = await api.post('/pathcompanion/login', pathCompanionLogin);
-      setPathCompanionSession(response.data.sessionTicket);
-      // Fetch characters after login
-      await fetchPathCompanionCharacters(response.data.sessionTicket);
-    } catch (error) {
-      console.error('PathCompanion login failed:', error);
-      alert('Failed to connect to PathCompanion. Check your username and password.');
-    }
-  };
-
-  const fetchPathCompanionCharacters = async (sessionTicket: string) => {
-    try {
-      const response = await api.post('/pathcompanion/characters', { sessionTicket });
-      setPathCompanionCharacters(response.data.characters);
-    } catch (error) {
-      console.error('Failed to fetch PathCompanion characters:', error);
-      alert('Failed to fetch characters from PathCompanion.');
-    }
-  };
-
-  const importPathCompanionCharacter = async (characterId: string) => {
+  const importFromShareKey = async () => {
     setImportingPC(true);
     try {
-      const response = await api.post('/pathcompanion/import', {
-        sessionTicket: pathCompanionSession,
-        characterId
+      const response = await api.post('/pathcompanion/character/share', { shareKey });
+      const { character } = response.data;
+      
+      // Save to our database
+      const saveResponse = await api.post('/characters', {
+        name: character.characterName,
+        characterClass: 'Pathfinder 2e',
+        level: character.data.level || 1,
+        strength: character.data.abilities?.str?.base || 10,
+        dexterity: character.data.abilities?.dex?.base || 10,
+        constitution: character.data.abilities?.con?.base || 10,
+        intelligence: character.data.abilities?.int?.base || 10,
+        wisdom: character.data.abilities?.wis?.base || 10,
+        charisma: character.data.abilities?.cha?.base || 10,
+        pathcompanion_data: character.data,
       });
-      setSheets([...sheets, response.data]);
-      setSelectedSheet(response.data);
+      
+      setSheets([...sheets, saveResponse.data]);
+      setSelectedSheet(saveResponse.data);
       setShowPathCompanionImport(false);
-      setPathCompanionSession('');
-      setPathCompanionCharacters([]);
-      setPathCompanionLogin({ username: '', password: '' });
+      setShareKey('');
+      alert(`Successfully imported ${character.characterName}!`);
     } catch (error) {
       console.error('Failed to import PathCompanion character:', error);
-      alert('Failed to import character.');
+      alert(error instanceof Error ? error.message : 'Failed to import character.');
     } finally {
       setImportingPC(false);
     }
@@ -483,68 +471,30 @@ export default function CharacterSheets() {
               </button>
             </div>
 
-            {!pathCompanionSession ? (
-              <div className="pathcompanion-login-form">
-                <div className="form-group">
-                  <label htmlFor="pc-username">PathCompanion Username or Email</label>
-                  <input
-                    id="pc-username"
-                    type="text"
-                    value={pathCompanionLogin.username}
-                    onChange={(e) => setPathCompanionLogin(prev => ({
-                      ...prev,
-                      username: e.target.value
-                    }))}
-                    placeholder="Enter username or email"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="pc-password">Password</label>
-                  <input
-                    id="pc-password"
-                    type="password"
-                    value={pathCompanionLogin.password}
-                    onChange={(e) => setPathCompanionLogin(prev => ({
-                      ...prev,
-                      password: e.target.value
-                    }))}
-                    placeholder="Enter your password"
-                  />
-                </div>
-                <button 
-                  className="button primary"
-                  onClick={handlePathCompanionLogin}
-                  disabled={!pathCompanionLogin.username || !pathCompanionLogin.password}
-                >
-                  Login to PathCompanion
-                </button>
+            <div className="pathcompanion-share-form">
+              <p>1. Go to <a href="https://pathcompanion.com" target="_blank" rel="noopener noreferrer">PathCompanion.com</a> and open your character</p>
+              <p>2. Click "Share Character" and copy the share key</p>
+              <p>3. Paste the share key below:</p>
+              
+              <div className="form-group">
+                <label htmlFor="share-key">Share Key</label>
+                <input
+                  id="share-key"
+                  type="text"
+                  value={shareKey}
+                  onChange={(e) => setShareKey(e.target.value)}
+                  placeholder="Paste share key here"
+                />
               </div>
-            ) : (
-              <div>
-                {pathCompanionCharacters.length === 0 ? (
-                  <p>Loading characters...</p>
-                ) : (
-                  <div className="pathcompanion-characters-list">
-                    <p>Select a character to import:</p>
-                    {pathCompanionCharacters.map(char => (
-                      <div
-                        key={char.CharacterId}
-                        className="pathcompanion-character-item"
-                        onClick={() => importPathCompanionCharacter(char)}
-                      >
-                        <div className="pathcompanion-character-name">
-                          {char.CharacterName}
-                        </div>
-                        <div className="pathcompanion-character-details">
-                          {char.CharacterType && `${char.CharacterType} `}
-                          {importingPC === char.CharacterId && '(Importing...)'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+              
+              <button 
+                className="button primary"
+                onClick={importFromShareKey}
+                disabled={!shareKey || importingPC}
+              >
+                {importingPC ? 'Importing...' : 'Import Character'}
+              </button>
+            </div>
           </div>
         </div>
       )}

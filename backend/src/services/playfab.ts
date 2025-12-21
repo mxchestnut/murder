@@ -1,5 +1,7 @@
 import PlayFab from 'playfab-sdk/Scripts/PlayFab/PlayFab';
 import PlayFabClient from 'playfab-sdk/Scripts/PlayFab/PlayFabClient';
+// @ts-ignore - PlayFab SDK doesn't have full TypeScript definitions
+import PlayFabServer from 'playfab-sdk/Scripts/PlayFab/PlayFabServer';
 
 // PathCompanion Title ID (publicly visible)
 const TITLE_ID = 'BCA4C';
@@ -126,49 +128,55 @@ export async function getUserData(sessionTicket: string): Promise<any> {
  * Get all characters for a user
  * PathCompanion stores character data in PlayFab's title data or user data
  */
-export async function getCharacterList(sessionTicket: string): Promise<PathCompanionCharacter[]> {
+export async function getCharacterFromShareKey(shareKey: string): Promise<PathCompanionCharacter> {
   try {
-    const userData = await getUserData(sessionTicket);
+    // Decode the share key
+    const decoded = JSON.parse(Buffer.from(shareKey, 'base64').toString('utf-8'));
+    const { account, character } = decoded;
     
-    console.log('Fetching character list, userData keys:', Object.keys(userData));
+    console.log('Fetching shared character:', { account, character });
     
-    // PathCompanion stores compressed character data
-    const characters: PathCompanionCharacter[] = [];
-    const zlib = require('zlib');
-
-    // Look for character data keys (skip portraits and shared data)
-    for (const [key, value] of Object.entries(userData)) {
-      // Only process character1, character2, etc. - skip portraits, gm, and shared
-      if (key.match(/^character\d+$/)) {
+    // Use PlayFab Server API to get user data by PlayFabId
+    return new Promise((resolve, reject) => {
+      PlayFabServer.GetUserData({
+        PlayFabId: account,
+        Keys: [character]
+      }, (error: any, result: any) => {
+        if (error) {
+          console.error('PlayFab GetUserData error:', error);
+          return reject(new Error(error.errorMessage || 'Failed to fetch character'));
+        }
+        
+        if (!result?.data?.Data?.[character]) {
+          return reject(new Error('Character not found'));
+        }
+        
         try {
-          console.log(`Processing character key: ${key}`);
+          const zlib = require('zlib');
+          const charValue = result.data.Data[character];
+          const rawValue = charValue.Value;
           
-          // PlayFab UserData has structure: { Value: "compressed data", LastUpdated: "date" }
-          const rawValue = (value as any).Value || value;
-          
-          // PathCompanion stores zlib-compressed, base64-encoded data
+          // Decompress the character data
           const compressed = Buffer.from(rawValue, 'base64');
           const decompressed = zlib.inflateSync(compressed);
           const charData = JSON.parse(decompressed.toString('utf-8'));
           
-          console.log(`Decompressed character ${key}:`, charData.name || charData.characterName || 'Unknown');
+          console.log('Successfully decompressed character:', charData.name || 'Unknown');
           
-          characters.push({
-            characterId: key,
+          resolve({
+            characterId: character,
             characterName: charData.name || charData.characterName || charData.Name || 'Unnamed Character',
             data: charData,
-            lastModified: new Date((value as any).LastUpdated || charData.lastModified || Date.now()),
+            lastModified: new Date(charValue.LastUpdated || Date.now()),
           });
         } catch (e) {
-          console.error(`Failed to decompress character data for ${key}:`, e);
+          console.error('Failed to decompress character data:', e);
+          reject(new Error('Failed to parse character data'));
         }
-      }
-    }
-
-    console.log(`Found ${characters.length} characters:`, characters.map(c => ({ id: c.characterId, name: c.characterName })));
-    return characters;
+      });
+    });
   } catch (error) {
-    throw new Error(`Failed to get character list: ${error}`);
+    throw new Error(`Invalid share key: ${error}`);
   }
 }
 
@@ -226,7 +234,7 @@ export function calculateModifier(score: number): number {
 export default {
   loginToPlayFab,
   getUserData,
-  getCharacterList,
+  getCharacterFromShareKey,
   getCharacter,
   extractAbilityScores,
   calculateModifier,
