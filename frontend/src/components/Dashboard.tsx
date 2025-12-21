@@ -191,10 +191,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         {/* Content Area */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflow: 'auto' }}>
-            {showCharacters ? (
+          {showCharacters && (
+            <div style={{
+              width: '400px',
+              borderRight: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
               <CharacterSheets />
-            ) : currentDocument && !currentDocument.isFolder ? (
+            </div>
+          )}
+
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {currentDocument && !currentDocument.isFolder ? (
               <Editor 
                 document={currentDocument} 
                 onSave={(content) => {
