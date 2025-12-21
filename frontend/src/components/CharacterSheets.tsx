@@ -55,6 +55,7 @@ interface CharacterSheet {
   spells?: any;
   isPathCompanion?: boolean;
   pathCompanionId?: string;
+  pathCompanionData?: string;
   lastSynced?: string;
   modifiers: {
     strength: number;
@@ -683,6 +684,69 @@ export default function CharacterSheets() {
                 </div>
               </div>
             </div>
+
+            {/* Defensive Abilities */}
+            {selectedSheet.pathCompanionData && (() => {
+              try {
+                const pcData = JSON.parse(selectedSheet.pathCompanionData);
+                const defense = pcData.defense || {};
+                const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
+                const hasSR = defense.sr && (defense.sr.total || defense.sr) > 0;
+                const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
+                const hasImmunities = defense.immunities && defense.immunities.length > 0;
+                
+                if (hasDR || hasSR || hasResistances || hasImmunities) {
+                  return (
+                    <div className="sheet-section">
+                      <h3>Defensive Abilities</h3>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                        {hasSR && (
+                          <div className="stat-inline">
+                            <span className="label">SR:</span>
+                            <span className="value">{defense.sr.total || defense.sr}</span>
+                          </div>
+                        )}
+                        {hasDR && (
+                          <div style={{ flex: '1 1 100%' }}>
+                            <strong>Damage Reduction:</strong>
+                            <div style={{ marginTop: '0.5rem' }}>
+                              {Object.entries(defense.dr).map(([type, value]: [string, any]) => (
+                                <div key={type} style={{ marginLeft: '1rem' }}>
+                                  {value.total || value}/{type}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hasResistances && (
+                          <div style={{ flex: '1 1 100%' }}>
+                            <strong>Resistances:</strong>
+                            <div style={{ marginTop: '0.5rem' }}>
+                              {Object.entries(defense.resistances).map(([type, value]: [string, any]) => (
+                                <div key={type} style={{ marginLeft: '1rem' }}>
+                                  {type} {value.total || value}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {hasImmunities && (
+                          <div style={{ flex: '1 1 100%' }}>
+                            <strong>Immunities:</strong>
+                            <div style={{ marginTop: '0.5rem', marginLeft: '1rem' }}>
+                              {defense.immunities.join(', ')}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (e) {
+                return null;
+              }
+              return null;
+            })()}
 
             {/* Offense */}
             <div className="sheet-section">
