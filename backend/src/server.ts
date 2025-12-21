@@ -47,7 +47,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   proxy: true, // Trust the reverse proxy
   cookie: {
     secure: process.env.NODE_ENV === 'production',
