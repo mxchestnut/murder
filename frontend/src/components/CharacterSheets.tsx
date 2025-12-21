@@ -464,7 +464,14 @@ export default function CharacterSheets() {
 
       {/* PathCompanion Import Modal */}
       {showPathCompanionImport && (
-        <div className="pathcompanion-modal" onClick={() => setShowPathCompanionImport(false)}>
+        <div 
+          className="pathcompanion-modal" 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPathCompanionImport(false);
+            }
+          }}
+        >
           <div className="pathcompanion-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="pathcompanion-modal-header">
               <h3>Import from PathCompanion</h3>
