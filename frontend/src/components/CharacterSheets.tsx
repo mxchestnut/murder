@@ -57,7 +57,9 @@ export default function CharacterSheets() {
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPathCompanionImport, setShowPathCompanionImport] = useState(false);
-  const [shareKey, setShareKey] = useState('');
+  const [pathCompanionLogin, setPathCompanionLogin] = useState({ username: '', password: '' });
+  const [pathCompanionSession, setPathCompanionSession] = useState('');
+  const [characterId, setCharacterId] = useState('');
   const [importingPC, setImportingPC] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -169,31 +171,32 @@ export default function CharacterSheets() {
   };
 
   // PathCompanion integration handlers
-  const importFromShareKey = async () => {
+  const handlePathCompanionLogin = async () => {
+    try {
+      const response = await api.post('/pathcompanion/login', pathCompanionLogin);
+      setPathCompanionSession(response.data.sessionTicket);
+      alert('Successfully logged into PathCompanion! Now enter your character ID (e.g., "character4")');
+    } catch (error) {
+      console.error('PathCompanion login failed:', error);
+      alert('Failed to connect to PathCompanion. Check your username and password.');
+    }
+  };
+
+  const importPathCompanionCharacter = async () => {
     setImportingPC(true);
     try {
-      const response = await api.post('/pathcompanion/character/share', { shareKey });
-      const { character } = response.data;
-      
-      // Save to our database
-      const saveResponse = await api.post('/characters', {
-        name: character.characterName,
-        characterClass: 'Pathfinder 2e',
-        level: character.data.level || 1,
-        strength: character.data.abilities?.str?.base || 10,
-        dexterity: character.data.abilities?.dex?.base || 10,
-        constitution: character.data.abilities?.con?.base || 10,
-        intelligence: character.data.abilities?.int?.base || 10,
-        wisdom: character.data.abilities?.wis?.base || 10,
-        charisma: character.data.abilities?.cha?.base || 10,
-        pathcompanion_data: character.data,
+      const response = await api.post('/pathcompanion/import', {
+        sessionTicket: pathCompanionSession,
+        characterId
       });
       
-      setSheets([...sheets, saveResponse.data]);
-      setSelectedSheet(saveResponse.data);
+      setSheets([...sheets, response.data]);
+      setSelectedSheet(response.data);
       setShowPathCompanionImport(false);
-      setShareKey('');
-      alert(`Successfully imported ${character.characterName}!`);
+      setPathCompanionSession('');
+      setCharacterId('');
+      setPathCompanionLogin({ username: '', password: '' });
+      alert(`Successfully imported character!`);
     } catch (error) {
       console.error('Failed to import PathCompanion character:', error);
       alert(error instanceof Error ? error.message : 'Failed to import character.');
@@ -465,36 +468,79 @@ export default function CharacterSheets() {
               <h3>Import from PathCompanion</h3>
               <button 
                 className="icon-button"
-                onClick={() => setShowPathCompanionImport(false)}
+                onClick={() => {
+                  setShowPathCompanionImport(false);
+                  setPathCompanionSession('');
+                  setCharacterId('');
+                  setPathCompanionLogin({ username: '', password: '' });
+                }}
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="pathcompanion-share-form">
-              <p>1. Go to <a href="https://pathcompanion.com" target="_blank" rel="noopener noreferrer">PathCompanion.com</a> and open your character</p>
-              <p>2. Click "Share Character" and copy the share key</p>
-              <p>3. Paste the share key below:</p>
-              
-              <div className="form-group">
-                <label htmlFor="share-key">Share Key</label>
-                <input
-                  id="share-key"
-                  type="text"
-                  value={shareKey}
-                  onChange={(e) => setShareKey(e.target.value)}
-                  placeholder="Paste share key here"
-                />
+            {!pathCompanionSession ? (
+              <div className="pathcompanion-login-form">
+                <p>Step 1: Login to PathCompanion</p>
+                <div className="form-group">
+                  <label htmlFor="pc-username">Username or Email</label>
+                  <input
+                    id="pc-username"
+                    type="text"
+                    value={pathCompanionLogin.username}
+                    onChange={(e) => setPathCompanionLogin(prev => ({
+                      ...prev,
+                      username: e.target.value
+                    }))}
+                    placeholder="Enter username or email"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="pc-password">Password</label>
+                  <input
+                    id="pc-password"
+                    type="password"
+                    value={pathCompanionLogin.password}
+                    onChange={(e) => setPathCompanionLogin(prev => ({
+                      ...prev,
+                      password: e.target.value
+                    }))}
+                    placeholder="Enter your password"
+                  />
+                </div>
+                <button 
+                  className="button primary"
+                  onClick={handlePathCompanionLogin}
+                  disabled={!pathCompanionLogin.username || !pathCompanionLogin.password}
+                >
+                  Login to PathCompanion
+                </button>
               </div>
-              
-              <button 
-                className="button primary"
-                onClick={importFromShareKey}
-                disabled={!shareKey || importingPC}
-              >
-                {importingPC ? 'Importing...' : 'Import Character'}
-              </button>
-            </div>
+            ) : (
+              <div className="pathcompanion-import-form">
+                <p>Step 2: Enter Character ID</p>
+                <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
+                  Your characters are named: character1, character2, character3, etc.
+                </p>
+                <div className="form-group">
+                  <label htmlFor="character-id">Character ID</label>
+                  <input
+                    id="character-id"
+                    type="text"
+                    value={characterId}
+                    onChange={(e) => setCharacterId(e.target.value)}
+                    placeholder="e.g., character4"
+                  />
+                </div>
+                <button 
+                  className="button primary"
+                  onClick={importPathCompanionCharacter}
+                  disabled={!characterId || importingPC}
+                >
+                  {importingPC ? 'Importing...' : 'Import Character'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -856,26 +902,29 @@ export default function CharacterSheets() {
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
           color: #1a202c;
         }
-
-        .pathcompanion-modal-content * {
-          color: #1a202c;
+import-form .button.primary,
+        .pathcompanion-share-form .button.primary,
+        .pathcompanion-login-form .button.primary {
+          background-color: #4299e1;
+          color: white;
+          font-weight: 600;
+          padding: 0.75rem;
+          border: none;
+          cursor: pointer;
+          border-radius: 6px;
+          font-size: 1rem;
+          transition: all 0.2s;
         }
 
-        .pathcompanion-modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.5rem;
-          border-bottom: 2px solid #e2e8f0;
-          padding-bottom: 1rem;
+        .pathcompanion-import-form .button.primary:hover:not(:disabled),
+        .pathcompanion-share-form .button.primary:hover:not(:disabled),
+        .pathcompanion-login-form .button.primary:hover:not(:disabled) {
+          background-color: #3182ce;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .pathcompanion-modal-header h3 {
-          margin: 0;
-          color: #1a202c;
-          font-size: 1.5rem;
-        }
-
+        .pathcompanion-import-form .button.primary:disabled,
         .pathcompanion-login-form {
           display: flex;
           flex-direction: column;
