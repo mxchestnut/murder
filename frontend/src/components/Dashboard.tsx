@@ -278,11 +278,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="character-display">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                    <div className="character-display" style={{ fontSize: '0.9rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                         <div>
-                          <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>{currentCharacter.name}</h1>
-                          <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
+                          <h1 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.5rem' }}>{currentCharacter.name}</h1>
+                          <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
                             {currentCharacter.characterClass && `${currentCharacter.characterClass} • `}
                             Level {currentCharacter.level}
                           </p>
@@ -303,45 +303,284 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         </button>
                       </div>
 
+                      {/* Ability Scores */}
                       <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                        gap: '1rem',
-                        marginTop: '2rem'
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '0.75rem',
+                        marginBottom: '1.5rem'
                       }}>
                         {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
                           <div key={stat} style={{
-                            padding: '1rem',
+                            padding: '0.75rem',
                             borderRadius: '8px',
                             background: 'var(--bg-secondary)',
                             border: '1px solid var(--border-color)',
                             textAlign: 'center'
                           }}>
                             <div style={{ 
-                              fontSize: '0.7rem', 
+                              fontSize: '0.65rem', 
                               textTransform: 'uppercase', 
                               color: 'var(--text-secondary)',
-                              marginBottom: '0.5rem'
+                              marginBottom: '0.25rem'
                             }}>
                               {stat.substring(0, 3)}
                             </div>
                             <div style={{ 
-                              fontSize: '1.75rem', 
+                              fontSize: '1.5rem', 
                               fontWeight: 'bold',
                               color: 'var(--text-primary)'
                             }}>
                               {currentCharacter[stat]}
                             </div>
                             <div style={{ 
-                              fontSize: '0.85rem',
+                              fontSize: '0.75rem',
                               color: 'var(--text-secondary)',
-                              marginTop: '0.25rem'
+                              marginTop: '0.15rem'
                             }}>
                               {currentCharacter.modifiers?.[stat] >= 0 ? '+' : ''}{currentCharacter.modifiers?.[stat] || 0}
                             </div>
                           </div>
                         ))}
                       </div>
+
+                      {/* Combat Stats */}
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Combat</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>HP</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {currentCharacter.currentHp || 0}/{currentCharacter.maxHp || 0}
+                            </div>
+                            {(currentCharacter.tempHp || 0) > 0 && (
+                              <div style={{ fontSize: '0.7rem', color: 'var(--accent-1)', marginTop: '0.15rem' }}>+{currentCharacter.tempHp} temp</div>
+                            )}
+                          </div>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>AC</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {currentCharacter.armorClass || 10}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                              Touch: {currentCharacter.touchAc || 10} / FF: {currentCharacter.flatFootedAc || 10}
+                            </div>
+                          </div>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Initiative</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {(currentCharacter.initiative || 0) >= 0 ? '+' : ''}{currentCharacter.initiative || 0}
+                            </div>
+                          </div>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Speed</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {currentCharacter.speed || 30} ft
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Saving Throws */}
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Saving Throws</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Fort</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {(currentCharacter.fortitudeSave || 0) >= 0 ? '+' : ''}{currentCharacter.fortitudeSave || 0}
+                            </div>
+                          </div>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Ref</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {(currentCharacter.reflexSave || 0) >= 0 ? '+' : ''}{currentCharacter.reflexSave || 0}
+                            </div>
+                          </div>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Will</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {(currentCharacter.willSave || 0) >= 0 ? '+' : ''}{currentCharacter.willSave || 0}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Defensive Abilities */}
+                      {currentCharacter.pathCompanionData && (() => {
+                        try {
+                          const pcData = JSON.parse(currentCharacter.pathCompanionData);
+                          const defense = pcData.defense || {};
+                          
+                          const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
+                          const hasSR = defense.sr && (
+                            (typeof defense.sr === 'number' && defense.sr > 0) ||
+                            (typeof defense.sr === 'object' && (defense.sr.total > 0 || (defense.sr.bonuses && defense.sr.bonuses.length > 0)))
+                          );
+                          const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
+                          const hasImmunities = defense.immunities && defense.immunities.length > 0;
+                          
+                          if (hasDR || hasSR || hasResistances || hasImmunities) {
+                            return (
+                              <div style={{ marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Defensive Abilities</h3>
+                                <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                                  {hasSR && (
+                                    <div style={{ marginBottom: '0.5rem' }}>
+                                      <strong style={{ color: 'var(--text-primary)' }}>SR:</strong>{' '}
+                                      <span style={{ color: 'var(--text-secondary)' }}>
+                                        {typeof defense.sr === 'number' 
+                                          ? defense.sr 
+                                          : defense.sr.total || (defense.sr.bonuses && defense.sr.bonuses.length > 0 
+                                            ? `${11 + currentCharacter.level}` 
+                                            : 'Yes')}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {hasDR && (
+                                    <div style={{ marginBottom: '0.5rem' }}>
+                                      <strong style={{ color: 'var(--text-primary)' }}>DR:</strong>
+                                      {Object.entries(defense.dr).map(([type, value]: [string, any]) => {
+                                        const drValue = typeof value === 'object' ? (value.total || 0) : value;
+                                        return (
+                                          <div key={type} style={{ marginLeft: '1rem', color: 'var(--text-secondary)' }}>
+                                            {drValue}/{type}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  {hasResistances && (
+                                    <div style={{ marginBottom: '0.5rem' }}>
+                                      <strong style={{ color: 'var(--text-primary)' }}>Resistances:</strong>
+                                      {Object.entries(defense.resistances).map(([type, value]: [string, any]) => {
+                                        const resValue = typeof value === 'object' ? (value.total || 0) : value;
+                                        return (
+                                          <div key={type} style={{ marginLeft: '1rem', color: 'var(--text-secondary)' }}>
+                                            {type} {resValue}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  {hasImmunities && (
+                                    <div>
+                                      <strong style={{ color: 'var(--text-primary)' }}>Immunities:</strong>{' '}
+                                      <span style={{ color: 'var(--text-secondary)' }}>{defense.immunities.join(', ')}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                        } catch (e) {
+                          return null;
+                        }
+                        return null;
+                      })()}
+
+                      {/* Offense */}
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Offense</h3>
+                        <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)' }}>BAB:</strong>{' '}
+                              <span style={{ color: 'var(--text-secondary)' }}>
+                                {(currentCharacter.baseAttackBonus || 0) >= 0 ? '+' : ''}{currentCharacter.baseAttackBonus || 0}
+                              </span>
+                            </div>
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)' }}>CMB:</strong>{' '}
+                              <span style={{ color: 'var(--text-secondary)' }}>
+                                {(currentCharacter.cmb || 0) >= 0 ? '+' : ''}{currentCharacter.cmb || 0}
+                              </span>
+                            </div>
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)' }}>CMD:</strong>{' '}
+                              <span style={{ color: 'var(--text-secondary)' }}>{currentCharacter.cmd || 10}</span>
+                            </div>
+                          </div>
+                          {currentCharacter.weapons && currentCharacter.weapons.length > 0 && (
+                            <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>Weapons</strong>
+                              {currentCharacter.weapons.map((weapon: any, idx: number) => (
+                                <div key={idx} style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'var(--bg-primary)', borderRadius: '4px' }}>
+                                  <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '0.85rem' }}>{weapon.name}</div>
+                                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                                    {weapon.attackBonus && `+${weapon.attackBonus} `}
+                                    {weapon.damage && `(${weapon.damage})`}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Feats & Abilities */}
+                      {((currentCharacter.feats && currentCharacter.feats.length > 0) || 
+                        (currentCharacter.specialAbilities && currentCharacter.specialAbilities.length > 0)) && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Feats & Special Abilities</h3>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            {currentCharacter.feats && currentCharacter.feats.length > 0 && (
+                              <div style={{ marginBottom: currentCharacter.specialAbilities?.length > 0 ? '0.75rem' : 0 }}>
+                                <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>Feats</strong>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                  {currentCharacter.feats.map((feat: string, idx: number) => (
+                                    <span key={idx} style={{ 
+                                      padding: '0.25rem 0.5rem', 
+                                      background: 'var(--bg-primary)', 
+                                      borderRadius: '4px',
+                                      fontSize: '0.75rem',
+                                      color: 'var(--text-secondary)'
+                                    }}>
+                                      {feat}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {currentCharacter.specialAbilities && currentCharacter.specialAbilities.length > 0 && (
+                              <div>
+                                <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>Special Abilities</strong>
+                                {currentCharacter.specialAbilities.map((ability: string, idx: number) => (
+                                  <div key={idx} style={{ 
+                                    marginTop: '0.5rem', 
+                                    padding: '0.5rem',
+                                    background: 'var(--bg-primary)',
+                                    borderRadius: '4px',
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-secondary)'
+                                  }}>
+                                    {ability}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Skills */}
+                      {currentCharacter.skills && Object.keys(currentCharacter.skills).length > 0 && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Skills</h3>
+                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem', fontSize: '0.8rem' }}>
+                              {Object.entries(currentCharacter.skills).map(([skillName, skillData]: [string, any]) => (
+                                <>
+                                  <div key={`${skillName}-name`} style={{ color: 'var(--text-primary)' }}>{skillName}</div>
+                                  <div key={`${skillName}-value`} style={{ color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+                                    {skillData.total >= 0 ? '+' : ''}{skillData.total || 0}
+                                  </div>
+                                </>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
