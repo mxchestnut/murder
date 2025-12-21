@@ -379,25 +379,38 @@ export function extractCombatStats(characterData: any) {
   const defense = characterData.defense || {};
   const offense = characterData.offense || {};
   const pools = characterData.pools || {};
+  const social = characterData.social || {};
+  const characterInfo = characterData.characterInfo || {};
   
   console.log('Combat extraction debug:', {
-    combatKeys: Object.keys(combat),
-    combatHp: combat.hp,
-    combatMaxHp: combat.maxHp,
-    combatHitPoints: combat.hitPoints,
-    poolsKeys: Object.keys(pools).slice(0, 5),
-    offenseKeys: Object.keys(offense),
+    socialKeys: Object.keys(social),
+    socialHp: social.hp,
+    socialHitPoints: social.hitPoints,
+    defenseKeys: Object.keys(defense).slice(0, 10),
+    defenseHp: defense.hp,
+    characterInfoHp: characterInfo.hp,
+    characterInfoHitPoints: characterInfo.hitPoints,
     offenseBab: offense.bab,
-    offenseBabTotal: offense.bab?.total
   });
   
   // BAB can be a number or an object with total
   const bab = typeof offense.bab === 'number' ? offense.bab : (offense.bab?.total || 0);
   
+  // Try multiple possible locations for HP
+  const currentHp = social.hp?.current || social.hitPoints?.current || 
+                    characterInfo.hp?.current || characterInfo.hitPoints?.current ||
+                    defense.hp?.current || combat.currentHp || 0;
+  const maxHp = social.hp?.max || social.hitPoints?.max || 
+                characterInfo.hp?.max || characterInfo.hitPoints?.max ||
+                defense.hp?.max || combat.maxHp || 0;
+  const tempHp = social.hp?.temp || social.hitPoints?.temp || 
+                 characterInfo.hp?.temp || characterInfo.hitPoints?.temp ||
+                 defense.hp?.temp || combat.tempHp || 0;
+  
   return {
-    currentHp: combat.hp?.current || combat.hitPoints?.current || combat.currentHp || 0,
-    maxHp: combat.hp?.max || combat.hitPoints?.max || combat.maxHp || 0,
-    tempHp: combat.hp?.temp || combat.hitPoints?.temp || combat.tempHp || 0,
+    currentHp,
+    maxHp,
+    tempHp,
     armorClass: defense.ac?.total || defense.armorClass || 10,
     touchAc: defense.ac?.touch || defense.touchAc || 10,
     flatFootedAc: defense.ac?.flatFooted || defense.flatFootedAc || 10,
