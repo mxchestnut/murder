@@ -3,8 +3,9 @@ import Sidebar from './Sidebar';
 import Editor from './Editor';
 import MessagingPanel from './MessagingPanel';
 import Settings from './Settings';
+import CharacterSheets from './CharacterSheets';
 import { api } from '../utils/api';
-import { FileText, MessageSquare, LogOut, Sun, Moon, X, Settings as SettingsIcon } from 'lucide-react';
+import { FileText, MessageSquare, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -17,6 +18,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentCharacter, setCurrentCharacter] = useState<any>(null);
   const [showMessaging, setShowMessaging] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCharacterSheets, setShowCharacterSheets] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareDocument, setShareDocument] = useState<any>(null);
   const [shareUsername, setShareUsername] = useState('');
@@ -140,8 +142,31 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
+                setShowCharacterSheets(!showCharacterSheets);
+                setShowMessaging(false);
+                setShowSettings(false);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showCharacterSheets ? 'var(--accent-2)' : 'var(--accent-1)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <Dices size={18} />
+              Characters
+            </button>
+
+            <button
+              onClick={() => {
                 setShowMessaging(!showMessaging);
                 setShowSettings(false);
+                setShowCharacterSheets(false);
               }}
               style={{
                 padding: '0.5rem 1rem',
@@ -163,6 +188,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               onClick={() => {
                 setShowSettings(!showSettings);
                 setShowMessaging(false);
+                setShowCharacterSheets(false);
               }}
               style={{
                 padding: '0.5rem 1rem',
@@ -207,6 +233,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           {showSettings ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Settings />
+            </div>
+          ) : showCharacterSheets ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <CharacterSheets />
             </div>
           ) : (
             <>
