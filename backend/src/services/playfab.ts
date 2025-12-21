@@ -109,12 +109,14 @@ export async function getUserData(sessionTicket: string): Promise<any> {
       SessionTicket: sessionTicket,
     };
 
-    PlayFabClient.GetUserData(request, (result: any, error: any) => {
+    PlayFabClient.GetUserData(request, (error: any, result: any) => {
       if (error) {
+        console.error('GetUserData error:', JSON.stringify(error, null, 2));
         reject(new Error(error.errorMessage || 'Failed to get user data'));
         return;
       }
 
+      console.log('GetUserData success, data keys:', Object.keys(result?.data?.Data || {}));
       resolve(result?.data?.Data || {});
     });
   });
