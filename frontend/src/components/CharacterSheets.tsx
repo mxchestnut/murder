@@ -369,6 +369,46 @@ export default function CharacterSheets() {
     }
   };
 
+  const importAllCharacters = async () => {
+    if (pathCompanionCharacters.length === 0) {
+      alert('No characters to import');
+      return;
+    }
+
+    if (!confirm(`This will import all ${pathCompanionCharacters.length} characters from PathCompanion. Continue?`)) {
+      return;
+    }
+
+    setImportingPC(true);
+    try {
+      const response = await api.post('/pathcompanion/import-all');
+      
+      // Reload all sheets to show the imported characters
+      await loadSheets();
+      
+      setShowPathCompanionImport(false);
+      setPathCompanionCharacters([]);
+      setPathCompanionCampaigns([]);
+      
+      const { success, failed } = response.data;
+      const successCount = success.length;
+      const failedCount = failed.length;
+      
+      let message = `Successfully imported ${successCount} character${successCount !== 1 ? 's' : ''}`;
+      if (failedCount > 0) {
+        message += `\n${failedCount} character${failedCount !== 1 ? 's' : ''} failed to import`;
+      }
+      
+      alert(message);
+    } catch (error: any) {
+      console.error('Failed to import all characters:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to import characters.';
+      alert(`Import all failed: ${errorMsg}`);
+    } finally {
+      setImportingPC(false);
+    }
+  };
+
   const StatBlock = ({ stat, value, modifier }: { stat: string; value: number; modifier: number }) => {
     const Icon = statIcons[stat as keyof typeof statIcons];
     const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
@@ -778,14 +818,24 @@ export default function CharacterSheets() {
                     <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
                       Click a character or campaign to import it:
                     </p>
-                    <button 
-                      className="button secondary"
-                      onClick={loadPathCompanionCharacters}
-                      disabled={loadingCharacters}
-                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                    >
-                      Refresh List
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        className="button primary"
+                        onClick={importAllCharacters}
+                        disabled={loadingCharacters || importingPC || pathCompanionCharacters.length === 0}
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                      >
+                        Import All Characters
+                      </button>
+                      <button 
+                        className="button secondary"
+                        onClick={loadPathCompanionCharacters}
+                        disabled={loadingCharacters}
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                      >
+                        Refresh List
+                      </button>
+                    </div>
                   </div>
                   
                   {pathCompanionCharacters.length > 0 && (

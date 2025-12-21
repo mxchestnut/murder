@@ -430,4 +430,183 @@ router.post('/sync/:id', async (req, res) => {
   }
 });
 
+/**
+ * Import all characters from PathCompanion account
+ * POST /api/pathcompanion/import-all
+ * Requires Cyarika authentication AND PathCompanion account connection
+ */
+router.post('/import-all', isAuthenticated, async (req, res) => {
+  try {
+    const user = req.user as any;
+    const userId = user.id;
+
+    // Check if user has connected PathCompanion account
+    if (!user.pathCompanionSessionTicket) {
+      return res.status(400).json({ 
+        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.' 
+      });
+    }
+
+    // Get user data from PathCompanion
+    const userData = await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+
+    // Filter to character entries only (exclude campaigns)
+    const characterKeys = Object.keys(userData)
+      .filter(key => /^character\d+$/.test(key))  // Only character1, character2, etc.
+      .slice(0, 50); // Limit to 50 characters
+
+    console.log(`Importing ${characterKeys.length} characters from PathCompanion`);
+
+    const results: {
+      success: Array<{ id: string; name: string; action: string }>;
+      failed: Array<{ id: string; reason: string }>;
+    } = {
+      success: [],
+      failed: []
+    };
+
+    // Import each character sequentially to avoid overwhelming the DB
+    for (const characterId of characterKeys) {
+      try {
+        const character = await PlayFabService.getCharacter(user.pathCompanionSessionTicket, characterId);
+
+        if (!character) {
+          results.failed.push({ id: characterId, reason: 'Character not found' });
+          continue;
+        }
+
+        // Extract all data
+        const abilities = PlayFabService.extractAbilityScores(character.data);
+        const level = PlayFabService.extractCharacterLevel(character.data);
+        const combatStats = PlayFabService.extractCombatStats(character.data);
+        const saves = PlayFabService.extractSavingThrows(character.data);
+        const basicInfo = PlayFabService.extractBasicInfo(character.data);
+        const skills = PlayFabService.extractSkills(character.data);
+        const feats = PlayFabService.extractFeats(character.data);
+        const specialAbilities = PlayFabService.extractSpecialAbilities(character.data);
+        const weapons = PlayFabService.extractWeapons(character.data);
+        const armor = PlayFabService.extractArmor(character.data);
+        const spells = PlayFabService.extractSpells(character.data);
+
+        // Check if character already exists
+        const existing = await db.select().from(characterSheets).where(
+          eq(characterSheets.pathCompanionId, characterId)
+        );
+
+        if (existing.length > 0) {
+          // Update existing character
+          await db.update(characterSheets)
+            .set({
+              name: character.characterName,
+              strength: abilities.strength,
+              dexterity: abilities.dexterity,
+              constitution: abilities.constitution,
+              intelligence: abilities.intelligence,
+              wisdom: abilities.wisdom,
+              charisma: abilities.charisma,
+              characterClass: character.data.class || character.data.className,
+              level: level,
+              race: basicInfo.race,
+              alignment: basicInfo.alignment,
+              deity: basicInfo.deity,
+              size: basicInfo.size,
+              currentHp: combatStats.currentHp,
+              maxHp: combatStats.maxHp,
+              tempHp: combatStats.tempHp,
+              armorClass: combatStats.armorClass,
+              touchAc: combatStats.touchAc,
+              flatFootedAc: combatStats.flatFootedAc,
+              initiative: combatStats.initiative,
+              speed: combatStats.speed,
+              baseAttackBonus: combatStats.baseAttackBonus,
+              cmb: combatStats.cmb,
+              cmd: combatStats.cmd,
+              fortitudeSave: saves.fortitudeSave,
+              reflexSave: saves.reflexSave,
+              willSave: saves.willSave,
+              skills: JSON.stringify(skills),
+              feats: JSON.stringify(feats),
+              specialAbilities: JSON.stringify(specialAbilities),
+              weapons: JSON.stringify(weapons),
+              armor: JSON.stringify(armor),
+              spells: JSON.stringify(spells),
+              pathCompanionData: JSON.stringify(character.data),
+              pathCompanionSession: user.pathCompanionSessionTicket,
+              lastSynced: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(characterSheets.id, existing[0].id));
+
+          results.success.push({ id: characterId, name: character.characterName, action: 'updated' });
+        } else {
+          // Create new character
+          await db.insert(characterSheets).values({
+            userId,
+            name: character.characterName,
+            strength: abilities.strength,
+            dexterity: abilities.dexterity,
+            constitution: abilities.constitution,
+            intelligence: abilities.intelligence,
+            wisdom: abilities.wisdom,
+            charisma: abilities.charisma,
+            characterClass: character.data.class || character.data.className,
+            level: level,
+            race: basicInfo.race,
+            alignment: basicInfo.alignment,
+            deity: basicInfo.deity,
+            size: basicInfo.size,
+            currentHp: combatStats.currentHp,
+            maxHp: combatStats.maxHp,
+            tempHp: combatStats.tempHp,
+            armorClass: combatStats.armorClass,
+            touchAc: combatStats.touchAc,
+            flatFootedAc: combatStats.flatFootedAc,
+            initiative: combatStats.initiative,
+            speed: combatStats.speed,
+            baseAttackBonus: combatStats.baseAttackBonus,
+            cmb: combatStats.cmb,
+            cmd: combatStats.cmd,
+            fortitudeSave: saves.fortitudeSave,
+            reflexSave: saves.reflexSave,
+            willSave: saves.willSave,
+            skills: JSON.stringify(skills),
+            feats: JSON.stringify(feats),
+            specialAbilities: JSON.stringify(specialAbilities),
+            weapons: JSON.stringify(weapons),
+            armor: JSON.stringify(armor),
+            spells: JSON.stringify(spells),
+            pathCompanionData: JSON.stringify(character.data),
+            pathCompanionSession: user.pathCompanionSessionTicket,
+            pathCompanionId: characterId,
+            isPathCompanion: true,
+            lastSynced: new Date()
+          });
+
+          results.success.push({ id: characterId, name: character.characterName, action: 'created' });
+        }
+      } catch (error) {
+        console.error(`Failed to import character ${characterId}:`, error);
+        results.failed.push({ 
+          id: characterId, 
+          reason: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+    }
+
+    console.log(`Import all complete: ${results.success.length} succeeded, ${results.failed.length} failed`);
+
+    res.json({
+      message: `Imported ${results.success.length} characters`,
+      success: results.success,
+      failed: results.failed
+    });
+  } catch (error) {
+    console.error('Failed to import all characters:', error);
+    res.status(500).json({ 
+      error: 'Failed to import characters',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;

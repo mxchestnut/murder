@@ -381,24 +381,29 @@ export function extractCombatStats(characterData: any) {
   const pools = characterData.pools || {};
   
   console.log('Combat extraction debug:', {
-    hasPoolsHp: !!pools.hp,
+    combatKeys: Object.keys(combat),
+    combatHp: combat.hp,
+    combatMaxHp: combat.maxHp,
+    combatHitPoints: combat.hitPoints,
     poolsKeys: Object.keys(pools).slice(0, 5),
-    hasOffenseBab: !!offense.bab,
-    offenseKeys: Object.keys(offense).slice(0, 5),
-    poolsHp: pools.hp,
-    offenseBab: offense.bab
+    offenseKeys: Object.keys(offense),
+    offenseBab: offense.bab,
+    offenseBabTotal: offense.bab?.total
   });
   
+  // BAB can be a number or an object with total
+  const bab = typeof offense.bab === 'number' ? offense.bab : (offense.bab?.total || 0);
+  
   return {
-    currentHp: pools.hp?.current || pools.hitPoints?.current || combat.currentHp || 0,
-    maxHp: pools.hp?.max || pools.hitPoints?.max || combat.maxHp || 0,
-    tempHp: pools.hp?.temp || pools.hitPoints?.temp || combat.tempHp || 0,
+    currentHp: combat.hp?.current || combat.hitPoints?.current || combat.currentHp || 0,
+    maxHp: combat.hp?.max || combat.hitPoints?.max || combat.maxHp || 0,
+    tempHp: combat.hp?.temp || combat.hitPoints?.temp || combat.tempHp || 0,
     armorClass: defense.ac?.total || defense.armorClass || 10,
     touchAc: defense.ac?.touch || defense.touchAc || 10,
     flatFootedAc: defense.ac?.flatFooted || defense.flatFootedAc || 10,
     initiative: offense.initiative?.total || offense.initiative || 0,
     speed: combat.speed?.total || combat.baseSpeed || 30,
-    baseAttackBonus: offense.bab?.total || offense.bab || offense.baseAttackBonus || 0,
+    baseAttackBonus: bab,
     cmb: offense.cmb?.total || offense.cmb || 0,
     cmd: defense.cmd?.total || defense.cmd || 10,
   };
