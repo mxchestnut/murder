@@ -22,6 +22,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareDocument, setShareDocument] = useState<any>(null);
   const [shareUsername, setShareUsername] = useState('');
+  const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
     return (saved as 'light' | 'dark') || 'light';
@@ -243,64 +244,106 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <>
               {currentCharacter && (
                 <div style={{ 
-                  flex: '0 0 auto',
-                  width: '400px',
-                  minWidth: '300px',
-                  maxWidth: '800px',
-                  resize: 'horizontal',
+                  flex: characterPanelCollapsed ? '0 0 auto' : '0 0 400px',
+                  width: characterPanelCollapsed ? 'auto' : '400px',
+                  minWidth: characterPanelCollapsed ? 'auto' : '300px',
+                  maxWidth: characterPanelCollapsed ? 'none' : '800px',
+                  resize: characterPanelCollapsed ? 'none' : 'horizontal',
                   overflow: 'auto',
-                  padding: '2rem',
-                  borderRight: currentDocument ? '1px solid var(--border-color)' : 'none'
+                  padding: characterPanelCollapsed ? '0.5rem 1rem' : '2rem',
+                  borderRight: currentDocument ? '1px solid var(--border-color)' : 'none',
+                  background: characterPanelCollapsed ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                  borderBottom: characterPanelCollapsed ? `1px solid var(--border-color)` : 'none'
                 }}>
-                  <div className="character-display">
-                    <div style={{ marginBottom: '2rem' }}>
-                      <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>{currentCharacter.name}</h1>
-                      <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
-                        {currentCharacter.characterClass && `${currentCharacter.characterClass} • `}
-                        Level {currentCharacter.level}
-                      </p>
-                    </div>
-
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                      gap: '1rem',
-                      marginTop: '2rem'
-                    }}>
-                      {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
-                        <div key={stat} style={{
-                          padding: '1rem',
-                          borderRadius: '8px',
-                          background: 'var(--bg-secondary)',
-                          border: '1px solid var(--border-color)',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ 
-                            fontSize: '0.7rem', 
-                            textTransform: 'uppercase', 
-                            color: 'var(--text-secondary)',
-                            marginBottom: '0.5rem'
-                          }}>
-                            {stat.substring(0, 3)}
-                          </div>
-                          <div style={{ 
-                            fontSize: '1.75rem', 
-                            fontWeight: 'bold',
-                            color: 'var(--text-primary)'
-                          }}>
-                            {currentCharacter[stat]}
-                          </div>
-                          <div style={{ 
-                            fontSize: '0.85rem',
-                            color: 'var(--text-secondary)',
-                            marginTop: '0.25rem'
-                          }}>
-                            {currentCharacter.modifiers?.[stat] >= 0 ? '+' : ''}{currentCharacter.modifiers?.[stat] || 0}
-                          </div>
+                  {characterPanelCollapsed ? (
+                    <div
+                      onClick={() => setCharacterPanelCollapsed(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        cursor: 'pointer',
+                        padding: '0.5rem'
+                      }}
+                      title="Click to expand"
+                    >
+                      <Dices size={20} style={{ color: 'var(--text-primary)' }} />
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                          {currentCharacter.name}
                         </div>
-                      ))}
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          {currentCharacter.characterClass} • Level {currentCharacter.level} • Click to expand
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="character-display">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                        <div>
+                          <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>{currentCharacter.name}</h1>
+                          <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
+                            {currentCharacter.characterClass && `${currentCharacter.characterClass} • `}
+                            Level {currentCharacter.level}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setCharacterPanelCollapsed(true)}
+                          style={{
+                            padding: '0.5rem',
+                            borderRadius: '4px',
+                            border: 'none',
+                            background: 'var(--accent-1)',
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer'
+                          }}
+                          title="Collapse character panel"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                        gap: '1rem',
+                        marginTop: '2rem'
+                      }}>
+                        {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
+                          <div key={stat} style={{
+                            padding: '1rem',
+                            borderRadius: '8px',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-color)',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ 
+                              fontSize: '0.7rem', 
+                              textTransform: 'uppercase', 
+                              color: 'var(--text-secondary)',
+                              marginBottom: '0.5rem'
+                            }}>
+                              {stat.substring(0, 3)}
+                            </div>
+                            <div style={{ 
+                              fontSize: '1.75rem', 
+                              fontWeight: 'bold',
+                              color: 'var(--text-primary)'
+                            }}>
+                              {currentCharacter[stat]}
+                            </div>
+                            <div style={{ 
+                              fontSize: '0.85rem',
+                              color: 'var(--text-secondary)',
+                              marginTop: '0.25rem'
+                            }}>
+                              {currentCharacter.modifiers?.[stat] >= 0 ? '+' : ''}{currentCharacter.modifiers?.[stat] || 0}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
