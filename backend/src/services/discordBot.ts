@@ -395,7 +395,10 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     else {
       rollType = 'skill';
       const skills = character.skills as any;
-      if (skills && typeof skills === 'object') {
+      
+      console.log(`[handleNameRoll] Character: ${character.name}, Skills type: ${typeof skills}, Skills:`, skills);
+      
+      if (skills && typeof skills === 'object' && Object.keys(skills).length > 0) {
         // Try exact match first, then partial match
         let skillKey = Object.keys(skills).find(k => k.toLowerCase() === statName);
         if (!skillKey) {
@@ -407,15 +410,17 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
           skillKey = Object.keys(skills).find(k => statName.includes(k.toLowerCase()));
         }
         
+        console.log(`[handleNameRoll] Skill search for "${statName}", found: ${skillKey}`);
+        
         if (skillKey && skills[skillKey]) {
           modifier = skills[skillKey].total || 0;
           rollDescription = `${skillKey} Check`;
         } else {
-          await message.reply(`❌ Skill "${rollParam}" not found on ${character.name}.`);
+          await message.reply(`❌ Skill "${rollParam}" not found on ${character.name}. Available skills: ${Object.keys(skills).join(', ')}`);
           return true;
         }
       } else {
-        await message.reply(`❌ "${rollParam}" not recognized. Try an ability, save, or skill name.`);
+        await message.reply(`❌ ${character.name} has no skills configured. Please import from PathCompanion or manually add skills.`);
         return true;
       }
     }
