@@ -37,15 +37,19 @@ export async function loginToPlayFab(username: string, password: string): Promis
 
     PlayFabClient.LoginWithPlayFab(loginRequest, (result: any, error: any) => {
       if (error) {
-        reject(new Error(error.errorMessage || 'PlayFab login failed'));
+        console.error('PlayFab login error details:', JSON.stringify(error, null, 2));
+        const errorMsg = error.errorMessage || error.error || 'PlayFab login failed';
+        reject(new Error(errorMsg));
         return;
       }
 
       if (!result || !result.data) {
+        console.error('PlayFab login - no result data. Result:', result);
         reject(new Error('No data returned from PlayFab'));
         return;
       }
 
+      console.log('PlayFab login successful for:', username);
       resolve({
         playfabId: result.data.PlayFabId,
         sessionTicket: result.data.SessionTicket,
