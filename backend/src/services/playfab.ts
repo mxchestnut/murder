@@ -136,43 +136,59 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
     
     console.log('Fetching shared character:', { account, character });
     
-    // Use PlayFab Server API to get user data by PlayFabId
+    // Use PlayFab Client API with anonymous login to access public data
+    // This requires the character to be publicly shared
     return new Promise((resolve, reject) => {
-      PlayFabServer.GetUserData({
-        PlayFabId: account,
-        Keys: [character]
+      // First, login anonymously
+      PlayFabClient.LoginWithCustomID({
+        CustomId: `cyarika_import_${Date.now()}`,
+        CreateAccount: true,
+        TitleId: TITLE_ID
       }, (error: any, result: any) => {
         if (error) {
-          console.error('PlayFab GetUserData error:', error);
-          return reject(new Error(error.errorMessage || 'Failed to fetch character'));
+          console.error('PlayFab anonymous login error:', error);
+          return reject(new Error('Failed to authenticate with PathCompanion'));
         }
         
-        if (!result?.data?.Data?.[character]) {
-          return reject(new Error('Character not found'));
-        }
+        const sessionTicket = result.data.SessionTicket;
         
-        try {
-          const zlib = require('zlib');
-          const charValue = result.data.Data[character];
-          const rawValue = charValue.Value;
+        // Now try to get the user's public data
+        PlayFabClient.GetUserData({
+          PlayFabId: account,
+          Keys: [character]
+        }, (error2: any, result2: any) => {
+          if (error2) {
+            console.error('PlayFab GetUserData error:', error2);
+            return reject(new Error('Character not found or not publicly shared'));
+          }
           
-          // Decompress the character data
-          const compressed = Buffer.from(rawValue, 'base64');
-          const decompressed = zlib.inflateSync(compressed);
-          const charData = JSON.parse(decompressed.toString('utf-8'));
+          if (!result2?.data?.Data?.[character]) {
+            return reject(new Error('Character not found'));
+          }
           
-          console.log('Successfully decompressed character:', charData.name || 'Unknown');
-          
-          resolve({
-            characterId: character,
-            characterName: charData.name || charData.characterName || charData.Name || 'Unnamed Character',
-            data: charData,
-            lastModified: new Date(charValue.LastUpdated || Date.now()),
-          });
-        } catch (e) {
-          console.error('Failed to decompress character data:', e);
-          reject(new Error('Failed to parse character data'));
-        }
+          try {
+            const zlib = require('zlib');
+            const charValue = result2.data.Data[character];
+            const rawValue = charValue.Value;
+            
+            // Decompress the character data
+            const compressed = Buffer.from(rawValue, 'base64');
+            const decompressed = zlib.inflateSync(compressed);
+            const charData = JSON.parse(decompressed.toString('utf-8'));
+            
+            console.log('Successfully decompressed character:', charData.name || 'Unknown');
+            
+            resolve({
+              characterId: character,
+              characterName: charData.name || charData.characterName || charData.Name || 'Unnamed Character',
+              data: charData,
+              lastModified: new Date(charValue.LastUpdated || Date.now()),
+            });
+          } catch (e) {
+            console.error('Failed to decompress character data:', e);
+            reject(new Error('Failed to parse character data'));
+          }
+        });
       });
     });
   } catch (error) {

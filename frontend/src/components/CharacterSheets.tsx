@@ -899,6 +899,7 @@ export default function CharacterSheets() {
           outline: none;
         }
 
+        .pathcompanion-share-form .button.primary,
         .pathcompanion-login-form .button.primary {
           background-color: #4299e1;
           color: white;
@@ -911,12 +912,14 @@ export default function CharacterSheets() {
           transition: all 0.2s;
         }
 
+        .pathcompanion-share-form .button.primary:hover:not(:disabled),
         .pathcompanion-login-form .button.primary:hover:not(:disabled) {
           background-color: #3182ce;
           transform: translateY(-2px);
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
+        .pathcompanion-share-form .button.primary:disabled,
         .pathcompanion-login-form .button.primary:disabled {
           background-color: #cbd5e0;
           cursor: not-allowed;
