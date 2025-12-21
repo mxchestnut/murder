@@ -1,17 +1,72 @@
-import { useState } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, Download, ExternalLink, X } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface SidebarProps {
   documents: any[];
   onSelectDocument: (doc: any) => void;
+  onSelectCharacter: (character: any) => void;
   onRefresh: () => void;
   currentDocument: any;
+  currentCharacter: any;
 }
 
-export default function Sidebar({ documents, onSelectDocument, onRefresh, currentDocument }: SidebarProps) {
+export default function Sidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter }: SidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
+  const [characters, setCharacters] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
+  const [showPathCompanionImport, setShowPathCompanionImport] = useState(false);
+  const [pathCompanionCharacters, setPathCompanionCharacters] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
+  const [loadingCharacters, setLoadingCharacters] = useState(false);
+  const [importingPC, setImportingPC] = useState(false);
+
+  useEffect(() => {
+    loadCharacters();
+  }, []);
+
+  const loadCharacters = async () => {
+    try {
+      const response = await api.get('/characters');
+      setCharacters(response.data);
+    } catch (error) {
+      console.error('Error loading characters:', error);
+    }
+  };
+
+  const loadPathCompanionCharacters = async () => {
+    setLoadingCharacters(true);
+    try {
+      const response = await api.get('/pathcompanion/characters');
+      setPathCompanionCharacters(response.data.characters || []);
+      setCampaigns(response.data.campaigns || []);
+    } catch (error: any) {
+      console.error('Failed to load PathCompanion characters:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to load characters.';
+      if (errorMsg.includes('connect your PathCompanion account in Settings')) {
+        alert('Please connect your PathCompanion account in Settings first.');
+      } else {
+        alert(errorMsg);
+      }
+    } finally {
+      setLoadingCharacters(false);
+    }
+  };
+
+  const importPathCompanionCharacter = async (charId: string) => {
+    setImportingPC(true);
+    try {
+      await api.post('/pathcompanion/import', { characterId: charId });
+      loadCharacters();
+      alert('Successfully imported character!');
+    } catch (error: any) {
+      console.error('Failed to import PathCompanion character:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to import character.';
+      alert(errorMsg);
+    } finally {
+      setImportingPC(false);
+    }
+  };
 
   const handleCreateFolder = async () => {
     if (!newItemName) return;
@@ -74,9 +129,14 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
 
   return (
     <div style={{
+      flex: '0 0 auto',
       width: '250px',
+      minWidth: '200px',
+      maxWidth: '600px',
+      resize: 'horizontal',
+      overflow: 'hidden',
       background: 'var(--bg-secondary)',
-      borderRight: `1px solid var(--border-color)`,
+      borderRight: `2px solid var(--border-color)`,
       display: 'flex',
       flexDirection: 'column'
     }}>
@@ -198,6 +258,114 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
         )}
       </div>
 
+      {/* Characters Section */}
+      <div style={{ 
+        padding: '1rem', 
+        borderTop: `1px solid var(--border-color)`,
+        borderBottom: `1px solid var(--border-color)` 
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '0.75rem'
+        }}>
+          <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+            <Dices size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            Characters
+          </h3>
+          <button
+            onClick={() => {
+              setShowPathCompanionImport(true);
+              loadPathCompanionCharacters();
+            }}
+            style={{
+              padding: '0.25rem',
+              borderRadius: '4px',
+              border: 'none',
+              background: 'var(--accent-1)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            title="Import from PathCompanion"
+          >
+            <Download size={14} />
+          </button>
+        </div>
+        <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+          {characters.map((char) => (
+            <div
+              key={char.id}
+              onClick={() => onSelectCharacter(char)}
+              style={{
+                padding: '0.5rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                background: currentCharacter?.id === char.id ? 'var(--accent-2)' : 'transparent',
+                marginBottom: '0.25rem',
+                color: 'var(--text-primary)',
+                fontSize: '0.9rem'
+              }}
+            >
+              <div style={{ fontWeight: 500 }}>
+                {char.name}
+                {char.isPathCompanion && (
+                  <ExternalLink size={10} style={{ marginLeft: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
+                )}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {char.characterClass && `${char.characterClass} `}Level {char.level}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Campaigns Section */}
+      {campaigns.length > 0 && (
+        <div style={{ 
+          padding: '1rem', 
+          borderTop: `1px solid var(--border-color)`,
+          borderBottom: `1px solid var(--border-color)` 
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '0.75rem'
+          }}>
+            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+              <Folder size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+              Campaigns
+            </h3>
+          </div>
+          <div style={{ maxHeight: '150px', overflow: 'auto' }}>
+            {campaigns.map((campaign) => (
+              <div
+                key={campaign.id}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: '4px',
+                  background: 'var(--accent-1)',
+                  marginBottom: '0.25rem',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <div style={{ fontWeight: 500 }}>
+                  {campaign.name}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                  Campaign
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ flex: 1, overflow: 'auto', padding: '0.5rem' }}>
         {documents.map((doc) => (
           <div
@@ -244,6 +412,110 @@ export default function Sidebar({ documents, onSelectDocument, onRefresh, curren
           </div>
         ))}
       </div>
+
+      {/* PathCompanion Import Modal */}
+      {showPathCompanionImport && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPathCompanionImport(false);
+            }
+          }}
+        >
+          <div 
+            style={{
+              background: 'var(--bg-secondary)',
+              padding: '2rem',
+              borderRadius: '8px',
+              maxWidth: '500px',
+              width: '90%',
+              border: '1px solid var(--border-color)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Import from PathCompanion</h3>
+              <button 
+                onClick={() => {
+                  setShowPathCompanionImport(false);
+                  setPathCompanionCharacters([]);
+                }}
+                style={{
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div>
+              {loadingCharacters ? (
+                <p style={{ color: 'var(--text-primary)' }}>Loading your PathCompanion characters...</p>
+              ) : pathCompanionCharacters.length > 0 ? (
+                <div>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                    Select a character to import:
+                  </p>
+                  <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+                    {pathCompanionCharacters.map(char => (
+                      <div
+                        key={char.id}
+                        onClick={() => {
+                          importPathCompanionCharacter(char.id);
+                          setShowPathCompanionImport(false);
+                          setPathCompanionCharacters([]);
+                        }}
+                        style={{
+                          padding: '1rem',
+                          marginBottom: '0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid var(--border-color)',
+                          cursor: importingPC ? 'wait' : 'pointer',
+                          background: 'var(--bg-primary)',
+                          color: 'var(--text-primary)'
+                        }}
+                      >
+                        <div style={{ fontWeight: 500 }}>{char.name}</div>
+                        {char.lastModified && (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                            Last modified: {new Date(char.lastModified).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  <p>No characters found in your PathCompanion account.</p>
+                  <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                    Make sure you're logged into PathCompanion and have characters saved.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

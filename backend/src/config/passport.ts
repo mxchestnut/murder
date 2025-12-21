@@ -32,10 +32,13 @@ export function setupPassport() {
   });
 
   passport.deserializeUser(async (id: number, done) => {
+    console.log('Deserializing user with ID:', id);
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id));
+      console.log('Deserialized user:', user ? user.username : 'not found');
       done(null, user);
     } catch (err) {
+      console.error('Deserialize error:', err);
       done(err);
     }
   });

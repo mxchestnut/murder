@@ -1,11 +1,37 @@
 import { Router } from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { isAuthenticated } from '../middleware/auth';
 
 const router = Router();
+
+// Encryption utilities for PathCompanion password
+const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const ALGORITHM = 'aes-256-cbc';
+
+function encryptPassword(password: string): string {
+  const iv = crypto.randomBytes(16);
+  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  let encrypted = cipher.update(password, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+function decryptPassword(encryptedPassword: string): string {
+  const parts = encryptedPassword.split(':');
+  const iv = Buffer.from(parts[0], 'hex');
+  const encrypted = parts[1];
+  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 // Register
 router.post('/register', async (req, res) => {
@@ -36,14 +62,70 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', passport.authenticate('local'), (req, res) => {
-  res.json({ 
-    message: 'Login successful', 
-    user: { 
-      id: (req.user as any).id, 
-      username: (req.user as any).username 
-    } 
-  });
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err: any, user: any, info: any) => {
+    if (err) {
+      console.error('Login error:', err);
+      return res.status(500).json({ error: 'Login failed' });
+    }
+    if (!user) {
+      return res.status(401).json({ error: info?.message || 'Invalid credentials' });
+    }
+    
+    // Log the user in with session
+    req.logIn(user, (err) => {
+      if (err) {
+        console.error('Session login error:', err);
+        return res.status(500).json({ error: 'Login failed' });
+      }
+      
+      // Save session explicitly to ensure persistence
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ error: 'Session save failed' });
+        }
+        
+        console.log('Login successful for user:', user.username);
+        console.log('Session ID:', req.sessionID);
+        console.log('Session:', req.session);
+        console.log('Cookies being sent:', res.getHeader('Set-Cookie'));
+        
+        // Auto-refresh PathCompanion session if connected
+        if (user.pathCompanionUsername && user.pathCompanionPassword) {
+          (async () => {
+            try {
+              const PlayFabService = await import('../services/playfab');
+              const decryptedPassword = decryptPassword(user.pathCompanionPassword);
+              const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, decryptedPassword);
+              
+              // Update session ticket silently
+              await db.update(users)
+                .set({
+                  pathCompanionSessionTicket: auth.sessionTicket,
+                  pathCompanionConnectedAt: new Date()
+                })
+                .where(eq(users.id, user.id));
+              
+              console.log('Auto-refreshed PathCompanion session for user:', user.username);
+            } catch (error) {
+              console.error('Failed to auto-refresh PathCompanion session:', error);
+              // Don't fail the login if PathCompanion refresh fails
+            }
+          })();
+        }
+        
+        res.json({ 
+          message: 'Login successful', 
+          user: { 
+            id: user.id, 
+            username: user.username 
+          },
+          sessionId: req.sessionID // Send session ID to frontend for debugging
+        });
+      });
+    });
+  })(req, res, next);
 });
 
 // Logout
@@ -58,15 +140,94 @@ router.post('/logout', (req, res) => {
 
 // Get current user
 router.get('/me', (req, res) => {
+  console.log('GET /me - Cookies received:', req.headers.cookie);
+  console.log('GET /me - Session ID:', req.sessionID);
+  console.log('GET /me - Session:', req.session);
+  console.log('GET /me - User:', req.user);
+  console.log('GET /me - isAuthenticated:', req.isAuthenticated());
+  
   if (req.isAuthenticated()) {
+    const user = req.user as any;
     res.json({ 
       user: { 
-        id: (req.user as any).id, 
-        username: (req.user as any).username 
+        id: user.id, 
+        username: user.username,
+        pathCompanionConnected: !!user.pathCompanionSessionTicket,
+        pathCompanionUsername: user.pathCompanionUsername
       } 
     });
   } else {
     res.status(401).json({ error: 'Not authenticated' });
+  }
+});
+
+// Connect PathCompanion account
+router.post('/pathcompanion/connect', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+
+    // Import PlayFab service
+    const PlayFabService = await import('../services/playfab');
+    
+    // Login to PathCompanion to get session ticket
+    const auth = await PlayFabService.loginToPlayFab(username, password);
+
+    // Encrypt password for secure storage
+    const encryptedPassword = encryptPassword(password);
+    
+    const [updatedUser] = await db.update(users)
+      .set({
+        pathCompanionUsername: username,
+        pathCompanionPassword: encryptedPassword,
+        pathCompanionSessionTicket: auth.sessionTicket,
+        pathCompanionPlayfabId: auth.playfabId,
+        pathCompanionConnectedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    res.json({
+      message: 'PathCompanion account connected successfully',
+      pathCompanionUsername: updatedUser.pathCompanionUsername,
+      connectedAt: updatedUser.pathCompanionConnectedAt
+    });
+  } catch (error) {
+    console.error('Failed to connect PathCompanion account:', error);
+    res.status(500).json({
+      error: 'Failed to connect PathCompanion account',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Disconnect PathCompanion account
+router.post('/pathcompanion/disconnect', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+
+    // Remove PathCompanion credentials
+    await db.update(users)
+      .set({
+        pathCompanionUsername: null,
+        pathCompanionPassword: null,
+        pathCompanionSessionTicket: null,
+        pathCompanionPlayfabId: null,
+        pathCompanionConnectedAt: null
+      })
+      .where(eq(users.id, userId));
+
+    res.json({ message: 'PathCompanion account disconnected successfully' });
+  } catch (error) {
+    console.error('Failed to disconnect PathCompanion account:', error);
+    res.status(500).json({
+      error: 'Failed to disconnect PathCompanion account',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

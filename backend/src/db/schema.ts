@@ -6,6 +6,12 @@ export const users = pgTable('users', {
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
   email: text('email'),
+  // PathCompanion account binding
+  pathCompanionUsername: text('path_companion_username'),
+  pathCompanionPassword: text('path_companion_password'), // Encrypted
+  pathCompanionSessionTicket: text('path_companion_session_ticket'),
+  pathCompanionPlayfabId: text('path_companion_playfab_id'),
+  pathCompanionConnectedAt: timestamp('path_companion_connected_at'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
@@ -45,6 +51,34 @@ export const characterSheets = pgTable('character_sheets', {
   // Additional info
   characterClass: text('character_class'),
   level: integer('level').default(1),
+  race: text('race'),
+  alignment: text('alignment'),
+  deity: text('deity'),
+  size: text('size').default('Medium'),
+  // Combat stats
+  currentHp: integer('current_hp').default(0),
+  maxHp: integer('max_hp').default(0),
+  tempHp: integer('temp_hp').default(0),
+  armorClass: integer('armor_class').default(10),
+  touchAc: integer('touch_ac').default(10),
+  flatFootedAc: integer('flat_footed_ac').default(10),
+  initiative: integer('initiative').default(0),
+  speed: integer('speed').default(30),
+  baseAttackBonus: integer('base_attack_bonus').default(0),
+  cmb: integer('cmb').default(0),
+  cmd: integer('cmd').default(10),
+  // Saving throws
+  fortitudeSave: integer('fortitude_save').default(0),
+  reflexSave: integer('reflex_save').default(0),
+  willSave: integer('will_save').default(0),
+  // Skills (stored as JSON for flexibility)
+  skills: text('skills'), // JSON string of {skillName: {ranks: number, misc: number}}
+  // Equipment & abilities
+  weapons: text('weapons'), // JSON array of weapon objects
+  armor: text('armor'), // JSON string of armor details
+  feats: text('feats'), // JSON array of feat names
+  specialAbilities: text('special_abilities'), // JSON array of ability descriptions
+  spells: text('spells'), // JSON object of spells by level
   // PathCompanion integration
   isPathCompanion: boolean('is_path_companion').default(false),
   pathCompanionId: text('path_companion_id'), // Character ID in PlayFab

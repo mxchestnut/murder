@@ -29,6 +29,30 @@ interface CharacterSheet {
   charisma: number;
   characterClass?: string;
   level: number;
+  race?: string;
+  alignment?: string;
+  deity?: string;
+  size?: string;
+  currentHp?: number;
+  maxHp?: number;
+  tempHp?: number;
+  armorClass?: number;
+  touchAc?: number;
+  flatFootedAc?: number;
+  initiative?: number;
+  speed?: number;
+  baseAttackBonus?: number;
+  cmb?: number;
+  cmd?: number;
+  fortitudeSave?: number;
+  reflexSave?: number;
+  willSave?: number;
+  skills?: any;
+  weapons?: any[];
+  armor?: any;
+  feats?: string[];
+  specialAbilities?: string[];
+  spells?: any;
   isPathCompanion?: boolean;
   pathCompanionId?: string;
   lastSynced?: string;
@@ -57,20 +81,79 @@ export default function CharacterSheets() {
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPathCompanionImport, setShowPathCompanionImport] = useState(false);
-  const [pathCompanionLogin, setPathCompanionLogin] = useState({ username: '', password: '' });
-  const [pathCompanionSession, setPathCompanionSession] = useState('');
   const [characterId, setCharacterId] = useState('');
   const [importingPC, setImportingPC] = useState(false);
-  const [formData, setFormData] = useState({
+  const [pathCompanionCharacters, setPathCompanionCharacters] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
+  const [pathCompanionCampaigns, setPathCompanionCampaigns] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
+  const [loadingCharacters, setLoadingCharacters] = useState(false);
+  const [formData, setFormData] = useState<{
+    name: string;
+    characterClass: string;
+    level: number;
+    race: string;
+    alignment: string;
+    deity: string;
+    size: string;
+    strength: number;
+    dexterity: number;
+    constitution: number;
+    intelligence: number;
+    wisdom: number;
+    charisma: number;
+    currentHp: number;
+    maxHp: number;
+    tempHp: number;
+    armorClass: number;
+    touchAc: number;
+    flatFootedAc: number;
+    initiative: number;
+    speed: number;
+    baseAttackBonus: number;
+    cmb: number;
+    cmd: number;
+    fortitudeSave: number;
+    reflexSave: number;
+    willSave: number;
+    skills: any;
+    weapons: any[];
+    armor: any;
+    feats: string[];
+    specialAbilities: string[];
+    spells: any;
+  }>({
     name: '',
     characterClass: '',
     level: 1,
+    race: '',
+    alignment: '',
+    deity: '',
+    size: 'Medium',
     strength: 10,
     dexterity: 10,
     constitution: 10,
     intelligence: 10,
     wisdom: 10,
-    charisma: 10
+    charisma: 10,
+    currentHp: 0,
+    maxHp: 0,
+    tempHp: 0,
+    armorClass: 10,
+    touchAc: 10,
+    flatFootedAc: 10,
+    initiative: 0,
+    speed: 30,
+    baseAttackBonus: 0,
+    cmb: 0,
+    cmd: 10,
+    fortitudeSave: 0,
+    reflexSave: 0,
+    willSave: 0,
+    skills: {},
+    weapons: [],
+    armor: {},
+    feats: [],
+    specialAbilities: [],
+    spells: {}
   });
   const [rollResult, setRollResult] = useState<any>(null);
 
@@ -145,12 +228,36 @@ export default function CharacterSheets() {
       name: '',
       characterClass: '',
       level: 1,
+      race: '',
+      alignment: '',
+      deity: '',
+      size: 'Medium',
       strength: 10,
       dexterity: 10,
       constitution: 10,
       intelligence: 10,
       wisdom: 10,
-      charisma: 10
+      charisma: 10,
+      currentHp: 0,
+      maxHp: 0,
+      tempHp: 0,
+      armorClass: 10,
+      touchAc: 10,
+      flatFootedAc: 10,
+      initiative: 0,
+      speed: 30,
+      baseAttackBonus: 0,
+      cmb: 0,
+      cmd: 10,
+      fortitudeSave: 0,
+      reflexSave: 0,
+      willSave: 0,
+      skills: {},
+      weapons: [],
+      armor: {},
+      feats: [],
+      specialAbilities: [],
+      spells: {}
     });
   };
 
@@ -160,46 +267,88 @@ export default function CharacterSheets() {
       name: selectedSheet.name,
       characterClass: selectedSheet.characterClass || '',
       level: selectedSheet.level,
+      race: selectedSheet.race || '',
+      alignment: selectedSheet.alignment || '',
+      deity: selectedSheet.deity || '',
+      size: selectedSheet.size || 'Medium',
       strength: selectedSheet.strength,
       dexterity: selectedSheet.dexterity,
       constitution: selectedSheet.constitution,
       intelligence: selectedSheet.intelligence,
       wisdom: selectedSheet.wisdom,
-      charisma: selectedSheet.charisma
+      charisma: selectedSheet.charisma,
+      currentHp: selectedSheet.currentHp || 0,
+      maxHp: selectedSheet.maxHp || 0,
+      tempHp: selectedSheet.tempHp || 0,
+      armorClass: selectedSheet.armorClass || 10,
+      touchAc: selectedSheet.touchAc || 10,
+      flatFootedAc: selectedSheet.flatFootedAc || 10,
+      initiative: selectedSheet.initiative || 0,
+      speed: selectedSheet.speed || 30,
+      baseAttackBonus: selectedSheet.baseAttackBonus || 0,
+      cmb: selectedSheet.cmb || 0,
+      cmd: selectedSheet.cmd || 10,
+      fortitudeSave: selectedSheet.fortitudeSave || 0,
+      reflexSave: selectedSheet.reflexSave || 0,
+      willSave: selectedSheet.willSave || 0,
+      skills: selectedSheet.skills || {},
+      weapons: selectedSheet.weapons || [],
+      armor: selectedSheet.armor || {},
+      feats: selectedSheet.feats || [],
+      specialAbilities: selectedSheet.specialAbilities || [],
+      spells: selectedSheet.spells || {}
     });
     setIsEditing(true);
   };
 
   // PathCompanion integration handlers
-  const handlePathCompanionLogin = async () => {
+  const loadPathCompanionCharacters = async () => {
+    setLoadingCharacters(true);
+    setPathCompanionCharacters([]);
+    setPathCompanionCampaigns([]);
+    
     try {
-      const response = await api.post('/pathcompanion/login', pathCompanionLogin);
-      setPathCompanionSession(response.data.sessionTicket);
-      alert('Successfully logged into PathCompanion! Now enter your character ID (e.g., "character4")');
-    } catch (error) {
-      console.error('PathCompanion login failed:', error);
-      alert('Failed to connect to PathCompanion. Check your username and password.');
+      const response = await api.get('/pathcompanion/characters');
+      setPathCompanionCharacters(response.data.characters || []);
+      setPathCompanionCampaigns(response.data.campaigns || []);
+      
+      // If no characters or campaigns found, show a message
+      if ((response.data.characters || []).length === 0 && (response.data.campaigns || []).length === 0) {
+        console.log('No characters or campaigns found in PathCompanion account');
+      }
+    } catch (error: any) {
+      console.error('Failed to load PathCompanion characters:', error);
+      
+      // Don't show alert during loading, we'll show the error in the modal
+      setPathCompanionCharacters([]);
+      setPathCompanionCampaigns([]);
+    } finally {
+      setLoadingCharacters(false);
     }
   };
 
-  const importPathCompanionCharacter = async () => {
+  const importPathCompanionCharacter = async (charId?: string) => {
+    const idToImport = charId || characterId;
+    if (!idToImport) return;
+
     setImportingPC(true);
     try {
       const response = await api.post('/pathcompanion/import', {
-        sessionTicket: pathCompanionSession,
-        characterId
+        characterId: idToImport
       });
       
-      setSheets([...sheets, response.data]);
+      // Reload all sheets to get the imported character
+      await loadSheets();
       setSelectedSheet(response.data);
       setShowPathCompanionImport(false);
-      setPathCompanionSession('');
       setCharacterId('');
-      setPathCompanionLogin({ username: '', password: '' });
-      alert(`Successfully imported character!`);
-    } catch (error) {
+      setPathCompanionCharacters([]);
+      setPathCompanionCampaigns([]);
+      alert(`Successfully imported ${response.data.name}!`);
+    } catch (error: any) {
       console.error('Failed to import PathCompanion character:', error);
-      alert(error instanceof Error ? error.message : 'Failed to import character.');
+      const errorMsg = error.response?.data?.error || 'Failed to import character.';
+      alert(`Import failed: ${errorMsg}`);
     } finally {
       setImportingPC(false);
     }
@@ -252,7 +401,10 @@ export default function CharacterSheets() {
           <div className="character-list-actions">
             <button 
               className="icon-button secondary"
-              onClick={() => setShowPathCompanionImport(true)}
+              onClick={() => {
+                setShowPathCompanionImport(true);
+                loadPathCompanionCharacters();
+              }}
               title="Import from PathCompanion"
             >
               <Download size={20} />
@@ -433,6 +585,144 @@ export default function CharacterSheets() {
                 />
               ))}
             </div>
+
+            {/* Combat Stats */}
+            <div className="sheet-section">
+              <h3>Combat</h3>
+              <div className="combat-grid">
+                <div className="stat-box">
+                  <div className="stat-label">HP</div>
+                  <div className="stat-value-large">
+                    {selectedSheet.currentHp || 0}/{selectedSheet.maxHp || 0}
+                  </div>
+                  {(selectedSheet.tempHp || 0) > 0 && (
+                    <div className="stat-temp">+{selectedSheet.tempHp} temp</div>
+                  )}
+                </div>
+                <div className="stat-box">
+                  <div className="stat-label">AC</div>
+                  <div className="stat-value-large">{selectedSheet.armorClass || 10}</div>
+                  <div className="stat-detail">
+                    Touch: {selectedSheet.touchAc || 10} / FF: {selectedSheet.flatFootedAc || 10}
+                  </div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-label">Initiative</div>
+                  <div className="stat-value-large">
+                    {(selectedSheet.initiative || 0) >= 0 ? '+' : ''}{selectedSheet.initiative || 0}
+                  </div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-label">Speed</div>
+                  <div className="stat-value-large">{selectedSheet.speed || 30} ft</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Saves */}
+            <div className="sheet-section">
+              <h3>Saving Throws</h3>
+              <div className="saves-grid">
+                <div className="save-box">
+                  <div className="save-label">Fortitude</div>
+                  <div className="save-value">
+                    {(selectedSheet.fortitudeSave || 0) >= 0 ? '+' : ''}{selectedSheet.fortitudeSave || 0}
+                  </div>
+                </div>
+                <div className="save-box">
+                  <div className="save-label">Reflex</div>
+                  <div className="save-value">
+                    {(selectedSheet.reflexSave || 0) >= 0 ? '+' : ''}{selectedSheet.reflexSave || 0}
+                  </div>
+                </div>
+                <div className="save-box">
+                  <div className="save-label">Will</div>
+                  <div className="save-value">
+                    {(selectedSheet.willSave || 0) >= 0 ? '+' : ''}{selectedSheet.willSave || 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Offense */}
+            <div className="sheet-section">
+              <h3>Offense</h3>
+              <div className="offense-grid">
+                <div className="stat-inline">
+                  <span className="label">BAB:</span>
+                  <span className="value">
+                    {(selectedSheet.baseAttackBonus || 0) >= 0 ? '+' : ''}{selectedSheet.baseAttackBonus || 0}
+                  </span>
+                </div>
+                <div className="stat-inline">
+                  <span className="label">CMB:</span>
+                  <span className="value">
+                    {(selectedSheet.cmb || 0) >= 0 ? '+' : ''}{selectedSheet.cmb || 0}
+                  </span>
+                </div>
+                <div className="stat-inline">
+                  <span className="label">CMD:</span>
+                  <span className="value">{selectedSheet.cmd || 10}</span>
+                </div>
+              </div>
+              {selectedSheet.weapons && selectedSheet.weapons.length > 0 && (
+                <div className="weapons-list">
+                  <h4>Weapons</h4>
+                  {selectedSheet.weapons.map((weapon: any, idx: number) => (
+                    <div key={idx} className="weapon-item">
+                      <span className="weapon-name">{weapon.name}</span>
+                      <span className="weapon-stats">
+                        {weapon.attackBonus && `+${weapon.attackBonus} `}
+                        {weapon.damage && `(${weapon.damage})`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Feats & Abilities */}
+            {((selectedSheet.feats && selectedSheet.feats.length > 0) || 
+              (selectedSheet.specialAbilities && selectedSheet.specialAbilities.length > 0)) && (
+              <div className="sheet-section">
+                <h3>Feats & Special Abilities</h3>
+                {selectedSheet.feats && selectedSheet.feats.length > 0 && (
+                  <div className="feats-list">
+                    <h4>Feats</h4>
+                    <div className="feat-tags">
+                      {selectedSheet.feats.map((feat: string, idx: number) => (
+                        <span key={idx} className="feat-tag">{feat}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {selectedSheet.specialAbilities && selectedSheet.specialAbilities.length > 0 && (
+                  <div className="abilities-list">
+                    <h4>Special Abilities</h4>
+                    {selectedSheet.specialAbilities.map((ability: string, idx: number) => (
+                      <div key={idx} className="ability-item">{ability}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Skills */}
+            {selectedSheet.skills && Object.keys(selectedSheet.skills).length > 0 && (
+              <div className="sheet-section">
+                <h3>Skills</h3>
+                <div className="skills-grid">
+                  {Object.entries(selectedSheet.skills).map(([skillName, skillData]: [string, any]) => (
+                    <div key={skillName} className="skill-item">
+                      <span className="skill-name">{skillName}</span>
+                      <span className="skill-value">
+                        {skillData.total >= 0 ? '+' : ''}{skillData.total || 0}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="empty-state">
@@ -470,77 +760,119 @@ export default function CharacterSheets() {
                 className="icon-button"
                 onClick={() => {
                   setShowPathCompanionImport(false);
-                  setPathCompanionSession('');
                   setCharacterId('');
-                  setPathCompanionLogin({ username: '', password: '' });
                 }}
               >
                 <X size={20} />
               </button>
             </div>
 
-            {!pathCompanionSession ? (
-              <div className="pathcompanion-login-form">
-                <p>Step 1: Login to PathCompanion</p>
-                <div className="form-group">
-                  <label htmlFor="pc-username">Username or Email</label>
-                  <input
-                    id="pc-username"
-                    type="text"
-                    value={pathCompanionLogin.username}
-                    onChange={(e) => setPathCompanionLogin(prev => ({
-                      ...prev,
-                      username: e.target.value
-                    }))}
-                    placeholder="Enter username or email"
-                  />
+            <div className="pathcompanion-import-form">
+              {loadingCharacters ? (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <p>Loading your PathCompanion data...</p>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="pc-password">Password</label>
-                  <input
-                    id="pc-password"
-                    type="password"
-                    value={pathCompanionLogin.password}
-                    onChange={(e) => setPathCompanionLogin(prev => ({
-                      ...prev,
-                      password: e.target.value
-                    }))}
-                    placeholder="Enter your password"
-                  />
+              ) : (pathCompanionCharacters.length > 0 || pathCompanionCampaigns.length > 0) ? (
+                <>
+                  <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                      Click a character or campaign to import it:
+                    </p>
+                    <button 
+                      className="button secondary"
+                      onClick={loadPathCompanionCharacters}
+                      disabled={loadingCharacters}
+                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                    >
+                      Refresh List
+                    </button>
+                  </div>
+                  
+                  {pathCompanionCharacters.length > 0 && (
+                    <>
+                      <h4>Characters</h4>
+                      <div className="pathcompanion-characters-list">
+                        {pathCompanionCharacters.map(char => (
+                          <div
+                            key={char.id}
+                            className="pathcompanion-character-item"
+                            onClick={() => !importingPC && importPathCompanionCharacter(char.id)}
+                            style={{ cursor: importingPC ? 'not-allowed' : 'pointer', opacity: importingPC ? 0.5 : 1 }}
+                          >
+                            <div className="pathcompanion-character-name">{char.name}</div>
+                            <div className="pathcompanion-character-details">
+                              {char.id}{char.lastModified && ` • Last modified: ${new Date(char.lastModified).toLocaleDateString()}`}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  
+                  {pathCompanionCampaigns.length > 0 && (
+                    <>
+                      <h4 style={{ marginTop: pathCompanionCharacters.length > 0 ? '1.5rem' : 0 }}>Campaigns (GM Mode)</h4>
+                      <div className="pathcompanion-characters-list">
+                        {pathCompanionCampaigns.map(campaign => (
+                          <div
+                            key={campaign.id}
+                            className="pathcompanion-character-item"
+                            onClick={() => !importingPC && importPathCompanionCharacter(campaign.id)}
+                            style={{ cursor: importingPC ? 'not-allowed' : 'pointer', opacity: importingPC ? 0.5 : 1 }}
+                          >
+                            <div className="pathcompanion-character-name">{campaign.name}</div>
+                            <div className="pathcompanion-character-details">
+                              {campaign.id}{campaign.lastModified && ` • Last modified: ${new Date(campaign.lastModified).toLocaleDateString()}`}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <p style={{ marginBottom: '1rem', color: '#888' }}>
+                    {loadingCharacters ? 'Loading...' : 'No characters or campaigns found.'}
+                  </p>
+                  <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem' }}>
+                    Make sure you've connected your PathCompanion account in Settings.
+                  </p>
+                  <button 
+                    className="button secondary"
+                    onClick={loadPathCompanionCharacters}
+                    disabled={loadingCharacters}
+                    style={{ marginBottom: '1.5rem' }}
+                  >
+                    {loadingCharacters ? 'Loading...' : 'Try Loading Again'}
+                  </button>
+                  
+                  <hr style={{ margin: '1.5rem 0', borderColor: '#ddd' }} />
+                  
+                  <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Or enter a character ID manually:</p>
+                  <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1rem' }}>
+                    Examples: character1, character2, gm1, gm2, etc.
+                  </p>
+                  <div className="form-group">
+                    <label htmlFor="character-id">Character ID</label>
+                    <input
+                      id="character-id"
+                      type="text"
+                      value={characterId}
+                      onChange={(e) => setCharacterId(e.target.value)}
+                      placeholder="e.g., character4"
+                    />
+                  </div>
+                  <button 
+                    className="button primary"
+                    onClick={() => importPathCompanionCharacter()}
+                    disabled={!characterId || importingPC}
+                  >
+                    {importingPC ? 'Importing...' : 'Import Character'}
+                  </button>
                 </div>
-                <button 
-                  className="button primary"
-                  onClick={handlePathCompanionLogin}
-                  disabled={!pathCompanionLogin.username || !pathCompanionLogin.password}
-                >
-                  Login to PathCompanion
-                </button>
-              </div>
-            ) : (
-              <div className="pathcompanion-import-form">
-                <p>Step 2: Enter Character ID</p>
-                <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
-                  Your characters are named: character1, character2, character3, etc.
-                </p>
-                <div className="form-group">
-                  <label htmlFor="character-id">Character ID</label>
-                  <input
-                    id="character-id"
-                    type="text"
-                    value={characterId}
-                    onChange={(e) => setCharacterId(e.target.value)}
-                    placeholder="e.g., character4"
-                  />
-                </div>
-                <button 
-                  className="button primary"
-                  onClick={importPathCompanionCharacter}
-                  disabled={!characterId || importingPC}
-                >
-                  {importingPC ? 'Importing...' : 'Import Character'}
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -549,15 +881,32 @@ export default function CharacterSheets() {
         .character-sheets-container {
           display: flex;
           height: 100%;
-          gap: 1rem;
+          gap: 0;
         }
 
         .character-list {
+          flex: 0 0 auto;
           width: 280px;
-          border-right: 1px solid var(--border-color);
+          min-width: 200px;
+          max-width: 600px;
+          resize: horizontal;
+          overflow: hidden;
+          border-right: 2px solid var(--border-color);
           padding: 1rem;
           display: flex;
           flex-direction: column;
+          background: var(--bg-color, white);
+        }
+
+        .character-sheet-view {
+          flex: 0 0 auto;
+          width: 800px;
+          min-width: 400px;
+          max-width: 1400px;
+          resize: horizontal;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 2rem;
         }
 
         .character-list-header {
@@ -586,14 +935,15 @@ export default function CharacterSheets() {
           border-radius: 8px;
           cursor: pointer;
           transition: background-color 0.2s;
+          color: var(--text-color, #1a202c);
         }
 
         .character-item:hover {
-          background-color: var(--hover-bg);
+          background-color: var(--hover-bg, #f7fafc);
         }
 
         .character-item.active {
-          background-color: var(--primary-color);
+          background-color: var(--primary-color, #4299e1);
           color: white;
         }
 
@@ -604,11 +954,13 @@ export default function CharacterSheets() {
         .character-name {
           font-weight: 600;
           margin-bottom: 0.25rem;
+          color: inherit;
         }
 
         .character-meta {
           font-size: 0.875rem;
           opacity: 0.8;
+          color: inherit;
         }
 
         .character-sheet-view {
@@ -1030,6 +1382,194 @@ import-form .button.primary,
         .character-item-actions {
           display: flex;
           gap: 0.5rem;
+        }
+
+        /* Expanded Character Sheet Sections */
+        .sheet-section {
+          margin: 2rem 0;
+          padding: 1.5rem;
+          background: var(--card-bg, #f7fafc);
+          border-radius: 8px;
+          border: 1px solid var(--border-color);
+        }
+
+        .sheet-section h3 {
+          margin: 0 0 1rem 0;
+          font-size: 1.25rem;
+          color: var(--text-color);
+          border-bottom: 2px solid var(--border-color);
+          padding-bottom: 0.5rem;
+        }
+
+        .sheet-section h4 {
+          margin: 1rem 0 0.5rem 0;
+          font-size: 1rem;
+          color: var(--text-color);
+        }
+
+        .combat-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 1rem;
+        }
+
+        .stat-box {
+          background: white;
+          padding: 1rem;
+          border-radius: 6px;
+          text-align: center;
+          border: 2px solid var(--border-color);
+        }
+
+        .stat-label {
+          font-size: 0.875rem;
+          text-transform: uppercase;
+          color: #718096;
+          margin-bottom: 0.5rem;
+        }
+
+        .stat-value-large {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: var(--primary-color);
+        }
+
+        .stat-detail, .stat-temp {
+          font-size: 0.875rem;
+          color: #718096;
+          margin-top: 0.25rem;
+        }
+
+        .saves-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+        }
+
+        .save-box {
+          background: white;
+          padding: 1rem;
+          border-radius: 6px;
+          text-align: center;
+          border: 2px solid var(--border-color);
+        }
+
+        .save-label {
+          font-size: 0.875rem;
+          text-transform: uppercase;
+          color: #718096;
+          margin-bottom: 0.5rem;
+        }
+
+        .save-value {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--primary-color);
+        }
+
+        .offense-grid {
+          display: flex;
+          gap: 2rem;
+          margin-bottom: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .stat-inline {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .stat-inline .label {
+          font-weight: 600;
+          color: #4a5568;
+        }
+
+        .stat-inline .value {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--primary-color);
+        }
+
+        .weapons-list {
+          margin-top: 1rem;
+        }
+
+        .weapon-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem;
+          background: white;
+          border-radius: 6px;
+          margin-bottom: 0.5rem;
+          border: 1px solid var(--border-color);
+        }
+
+        .weapon-name {
+          font-weight: 600;
+          color: var(--text-color);
+        }
+
+        .weapon-stats {
+          color: #718096;
+          font-family: monospace;
+        }
+
+        .feats-list, .abilities-list {
+          margin-top: 1rem;
+        }
+
+        .feat-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .feat-tag {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          background: white;
+          border: 1px solid var(--border-color);
+          border-radius: 20px;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: var(--text-color);
+        }
+
+        .ability-item {
+          padding: 0.75rem;
+          background: white;
+          border-radius: 6px;
+          margin-bottom: 0.5rem;
+          border-left: 3px solid var(--primary-color);
+        }
+
+        .skills-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 0.5rem;
+        }
+
+        .skill-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.5rem 0.75rem;
+          background: white;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
+        }
+
+        .skill-name {
+          font-size: 0.875rem;
+          color: var(--text-color);
+        }
+
+        .skill-value {
+          font-weight: 700;
+          color: var(--primary-color);
+          font-family: monospace;
         }
       `}</style>
     </div>

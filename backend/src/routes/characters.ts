@@ -22,9 +22,15 @@ router.get('/', async (req, res) => {
       eq(characterSheets.userId, userId)
     );
 
-    // Add computed modifiers to each sheet
+    // Add computed modifiers and parse JSON fields
     const sheetsWithModifiers = sheets.map(sheet => ({
       ...sheet,
+      skills: sheet.skills ? JSON.parse(sheet.skills) : {},
+      weapons: sheet.weapons ? JSON.parse(sheet.weapons) : [],
+      armor: sheet.armor ? JSON.parse(sheet.armor) : {},
+      feats: sheet.feats ? JSON.parse(sheet.feats) : [],
+      specialAbilities: sheet.specialAbilities ? JSON.parse(sheet.specialAbilities) : [],
+      spells: sheet.spells ? JSON.parse(sheet.spells) : {},
       modifiers: {
         strength: calculateModifier(sheet.strength),
         dexterity: calculateModifier(sheet.dexterity),
@@ -59,9 +65,15 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Character sheet not found' });
     }
 
-    // Add computed modifiers
+    // Add computed modifiers and parse JSON fields
     const sheetWithModifiers = {
       ...sheet,
+      skills: sheet.skills ? JSON.parse(sheet.skills) : {},
+      weapons: sheet.weapons ? JSON.parse(sheet.weapons) : [],
+      armor: sheet.armor ? JSON.parse(sheet.armor) : {},
+      feats: sheet.feats ? JSON.parse(sheet.feats) : [],
+      specialAbilities: sheet.specialAbilities ? JSON.parse(sheet.specialAbilities) : [],
+      spells: sheet.spells ? JSON.parse(sheet.spells) : {},
       modifiers: {
         strength: calculateModifier(sheet.strength),
         dexterity: calculateModifier(sheet.dexterity),
@@ -92,7 +104,31 @@ router.post('/', async (req, res) => {
       wisdom = 10, 
       charisma = 10,
       characterClass,
-      level = 1
+      level = 1,
+      race,
+      alignment,
+      deity,
+      size = 'Medium',
+      currentHp = 0,
+      maxHp = 0,
+      tempHp = 0,
+      armorClass = 10,
+      touchAc = 10,
+      flatFootedAc = 10,
+      initiative = 0,
+      speed = 30,
+      baseAttackBonus = 0,
+      cmb = 0,
+      cmd = 10,
+      fortitudeSave = 0,
+      reflexSave = 0,
+      willSave = 0,
+      skills,
+      weapons,
+      armor,
+      feats,
+      specialAbilities,
+      spells
     } = req.body;
 
     if (!name) {
@@ -109,12 +145,42 @@ router.post('/', async (req, res) => {
       wisdom,
       charisma,
       characterClass,
-      level
+      level,
+      race,
+      alignment,
+      deity,
+      size,
+      currentHp,
+      maxHp,
+      tempHp,
+      armorClass,
+      touchAc,
+      flatFootedAc,
+      initiative,
+      speed,
+      baseAttackBonus,
+      cmb,
+      cmd,
+      fortitudeSave,
+      reflexSave,
+      willSave,
+      skills: skills ? JSON.stringify(skills) : null,
+      weapons: weapons ? JSON.stringify(weapons) : null,
+      armor: armor ? JSON.stringify(armor) : null,
+      feats: feats ? JSON.stringify(feats) : null,
+      specialAbilities: specialAbilities ? JSON.stringify(specialAbilities) : null,
+      spells: spells ? JSON.stringify(spells) : null
     }).returning();
 
-    // Add computed modifiers
+    // Add computed modifiers and parse JSON fields
     const sheetWithModifiers = {
       ...newSheet,
+      skills: newSheet.skills ? JSON.parse(newSheet.skills) : {},
+      weapons: newSheet.weapons ? JSON.parse(newSheet.weapons) : [],
+      armor: newSheet.armor ? JSON.parse(newSheet.armor) : {},
+      feats: newSheet.feats ? JSON.parse(newSheet.feats) : [],
+      specialAbilities: newSheet.specialAbilities ? JSON.parse(newSheet.specialAbilities) : [],
+      spells: newSheet.spells ? JSON.parse(newSheet.spells) : {},
       modifiers: {
         strength: calculateModifier(newSheet.strength),
         dexterity: calculateModifier(newSheet.dexterity),
@@ -159,7 +225,31 @@ router.put('/:id', async (req, res) => {
       wisdom, 
       charisma,
       characterClass,
-      level
+      level,
+      race,
+      alignment,
+      deity,
+      size,
+      currentHp,
+      maxHp,
+      tempHp,
+      armorClass,
+      touchAc,
+      flatFootedAc,
+      initiative,
+      speed,
+      baseAttackBonus,
+      cmb,
+      cmd,
+      fortitudeSave,
+      reflexSave,
+      willSave,
+      skills,
+      weapons,
+      armor,
+      feats,
+      specialAbilities,
+      spells
     } = req.body;
 
     const [updatedSheet] = await db.update(characterSheets)
@@ -173,14 +263,44 @@ router.put('/:id', async (req, res) => {
         ...(charisma !== undefined && { charisma }),
         ...(characterClass !== undefined && { characterClass }),
         ...(level !== undefined && { level }),
+        ...(race !== undefined && { race }),
+        ...(alignment !== undefined && { alignment }),
+        ...(deity !== undefined && { deity }),
+        ...(size !== undefined && { size }),
+        ...(currentHp !== undefined && { currentHp }),
+        ...(maxHp !== undefined && { maxHp }),
+        ...(tempHp !== undefined && { tempHp }),
+        ...(armorClass !== undefined && { armorClass }),
+        ...(touchAc !== undefined && { touchAc }),
+        ...(flatFootedAc !== undefined && { flatFootedAc }),
+        ...(initiative !== undefined && { initiative }),
+        ...(speed !== undefined && { speed }),
+        ...(baseAttackBonus !== undefined && { baseAttackBonus }),
+        ...(cmb !== undefined && { cmb }),
+        ...(cmd !== undefined && { cmd }),
+        ...(fortitudeSave !== undefined && { fortitudeSave }),
+        ...(reflexSave !== undefined && { reflexSave }),
+        ...(willSave !== undefined && { willSave }),
+        ...(skills !== undefined && { skills: JSON.stringify(skills) }),
+        ...(weapons !== undefined && { weapons: JSON.stringify(weapons) }),
+        ...(armor !== undefined && { armor: JSON.stringify(armor) }),
+        ...(feats !== undefined && { feats: JSON.stringify(feats) }),
+        ...(specialAbilities !== undefined && { specialAbilities: JSON.stringify(specialAbilities) }),
+        ...(spells !== undefined && { spells: JSON.stringify(spells) }),
         updatedAt: new Date()
       })
       .where(eq(characterSheets.id, sheetId))
       .returning();
 
-    // Add computed modifiers
+    // Add computed modifiers and parse JSON fields
     const sheetWithModifiers = {
       ...updatedSheet,
+      skills: updatedSheet.skills ? JSON.parse(updatedSheet.skills) : {},
+      weapons: updatedSheet.weapons ? JSON.parse(updatedSheet.weapons) : [],
+      armor: updatedSheet.armor ? JSON.parse(updatedSheet.armor) : {},
+      feats: updatedSheet.feats ? JSON.parse(updatedSheet.feats) : [],
+      specialAbilities: updatedSheet.specialAbilities ? JSON.parse(updatedSheet.specialAbilities) : [],
+      spells: updatedSheet.spells ? JSON.parse(updatedSheet.spells) : {},
       modifiers: {
         strength: calculateModifier(updatedSheet.strength),
         dexterity: calculateModifier(updatedSheet.dexterity),

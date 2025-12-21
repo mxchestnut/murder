@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Editor from './Editor';
 import MessagingPanel from './MessagingPanel';
-import CharacterSheets from './CharacterSheets';
+import Settings from './Settings';
 import { api } from '../utils/api';
-import { FileText, MessageSquare, LogOut, Sun, Moon, X, Dices } from 'lucide-react';
+import { FileText, MessageSquare, LogOut, Sun, Moon, X, Settings as SettingsIcon } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -14,8 +14,9 @@ interface DashboardProps {
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [currentDocument, setCurrentDocument] = useState<any>(null);
+  const [currentCharacter, setCurrentCharacter] = useState<any>(null);
   const [showMessaging, setShowMessaging] = useState(false);
-  const [showCharacters, setShowCharacters] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareDocument, setShareDocument] = useState<any>(null);
   const [shareUsername, setShareUsername] = useState('');
@@ -23,6 +24,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const saved = localStorage.getItem('theme');
     return (saved as 'light' | 'dark') || 'light';
   });
+
+  const handleSelectDocument = (doc: any) => {
+    setCurrentDocument(doc);
+  };
+
+  const handleSelectCharacter = (character: any) => {
+    setCurrentCharacter(character);
+  };
 
   useEffect(() => {
     loadDocuments();
@@ -88,9 +97,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       {/* Sidebar */}
       <Sidebar
         documents={documents}
-        onSelectDocument={setCurrentDocument}
+        onSelectDocument={handleSelectDocument}
+        onSelectCharacter={handleSelectCharacter}
         onRefresh={loadDocuments}
         currentDocument={currentDocument}
+        currentCharacter={currentCharacter}
       />
 
       {/* Main Content */}
@@ -104,7 +115,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           borderBottom: `1px solid var(--border-color)`,
           background: 'var(--bg-secondary)'
         }}>
-          <h2 style={{ color: 'var(--text-primary)' }}>{currentDocument?.name || 'Cyarika'}</h2>
+          <h2 style={{ color: 'var(--text-primary)' }}>
+            {currentCharacter?.name || currentDocument?.name || 'Cyarika'}
+          </h2>
           
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <button
@@ -127,29 +140,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
-                setShowCharacters(!showCharacters);
-                setShowMessaging(false);
-              }}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showCharacters ? 'var(--accent-2)' : 'var(--accent-1)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <Dices size={18} />
-              Characters
-            </button>
-
-            <button
-              onClick={() => {
                 setShowMessaging(!showMessaging);
-                setShowCharacters(false);
+                setShowSettings(false);
               }}
               style={{
                 padding: '0.5rem 1rem',
@@ -165,6 +157,27 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             >
               <MessageSquare size={18} />
               Messages
+            </button>
+
+            <button
+              onClick={() => {
+                setShowSettings(!showSettings);
+                setShowMessaging(false);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showSettings ? 'var(--accent-2)' : 'var(--accent-1)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <SettingsIcon size={18} />
+              Settings
             </button>
 
             <span style={{ color: 'var(--text-primary)' }}>{user.username}</span>
@@ -191,47 +204,105 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         {/* Content Area */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          {showCharacters && (
-            <div style={{
-              width: '400px',
-              borderRight: '1px solid var(--border-color)',
-              background: 'var(--bg-secondary)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}>
-              <CharacterSheets />
+          {showSettings ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <Settings />
             </div>
-          )}
+          ) : (
+            <>
+              {currentCharacter && (
+                <div style={{ 
+                  flex: '0 0 auto',
+                  width: '400px',
+                  minWidth: '300px',
+                  maxWidth: '800px',
+                  resize: 'horizontal',
+                  overflow: 'auto',
+                  padding: '2rem',
+                  borderRight: currentDocument ? '1px solid var(--border-color)' : 'none'
+                }}>
+                  <div className="character-display">
+                    <div style={{ marginBottom: '2rem' }}>
+                      <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>{currentCharacter.name}</h1>
+                      <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
+                        {currentCharacter.characterClass && `${currentCharacter.characterClass} • `}
+                        Level {currentCharacter.level}
+                      </p>
+                    </div>
 
-          <div style={{ flex: 1, overflow: 'auto' }}>
-            {currentDocument && !currentDocument.isFolder ? (
-              <Editor 
-                document={currentDocument} 
-                onSave={(content) => {
-                  api.post('/documents/document', {
-                    id: currentDocument.id,
-                    name: currentDocument.name,
-                    content
-                  });
-                }}
-                onShare={handleShare}
-              />
-            ) : (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100%',
-                color: '#8e9297'
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <FileText size={64} style={{ margin: '0 auto 1rem' }} />
-                  <p>Select a document to start editing</p>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: '1rem',
+                      marginTop: '2rem'
+                    }}>
+                      {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
+                        <div key={stat} style={{
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          background: 'var(--bg-secondary)',
+                          border: '1px solid var(--border-color)',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ 
+                            fontSize: '0.7rem', 
+                            textTransform: 'uppercase', 
+                            color: 'var(--text-secondary)',
+                            marginBottom: '0.5rem'
+                          }}>
+                            {stat.substring(0, 3)}
+                          </div>
+                          <div style={{ 
+                            fontSize: '1.75rem', 
+                            fontWeight: 'bold',
+                            color: 'var(--text-primary)'
+                          }}>
+                            {currentCharacter[stat]}
+                          </div>
+                          <div style={{ 
+                            fontSize: '0.85rem',
+                            color: 'var(--text-secondary)',
+                            marginTop: '0.25rem'
+                          }}>
+                            {currentCharacter.modifiers?.[stat] >= 0 ? '+' : ''}{currentCharacter.modifiers?.[stat] || 0}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {currentDocument && !currentDocument.isFolder ? (
+                <div style={{ flex: 1, overflow: 'auto' }}>
+                  <Editor 
+                    document={currentDocument} 
+                    onSave={(content) => {
+                      api.post('/documents/document', {
+                        id: currentDocument.id,
+                        name: currentDocument.name,
+                        content
+                      });
+                    }}
+                    onShare={handleShare}
+                  />
+                </div>
+              ) : !currentCharacter ? (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  color: '#8e9297'
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <FileText size={64} style={{ margin: '0 auto 1rem' }} />
+                    <p>Select a document or character to start</p>
+                  </div>
+                </div>
+              ) : null}
+            </>
+          )}
 
           {showMessaging && (
             <MessagingPanel />

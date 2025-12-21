@@ -69,8 +69,13 @@ export default function MessagingPanel() {
 
   return (
     <div style={{
+      flex: '0 0 auto',
       width: '300px',
-      borderLeft: `1px solid var(--border-color)`,
+      minWidth: '250px',
+      maxWidth: '600px',
+      resize: 'horizontal',
+      overflow: 'hidden',
+      borderLeft: `2px solid var(--border-color)`,
       background: 'var(--bg-secondary)',
       display: 'flex',
       flexDirection: 'column'

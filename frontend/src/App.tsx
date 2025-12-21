@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import { api } from './utils/api';
 
 function App() {
+  console.log('Cyarika v1.0.1 - Settings enabled');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
