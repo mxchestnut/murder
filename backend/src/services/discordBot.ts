@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel,
 import { db } from '../db';
 import { channelCharacterMappings, characterSheets, users } from '../db/schema';
 import { eq, and, or, sql } from 'drizzle-orm';
+import * as PlayFabService from './playfab';
 
 let botClient: Client | null = null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
@@ -67,6 +68,9 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'roll':
           await handleRoll(message, args);
+          break;
+        case 'syncall':
+          await handleSyncAll(message);
           break;
         case 'help':
           await handleHelp(message);
@@ -274,6 +278,198 @@ async function handleRoll(message: Message, args: string[]) {
   await message.reply({ embeds: [embed] });
 }
 
+async function handleSyncAll(message: Message) {
+  await message.reply('🔄 Syncing all characters from PathCompanion... This may take a moment.');
+
+  try {
+    // Get the user (assuming single user for now - you may want to expand this)
+    const userRecords = await db.select().from(users).limit(1);
+    if (userRecords.length === 0) {
+      await message.reply('❌ No PathCompanion account linked. Please log into the Cyarika Portal first.');
+      return;
+    }
+
+    const user = userRecords[0];
+    const userId = user.id;
+
+    if (!user.pathCompanionSessionTicket) {
+      await message.reply('❌ PathCompanion session expired. Please log into the Cyarika Portal to refresh.');
+      return;
+    }
+
+    // Get user data from PathCompanion
+    const userData = await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+
+    // Filter to character entries only
+    const characterKeys = Object.keys(userData)
+      .filter(key => /^character\d+$/.test(key))
+      .slice(0, 50);
+
+    if (characterKeys.length === 0) {
+      await message.reply('ℹ️ No characters found in your PathCompanion account.');
+      return;
+    }
+
+    const results: {
+      success: Array<{ name: string; action: string }>;
+      failed: Array<{ id: string; reason: string }>;
+    } = {
+      success: [],
+      failed: []
+    };
+
+    // Import each character
+    for (const characterId of characterKeys) {
+      try {
+        const character = await PlayFabService.getCharacter(user.pathCompanionSessionTicket, characterId);
+
+        if (!character) {
+          results.failed.push({ id: characterId, reason: 'Character not found' });
+          continue;
+        }
+
+        // Extract all data
+        const abilities = PlayFabService.extractAbilityScores(character.data);
+        const level = PlayFabService.extractCharacterLevel(character.data);
+        const combatStats = PlayFabService.extractCombatStats(character.data);
+        const saves = PlayFabService.extractSavingThrows(character.data);
+        const basicInfo = PlayFabService.extractBasicInfo(character.data);
+        const skills = PlayFabService.extractSkills(character.data);
+        const feats = PlayFabService.extractFeats(character.data);
+        const specialAbilities = PlayFabService.extractSpecialAbilities(character.data);
+        const weapons = PlayFabService.extractWeapons(character.data);
+        const armor = PlayFabService.extractArmor(character.data);
+        const spells = PlayFabService.extractSpells(character.data);
+
+        // Check if character already exists
+        const existing = await db.select().from(characterSheets).where(
+          eq(characterSheets.pathCompanionId, characterId)
+        );
+
+        if (existing.length > 0) {
+          // Update existing character
+          await db.update(characterSheets)
+            .set({
+              name: character.characterName,
+              strength: abilities.strength,
+              dexterity: abilities.dexterity,
+              constitution: abilities.constitution,
+              intelligence: abilities.intelligence,
+              wisdom: abilities.wisdom,
+              charisma: abilities.charisma,
+              characterClass: character.data.class || character.data.className,
+              level: level,
+              race: basicInfo.race,
+              alignment: basicInfo.alignment,
+              deity: basicInfo.deity,
+              size: basicInfo.size,
+              avatarUrl: basicInfo.avatarUrl,
+              currentHp: combatStats.currentHp,
+              maxHp: combatStats.maxHp,
+              tempHp: combatStats.tempHp,
+              armorClass: combatStats.armorClass,
+              touchAc: combatStats.touchAc,
+              flatFootedAc: combatStats.flatFootedAc,
+              initiative: combatStats.initiative,
+              speed: combatStats.speed,
+              baseAttackBonus: combatStats.baseAttackBonus,
+              cmb: combatStats.cmb,
+              cmd: combatStats.cmd,
+              fortitudeSave: saves.fortitudeSave,
+              reflexSave: saves.reflexSave,
+              willSave: saves.willSave,
+              skills: JSON.stringify(skills),
+              feats: JSON.stringify(feats),
+              specialAbilities: JSON.stringify(specialAbilities),
+              weapons: JSON.stringify(weapons),
+              armor: JSON.stringify(armor),
+              spells: JSON.stringify(spells),
+              pathCompanionData: JSON.stringify(character.data),
+              pathCompanionSession: user.pathCompanionSessionTicket,
+              lastSynced: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(characterSheets.id, existing[0].id));
+
+          results.success.push({ name: character.characterName, action: 'updated' });
+        } else {
+          // Create new character
+          await db.insert(characterSheets).values({
+            userId,
+            name: character.characterName,
+            strength: abilities.strength,
+            dexterity: abilities.dexterity,
+            constitution: abilities.constitution,
+            intelligence: abilities.intelligence,
+            wisdom: abilities.wisdom,
+            charisma: abilities.charisma,
+            characterClass: character.data.class || character.data.className,
+            level: level,
+            race: basicInfo.race,
+            alignment: basicInfo.alignment,
+            deity: basicInfo.deity,
+            size: basicInfo.size,
+            avatarUrl: basicInfo.avatarUrl,
+            currentHp: combatStats.currentHp,
+            maxHp: combatStats.maxHp,
+            tempHp: combatStats.tempHp,
+            armorClass: combatStats.armorClass,
+            touchAc: combatStats.touchAc,
+            flatFootedAc: combatStats.flatFootedAc,
+            initiative: combatStats.initiative,
+            speed: combatStats.speed,
+            baseAttackBonus: combatStats.baseAttackBonus,
+            cmb: combatStats.cmb,
+            cmd: combatStats.cmd,
+            fortitudeSave: saves.fortitudeSave,
+            reflexSave: saves.reflexSave,
+            willSave: saves.willSave,
+            skills: JSON.stringify(skills),
+            feats: JSON.stringify(feats),
+            specialAbilities: JSON.stringify(specialAbilities),
+            weapons: JSON.stringify(weapons),
+            armor: JSON.stringify(armor),
+            spells: JSON.stringify(spells),
+            pathCompanionData: JSON.stringify(character.data),
+            pathCompanionSession: user.pathCompanionSessionTicket,
+            pathCompanionId: characterId,
+            isPathCompanion: true,
+            lastSynced: new Date()
+          });
+
+          results.success.push({ name: character.characterName, action: 'imported' });
+        }
+      } catch (error) {
+        console.error(`Failed to sync character ${characterId}:`, error);
+        results.failed.push({ 
+          id: characterId, 
+          reason: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+    }
+
+    // Send success message
+    const imported = results.success.filter(r => r.action === 'imported').length;
+    const updated = results.success.filter(r => r.action === 'updated').length;
+    const failed = results.failed.length;
+
+    let resultMessage = '✅ **PathCompanion Sync Complete!**\n';
+    if (imported > 0) resultMessage += `\n• **${imported}** character${imported !== 1 ? 's' : ''} imported`;
+    if (updated > 0) resultMessage += `\n• **${updated}** character${updated !== 1 ? 's' : ''} updated`;
+    if (failed > 0) resultMessage += `\n• ⚠️ **${failed}** character${failed !== 1 ? 's' : ''} failed`;
+
+    if (results.success.length > 0) {
+      resultMessage += '\n\n**Characters:**\n' + results.success.map(r => `• ${r.name} (${r.action})`).join('\n');
+    }
+
+    await message.reply(resultMessage);
+
+  } catch (error) {
+    console.error('Error in handleSyncAll:', error);
+    await message.reply('❌ Failed to sync characters. Your PathCompanion session may have expired. Please log into the Cyarika Portal.');
+  }
+}
+
 async function handleHelp(message: Message) {
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
@@ -283,6 +479,7 @@ async function handleHelp(message: Message) {
       { name: '!setchar <name>', value: 'Link this channel to a character', inline: false },
       { name: '!char', value: 'Show which character is linked to this channel', inline: false },
       { name: '!roll <stat/save/skill>', value: 'Roll a check for the linked character', inline: false },
+      { name: '!syncall', value: 'Import/sync all characters from PathCompanion', inline: false },
       { name: '!CharName <stat/save/skill>', value: 'Roll a check for any character by name\nExample: `!Ogun strength`', inline: false },
       { name: 'CharName: message', value: 'Speak as a character (proxying)\nExample: `Ogun: Hello everyone!`', inline: false },
       { name: '!help', value: 'Show this help message', inline: false }
