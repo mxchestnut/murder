@@ -387,6 +387,21 @@ export function extractCombatStats(characterData: any) {
   const maxHp = defense.hp?.total || 0;
   const tempHp = defense.hp?.temp || 0;
   
+  // CMB and CMD can be numbers or objects with total property
+  let cmb = 0;
+  if (typeof offense.cmb === 'number') {
+    cmb = offense.cmb;
+  } else if (offense.cmb && typeof offense.cmb === 'object') {
+    cmb = offense.cmb.total || 0;
+  }
+  
+  let cmd = 10;
+  if (typeof defense.cmd === 'number') {
+    cmd = defense.cmd;
+  } else if (defense.cmd && typeof defense.cmd === 'object') {
+    cmd = defense.cmd.total || 10;
+  }
+  
   return {
     currentHp,
     maxHp,
@@ -397,8 +412,8 @@ export function extractCombatStats(characterData: any) {
     initiative: offense.initiative?.total || offense.initiative || 0,
     speed: combat.speed?.total || combat.baseSpeed || 30,
     baseAttackBonus: bab,
-    cmb: offense.cmb?.total || offense.cmb || 0,
-    cmd: defense.cmd?.total || defense.cmd || 10,
+    cmb,
+    cmd,
   };
 }
 
