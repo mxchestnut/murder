@@ -7,14 +7,7 @@ import * as PlayFabService from '../services/playfab';
 
 const router = Router();
 
-// All routes require authentication
-router.use(isAuthenticated);
-
-/**
- * Login to PathCompanion/PlayFab and get session
- * POST /api/pathcompanion/login
- * Body: { username, password }
- */
+// Login endpoint doesn't require Cyarika auth
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -81,8 +74,9 @@ router.post('/character/share', async (req, res) => {
  * Import a PathCompanion character
  * POST /api/pathcompanion/import
  * Body: { sessionTicket, characterId }
+ * Requires Cyarika authentication
  */
-router.post('/import', async (req, res) => {
+router.post('/import', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
     const { sessionTicket, characterId } = req.body;
