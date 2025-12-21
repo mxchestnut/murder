@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { characterSheets } from '../db/schema';
+import { characterSheets, users } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 
@@ -351,10 +351,13 @@ router.post('/:id/roll', async (req, res) => {
     const userId = (req.user as any).id;
     const username = (req.user as any).username;
     const sheetId = parseInt(req.params.id);
-    const { stat } = req.body; // stat should be 'strength', 'dexterity', etc.
+    const { stat, rollType, skillName } = req.body; 
+    // stat: 'strength', 'dexterity', etc.
+    // rollType: 'ability', 'save', 'skill', 'attack', 'advantage', 'disadvantage'
+    // skillName: for skill checks
 
-    if (!stat) {
-      return res.status(400).json({ error: 'Stat name is required' });
+    if (!stat && !skillName) {
+      return res.status(400).json({ error: 'Stat name or skill name is required' });
     }
 
     // Get the character sheet
@@ -369,28 +372,77 @@ router.post('/:id/roll', async (req, res) => {
       return res.status(404).json({ error: 'Character sheet not found' });
     }
 
-    // Get the stat value
-    const validStats = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
-    if (!validStats.includes(stat)) {
-      return res.status(400).json({ error: 'Invalid stat name' });
-    }
+    // Get user's Discord webhook
+    const [user] = await db.select({ webhookUrl: users.discordWebhookUrl }).from(users).where(eq(users.id, userId));
+    const discordWebhookUrl = user?.webhookUrl;
 
-    const statValue = sheet[stat as keyof typeof sheet] as number;
-    const modifier = calculateModifier(statValue);
-    
-    // Roll d20
-    const diceRoll = Math.floor(Math.random() * 20) + 1;
-    const total = diceRoll + modifier;
+    let diceRoll: number;
+    let total: number;
+    let modifier: number = 0;
+    let rollDescription: string;
+
+    // Handle different roll types
+    if (rollType === 'advantage' || rollType === 'disadvantage') {
+      const roll1 = Math.floor(Math.random() * 20) + 1;
+      const roll2 = Math.floor(Math.random() * 20) + 1;
+      diceRoll = rollType === 'advantage' ? Math.max(roll1, roll2) : Math.min(roll1, roll2);
+      
+      if (stat) {
+        const validStats = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
+        if (!validStats.includes(stat)) {
+          return res.status(400).json({ error: 'Invalid stat name' });
+        }
+        const statValue = sheet[stat as keyof typeof sheet] as number;
+        modifier = calculateModifier(statValue);
+      }
+      
+      total = diceRoll + modifier;
+      rollDescription = `${rollType === 'advantage' ? 'Advantage' : 'Disadvantage'} (${roll1}, ${roll2})`;
+    } else if (rollType === 'skill' && skillName) {
+      // Skill check
+      diceRoll = Math.floor(Math.random() * 20) + 1;
+      const skills = sheet.skills ? JSON.parse(sheet.skills) : {};
+      const skillData = skills[skillName];
+      modifier = skillData ? (skillData.total || 0) : 0;
+      total = diceRoll + modifier;
+      rollDescription = `${skillName} check`;
+    } else if (rollType === 'save') {
+      // Saving throw
+      diceRoll = Math.floor(Math.random() * 20) + 1;
+      const saveMap: { [key: string]: keyof typeof sheet } = {
+        'fortitude': 'fortitudeSave',
+        'reflex': 'reflexSave',
+        'will': 'willSave'
+      };
+      const saveKey = saveMap[stat];
+      modifier = saveKey ? (sheet[saveKey] as number || 0) : 0;
+      total = diceRoll + modifier;
+      rollDescription = `${stat.charAt(0).toUpperCase() + stat.slice(1)} save`;
+    } else {
+      // Standard ability check or attack
+      diceRoll = Math.floor(Math.random() * 20) + 1;
+      
+      if (stat) {
+        const validStats = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
+        if (!validStats.includes(stat)) {
+          return res.status(400).json({ error: 'Invalid stat name' });
+        }
+        const statValue = sheet[stat as keyof typeof sheet] as number;
+        modifier = calculateModifier(statValue);
+      }
+      
+      total = diceRoll + modifier;
+      rollDescription = stat ? `${stat.toUpperCase()} check` : 'Check';
+    }
 
     // Prepare Discord message
     const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
     const message = {
-      content: `🎲 **${username}** rolled for **${sheet.name}**'s **${stat.toUpperCase()}**\n` +
+      content: `🎲 **${username}** rolled for **${sheet.name}**'s **${rollDescription}**\n` +
                `Roll: ${diceRoll} ${modifierStr} = **${total}**`
     };
 
     // Send to Discord if webhook is configured
-    const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
     if (discordWebhookUrl) {
       try {
         const response = await fetch(discordWebhookUrl, {
@@ -408,14 +460,14 @@ router.post('/:id/roll', async (req, res) => {
         console.error('Error sending to Discord:', error);
         // Continue anyway - we'll still return the roll result
       }
-    } else {
-      console.warn('DISCORD_WEBHOOK_URL not configured - skipping Discord notification');
     }
 
     res.json({
       character: sheet.name,
       stat,
-      statValue,
+      skillName,
+      rollType,
+      rollDescription,
       modifier,
       diceRoll,
       total,

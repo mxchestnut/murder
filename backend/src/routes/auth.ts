@@ -231,4 +231,43 @@ router.post('/pathcompanion/disconnect', isAuthenticated, async (req, res) => {
   }
 });
 
+// Get Discord settings
+router.get('/discord-settings', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const [user] = await db.select({ 
+      webhookUrl: users.discordWebhookUrl 
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+    res.json({ webhookUrl: user?.webhookUrl || '' });
+  } catch (error) {
+    console.error('Failed to get Discord settings:', error);
+    res.status(500).json({ error: 'Failed to load Discord settings' });
+  }
+});
+
+// Save Discord settings
+router.post('/discord-settings', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const { webhookUrl } = req.body;
+
+    // Validate webhook URL format if provided
+    if (webhookUrl && !webhookUrl.startsWith('https://discord.com/api/webhooks/')) {
+      return res.status(400).json({ error: 'Invalid Discord webhook URL' });
+    }
+
+    await db.update(users)
+      .set({ discordWebhookUrl: webhookUrl || null })
+      .where(eq(users.id, userId));
+
+    res.json({ message: 'Discord settings saved successfully' });
+  } catch (error) {
+    console.error('Failed to save Discord settings:', error);
+    res.status(500).json({ error: 'Failed to save Discord settings' });
+  }
+});
+
 export default router;

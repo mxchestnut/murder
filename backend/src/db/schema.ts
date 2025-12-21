@@ -12,6 +12,8 @@ export const users = pgTable('users', {
   pathCompanionSessionTicket: text('path_companion_session_ticket'),
   pathCompanionPlayfabId: text('path_companion_playfab_id'),
   pathCompanionConnectedAt: timestamp('path_companion_connected_at'),
+  // Discord integration
+  discordWebhookUrl: text('discord_webhook_url'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 

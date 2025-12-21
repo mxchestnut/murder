@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import HamburgerSidebar from './HamburgerSidebar';
 import Editor from './Editor';
-import MessagingPanel from './MessagingPanel';
 import Settings from './Settings';
 import CharacterSheets from './CharacterSheets';
 import { api } from '../utils/api';
-import { FileText, MessageSquare, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices } from 'lucide-react';
+import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -16,17 +15,32 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [currentDocument, setCurrentDocument] = useState<any>(null);
   const [currentCharacter, setCurrentCharacter] = useState<any>(null);
-  const [showMessaging, setShowMessaging] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacterSheets, setShowCharacterSheets] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareDocument, setShareDocument] = useState<any>(null);
   const [shareUsername, setShareUsername] = useState('');
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
+  const [rollResult, setRollResult] = useState<any>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
     return (saved as 'light' | 'dark') || 'light';
   });
+
+  const handleRoll = async (stat: string, rollType: string = 'ability', skillName?: string) => {
+    if (!currentCharacter) return;
+    try {
+      const response = await api.post(`/characters/${currentCharacter.id}/roll`, { 
+        stat, 
+        rollType, 
+        skillName 
+      });
+      setRollResult(response.data);
+      setTimeout(() => setRollResult(null), 5000);
+    } catch (error) {
+      console.error('Error rolling dice:', error);
+    }
+  };
 
   const handleSelectDocument = (doc: any) => {
     setCurrentDocument(doc);
@@ -145,7 +159,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <button
               onClick={() => {
                 setShowCharacterSheets(!showCharacterSheets);
-                setShowMessaging(false);
                 setShowSettings(false);
               }}
               style={{
@@ -166,30 +179,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
-                setShowMessaging(!showMessaging);
-                setShowSettings(false);
-                setShowCharacterSheets(false);
-              }}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showMessaging ? 'var(--accent-2)' : 'var(--accent-1)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <MessageSquare size={18} />
-              Messages
-            </button>
-
-            <button
-              onClick={() => {
                 setShowSettings(!showSettings);
-                setShowMessaging(false);
                 setShowCharacterSheets(false);
               }}
               style={{
@@ -303,6 +293,30 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         </button>
                       </div>
 
+                      {/* Roll Result */}
+                      {rollResult && (
+                        <div style={{
+                          padding: '1rem',
+                          marginBottom: '1.5rem',
+                          background: 'var(--accent-2)',
+                          borderRadius: '8px',
+                          border: '2px solid var(--accent-1)',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                            {rollResult.rollDescription}
+                          </div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                            {rollResult.diceRoll} {rollResult.modifier >= 0 ? '+' : ''}{rollResult.modifier} = <span style={{ color: 'var(--accent-1)' }}>{rollResult.total}</span>
+                          </div>
+                          {rollResult.sentToDiscord && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                              ✓ Sent to Discord
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Ability Scores */}
                       <div style={{ 
                         display: 'grid', 
@@ -311,13 +325,28 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         marginBottom: '1.5rem'
                       }}>
                         {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
-                          <div key={stat} style={{
-                            padding: '0.75rem',
-                            borderRadius: '8px',
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-color)',
-                            textAlign: 'center'
-                          }}>
+                          <div 
+                            key={stat} 
+                            onClick={() => handleRoll(stat, 'ability')}
+                            style={{
+                              padding: '0.75rem',
+                              borderRadius: '8px',
+                              background: 'var(--bg-secondary)',
+                              border: '1px solid var(--border-color)',
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'var(--accent-2)';
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'var(--bg-secondary)';
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                            title="Click to roll"
+                          >
                             <div style={{ 
                               fontSize: '0.65rem', 
                               textTransform: 'uppercase', 
@@ -385,19 +414,79 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       <div style={{ marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Saving Throws</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                          <div 
+                            onClick={() => handleRoll('fortitude', 'save')}
+                            style={{ 
+                              padding: '0.75rem', 
+                              background: 'var(--bg-secondary)', 
+                              borderRadius: '6px', 
+                              border: '1px solid var(--border-color)', 
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'var(--accent-2)';
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'var(--bg-secondary)';
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                            title="Click to roll"
+                          >
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Fort</div>
                             <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                               {(currentCharacter.fortitudeSave || 0) >= 0 ? '+' : ''}{currentCharacter.fortitudeSave || 0}
                             </div>
                           </div>
-                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                          <div 
+                            onClick={() => handleRoll('reflex', 'save')}
+                            style={{ 
+                              padding: '0.75rem', 
+                              background: 'var(--bg-secondary)', 
+                              borderRadius: '6px', 
+                              border: '1px solid var(--border-color)', 
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'var(--accent-2)';
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'var(--bg-secondary)';
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                            title="Click to roll"
+                          >
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Ref</div>
                             <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                               {(currentCharacter.reflexSave || 0) >= 0 ? '+' : ''}{currentCharacter.reflexSave || 0}
                             </div>
                           </div>
-                          <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                          <div 
+                            onClick={() => handleRoll('will', 'save')}
+                            style={{ 
+                              padding: '0.75rem', 
+                              background: 'var(--bg-secondary)', 
+                              borderRadius: '6px', 
+                              border: '1px solid var(--border-color)', 
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'var(--accent-2)';
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'var(--bg-secondary)';
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                            title="Click to roll"
+                          >
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Will</div>
                             <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                               {(currentCharacter.willSave || 0) >= 0 ? '+' : ''}{currentCharacter.willSave || 0}
@@ -570,12 +659,40 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                           <div style={{ padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem', fontSize: '0.8rem' }}>
                               {Object.entries(currentCharacter.skills).map(([skillName, skillData]: [string, any]) => (
-                                <>
-                                  <div key={`${skillName}-name`} style={{ color: 'var(--text-primary)' }}>{skillName}</div>
-                                  <div key={`${skillName}-value`} style={{ color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+                                <div
+                                  key={skillName}
+                                  onClick={() => handleRoll('', 'skill', skillName)}
+                                  style={{
+                                    display: 'contents',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  <div 
+                                    style={{ 
+                                      color: 'var(--text-primary)',
+                                      padding: '0.25rem',
+                                      borderRadius: '4px',
+                                      transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-2)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  >
+                                    {skillName}
+                                  </div>
+                                  <div 
+                                    style={{ 
+                                      color: 'var(--text-secondary)', 
+                                      fontWeight: 'bold',
+                                      padding: '0.25rem',
+                                      borderRadius: '4px',
+                                      transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-2)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  >
                                     {skillData.total >= 0 ? '+' : ''}{skillData.total || 0}
                                   </div>
-                                </>
+                                </div>
                               ))}
                             </div>
                           </div>
@@ -615,10 +732,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </div>
               ) : null}
             </>
-          )}
-
-          {showMessaging && (
-            <MessagingPanel />
           )}
         </div>
       </div>

@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Link, Unlink, Loader } from 'lucide-react';
+import { Settings as SettingsIcon, Link, Unlink, Loader, Save } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface PathCompanionConnectionStatus {
   connected: boolean;
   username?: string;
+}
+
+interface DiscordSettings {
+  webhookUrl: string;
 }
 
 export default function Settings() {
@@ -15,9 +19,14 @@ export default function Settings() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  const [discordSettings, setDiscordSettings] = useState<DiscordSettings>({ webhookUrl: '' });
+  const [isSavingDiscord, setIsSavingDiscord] = useState(false);
+  const [discordMessage, setDiscordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadConnectionStatus();
+    loadDiscordSettings();
   }, []);
 
   const loadConnectionStatus = async () => {
@@ -29,6 +38,33 @@ export default function Settings() {
       });
     } catch (error) {
       console.error('Failed to load connection status:', error);
+    }
+  };
+
+  const loadDiscordSettings = async () => {
+    try {
+      const response = await api.get('/auth/discord-settings');
+      setDiscordSettings({ webhookUrl: response.data.webhookUrl || '' });
+    } catch (error) {
+      console.error('Failed to load Discord settings:', error);
+    }
+  };
+
+  const handleSaveDiscord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingDiscord(true);
+    setDiscordMessage(null);
+
+    try {
+      await api.post('/auth/discord-settings', discordSettings);
+      setDiscordMessage({ type: 'success', text: 'Discord webhook URL saved successfully!' });
+    } catch (error: any) {
+      setDiscordMessage({ 
+        type: 'error', 
+        text: error.response?.data?.error || 'Failed to save Discord settings.' 
+      });
+    } finally {
+      setIsSavingDiscord(false);
     }
   };
 
@@ -161,6 +197,58 @@ export default function Settings() {
               </form>
             </div>
           )}
+        </section>
+
+        <section className="settings-section">
+          <h2>Discord Integration</h2>
+          <p className="section-description">
+            Configure a Discord webhook to receive dice roll notifications when rolling from your character sheets.
+          </p>
+
+          {discordMessage && (
+            <div className={`message ${discordMessage.type}`}>
+              {discordMessage.text}
+            </div>
+          )}
+
+          <div className="connection-form">
+            <form onSubmit={handleSaveDiscord}>
+              <div className="form-group">
+                <label htmlFor="discord-webhook">Discord Webhook URL</label>
+                <input
+                  id="discord-webhook"
+                  type="url"
+                  value={discordSettings.webhookUrl}
+                  onChange={(e) => setDiscordSettings({ webhookUrl: e.target.value })}
+                  placeholder="https://discord.com/api/webhooks/..."
+                />
+                <p style={{ 
+                  fontSize: '0.85rem', 
+                  color: 'var(--text-secondary)', 
+                  marginTop: '0.5rem' 
+                }}>
+                  Get a webhook URL from your Discord server: Server Settings → Integrations → Webhooks
+                </p>
+              </div>
+              <button 
+                type="submit" 
+                className="button primary"
+                disabled={isSavingDiscord}
+              >
+                {isSavingDiscord ? (
+                  <>
+                    <Loader size={18} className="spinner" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    Save Discord Settings
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         </section>
       </div>
 

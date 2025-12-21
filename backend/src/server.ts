@@ -12,7 +12,6 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth';
 import documentRoutes from './routes/documents';
-import messageRoutes from './routes/messages';
 import characterRoutes from './routes/characters';
 import pathcompanionRoutes from './routes/pathcompanion';
 import { setupPassport } from './config/passport';
@@ -67,7 +66,6 @@ setupPassport();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
-app.use('/api/messages', messageRoutes);
 app.use('/api/characters', characterRoutes);
 app.use('/api/pathcompanion', pathcompanionRoutes);
 
