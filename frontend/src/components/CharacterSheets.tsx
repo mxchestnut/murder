@@ -694,6 +694,10 @@ export default function CharacterSheets() {
                 const defense = pcData.defense || {};
                 console.log('Defense object:', defense);
                 console.log('RAW defense.sr value:', defense.sr, 'Type:', typeof defense.sr);
+                console.log('characterInfo:', pcData.characterInfo);
+                console.log('Special abilities:', selectedSheet.specialAbilities);
+                console.log('Race info:', pcData.race);
+                
                 const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
                 const hasSR = defense.sr && (defense.sr.total || defense.sr) > 0;
                 const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
