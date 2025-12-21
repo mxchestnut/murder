@@ -582,7 +582,8 @@ export function extractBasicInfo(characterData: any) {
     race: charInfo.race || charInfo.raceName || '',
     alignment: charInfo.alignment || '',
     deity: charInfo.deity || charInfo.god || '',
-    size: charInfo.size || 'Medium'
+    size: charInfo.size || 'Medium',
+    avatarUrl: charInfo.portrait || charInfo.portraitUrl || charInfo.image || charInfo.avatar || null
   };
 }
 

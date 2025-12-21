@@ -3,8 +3,9 @@ import HamburgerSidebar from './HamburgerSidebar';
 import Editor from './Editor';
 import Settings from './Settings';
 import CharacterSheets from './CharacterSheets';
+import DiscordCommands from './DiscordCommands';
 import { api } from '../utils/api';
-import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices } from 'lucide-react';
+import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -17,6 +18,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentCharacter, setCurrentCharacter] = useState<any>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showCharacterSheets, setShowCharacterSheets] = useState(false);
+  const [showDiscordCommands, setShowDiscordCommands] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareDocument, setShareDocument] = useState<any>(null);
   const [shareUsername, setShareUsername] = useState('');
@@ -160,6 +162,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               onClick={() => {
                 setShowCharacterSheets(!showCharacterSheets);
                 setShowSettings(false);
+                setShowDiscordCommands(false);
               }}
               style={{
                 padding: '0.5rem 1rem',
@@ -179,8 +182,31 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
+                setShowDiscordCommands(!showDiscordCommands);
+                setShowSettings(false);
+                setShowCharacterSheets(false);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showDiscordCommands ? 'var(--accent-2)' : 'var(--accent-1)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <MessageCircle size={18} />
+              Discord
+            </button>
+
+            <button
+              onClick={() => {
                 setShowSettings(!showSettings);
                 setShowCharacterSheets(false);
+                setShowDiscordCommands(false);
               }}
               style={{
                 padding: '0.5rem 1rem',
@@ -229,6 +255,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           ) : showCharacterSheets ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <CharacterSheets />
+            </div>
+          ) : showDiscordCommands ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <DiscordCommands />
             </div>
           ) : (
             <>
