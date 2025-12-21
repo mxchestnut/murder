@@ -714,11 +714,14 @@ export default function CharacterSheets() {
                           <div style={{ flex: '1 1 100%' }}>
                             <strong>Damage Reduction:</strong>
                             <div style={{ marginTop: '0.5rem' }}>
-                              {Object.entries(defense.dr).map(([type, value]: [string, any]) => (
-                                <div key={type} style={{ marginLeft: '1rem' }}>
-                                  {value.total || value}/{type}
-                                </div>
-                              ))}
+                              {Object.entries(defense.dr).map(([type, value]: [string, any]) => {
+                                const drValue = typeof value === 'object' ? (value.total || 0) : value;
+                                return (
+                                  <div key={type} style={{ marginLeft: '1rem' }}>
+                                    {drValue}/{type}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
@@ -726,11 +729,14 @@ export default function CharacterSheets() {
                           <div style={{ flex: '1 1 100%' }}>
                             <strong>Resistances:</strong>
                             <div style={{ marginTop: '0.5rem' }}>
-                              {Object.entries(defense.resistances).map(([type, value]: [string, any]) => (
-                                <div key={type} style={{ marginLeft: '1rem' }}>
-                                  {type} {value.total || value}
-                                </div>
-                              ))}
+                              {Object.entries(defense.resistances).map(([type, value]: [string, any]) => {
+                                const resValue = typeof value === 'object' ? (value.total || 0) : value;
+                                return (
+                                  <div key={type} style={{ marginLeft: '1rem' }}>
+                                    {type} {resValue}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
