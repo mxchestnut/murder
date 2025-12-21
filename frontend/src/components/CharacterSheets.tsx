@@ -688,12 +688,16 @@ export default function CharacterSheets() {
             {/* Defensive Abilities */}
             {selectedSheet.pathCompanionData && (() => {
               try {
+                console.log('PathCompanion Data exists, parsing...');
                 const pcData = JSON.parse(selectedSheet.pathCompanionData);
+                console.log('Parsed PathCompanion data:', pcData);
                 const defense = pcData.defense || {};
+                console.log('Defense object:', defense);
                 const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
                 const hasSR = defense.sr && (defense.sr.total || defense.sr) > 0;
                 const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
                 const hasImmunities = defense.immunities && defense.immunities.length > 0;
+                console.log('Defensive abilities check:', { hasDR, hasSR, hasResistances, hasImmunities });
                 
                 if (hasDR || hasSR || hasResistances || hasImmunities) {
                   return (
