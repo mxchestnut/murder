@@ -693,6 +693,7 @@ export default function CharacterSheets() {
                 console.log('Parsed PathCompanion data:', pcData);
                 const defense = pcData.defense || {};
                 console.log('Defense object:', defense);
+                console.log('RAW defense.sr value:', defense.sr, 'Type:', typeof defense.sr);
                 const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
                 const hasSR = defense.sr && (defense.sr.total || defense.sr) > 0;
                 const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
