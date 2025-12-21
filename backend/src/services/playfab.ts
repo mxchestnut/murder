@@ -132,21 +132,26 @@ export async function getCharacterList(sessionTicket: string): Promise<PathCompa
     
     console.log('Fetching character list, userData keys:', Object.keys(userData));
     
-    // PathCompanion might store character list in user data
-    // The exact structure depends on how PathCompanion implements it
+    // PathCompanion stores compressed character data
     const characters: PathCompanionCharacter[] = [];
+    const zlib = require('zlib');
 
-    // Look for character data keys
+    // Look for character data keys (skip portraits and shared data)
     for (const [key, value] of Object.entries(userData)) {
-      if (key.startsWith('Character_') || key.toLowerCase().includes('character')) {
+      // Only process character1, character2, etc. - skip portraits, gm, and shared
+      if (key.match(/^character\d+$/)) {
         try {
-          console.log(`Processing character key: ${key}, value type:`, typeof value, 'value:', value);
+          console.log(`Processing character key: ${key}`);
           
-          // PlayFab UserData has structure: { Value: "json string", LastUpdated: "date" }
+          // PlayFab UserData has structure: { Value: "compressed data", LastUpdated: "date" }
           const rawValue = (value as any).Value || value;
-          const charData = typeof rawValue === 'string' ? JSON.parse(rawValue) : rawValue;
           
-          console.log(`Parsed character data for ${key}:`, JSON.stringify(charData).substring(0, 200));
+          // PathCompanion stores zlib-compressed, base64-encoded data
+          const compressed = Buffer.from(rawValue, 'base64');
+          const decompressed = zlib.inflateSync(compressed);
+          const charData = JSON.parse(decompressed.toString('utf-8'));
+          
+          console.log(`Decompressed character ${key}:`, charData.name || charData.characterName || 'Unknown');
           
           characters.push({
             characterId: key,
@@ -155,7 +160,7 @@ export async function getCharacterList(sessionTicket: string): Promise<PathCompa
             lastModified: new Date((value as any).LastUpdated || charData.lastModified || Date.now()),
           });
         } catch (e) {
-          console.error(`Failed to parse character data for ${key}:`, e);
+          console.error(`Failed to decompress character data for ${key}:`, e);
         }
       }
     }
