@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Editor from './Editor';
 import MessagingPanel from './MessagingPanel';
+import CharacterSheets from './CharacterSheets';
 import { api } from '../utils/api';
-import { FileText, MessageSquare, LogOut, Sun, Moon, X } from 'lucide-react';
+import { FileText, MessageSquare, LogOut, Sun, Moon, X, Dices } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -14,6 +15,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [currentDocument, setCurrentDocument] = useState<any>(null);
   const [showMessaging, setShowMessaging] = useState(false);
+  const [showCharacters, setShowCharacters] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareDocument, setShareDocument] = useState<any>(null);
   const [shareUsername, setShareUsername] = useState('');
@@ -124,7 +126,31 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </button>
 
             <button
-              onClick={() => setShowMessaging(!showMessaging)}
+              onClick={() => {
+                setShowCharacters(!showCharacters);
+                setShowMessaging(false);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showCharacters ? 'var(--accent-2)' : 'var(--accent-1)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <Dices size={18} />
+              Characters
+            </button>
+
+            <button
+              onClick={() => {
+                setShowMessaging(!showMessaging);
+                setShowCharacters(false);
+              }}
               style={{
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
@@ -166,7 +192,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         {/* Content Area */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           <div style={{ flex: 1, overflow: 'auto' }}>
-            {currentDocument && !currentDocument.isFolder ? (
+            {showCharacters ? (
+              <CharacterSheets />
+            ) : currentDocument && !currentDocument.isFolder ? (
               <Editor 
                 document={currentDocument} 
                 onSave={(content) => {

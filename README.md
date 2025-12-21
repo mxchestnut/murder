@@ -8,10 +8,12 @@ A secure, private portal with username/password authentication, rich text editin
 📝 **Rich Text Editor** - Tiptap 3.0 with full extensions  
 📁 **Document Management** - Nested folders, upload/download (Google Drive-like)  
 💬 **Matrix Messaging** - Real-time messaging between users  
+� **Character Sheets** - D&D-style character sheets with dice rolling to Discord  
+🎮 **PathCompanion Integration** - Import Pathfinder 2e characters from PathCompanion.com  
 🎨 **Obsidian-like UI** - Dark theme with sidebar navigation  
 🔒 **Tailscale VPN** - Network-level security, no public exposure  
 ☁️ **AWS S3 Storage** - Secure cloud file storage  
-🐘 **PostgreSQL** - Reliable data persistence  
+🐘 **PostgreSQL** - Reliable data persistence (Neon serverless)
 
 ## Tech Stack
 
@@ -65,17 +67,23 @@ AWS_ACCESS_KEY_ID=your-key
 AWS_SECRET_ACCESS_KEY=your-secret
 AWS_S3_BUCKET=cyarika-documents
 MATRIX_HOMESERVER_URL=https://matrix.org
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 ```
 
-### 3. Setup Database
-```bash
-# Create database
-createdb cyarika
+**Discord Webhook Setup (Optional):**
+1. Go to your Discord server settings → Integrations → Webhooks
+2. Create a new webhook or copy an existing one
+3. Add the webhook URL to your `.env` file
+4. Dice rolls from character sheets will be posted to this Discord channel
 
-# Run migrations
+### 3. Setup Database
+
+This project uses **Neon** (serverless PostgreSQL), so no local database setup needed!
+
+```bash
+# Just push your schema to Neon
 cd backend
-npm run db:generate
-npm run db:migrate
+npm run db:push
 ```
 
 ### 4. Run Development
@@ -197,6 +205,21 @@ See [MATRIX.md](MATRIX.md) for detailed instructions.
 - `GET /api/messages/room/:roomId` - Get messages
 - `POST /api/messages/dm` - Create/get DM room
 
+### Character Sheets
+- `GET /api/documents/character-sheets` - List all character sheets
+- `POST /api/documents/character-sheets` - Create character sheet
+- `PUT /api/documents/character-sheets/:id` - Update character sheet
+- `DELETE /api/documents/character-sheets/:id` - Delete character sheet
+- `POST /api/documents/character-sheets/:id/roll` - Roll dice (with Discord webhook)
+
+### PathCompanion Integration
+- `POST /api/pathcompanion/login` - Login to PathCompanion account
+- `POST /api/pathcompanion/characters` - Get PathCompanion character list
+- `POST /api/pathcompanion/import` - Import character from PathCompanion
+- `POST /api/pathcompanion/sync/:id` - Sync character updates from PathCompanion
+
+See [PATHCOMPANION_INTEGRATION.md](PATHCOMPANION_INTEGRATION.md) for detailed integration docs.
+
 ## Security Considerations
 
 ✅ **Network Security**: Tailscale VPN protects against public internet threats  
@@ -265,6 +288,11 @@ pm2 status
 - Check Matrix credentials
 - For self-hosted: ensure Synapse is running
 
+**PathCompanion import fails**
+- Verify PathCompanion username/password are correct
+- Check that you have characters in your PathCompanion account
+- See [PATHCOMPANION_TESTING.md](PATHCOMPANION_TESTING.md) for detailed troubleshooting
+
 **Can't access via Tailscale**
 - Verify Tailscale is running: `tailscale status`
 - Check ACLs in Tailscale admin
@@ -279,6 +307,9 @@ pm2 status
 - [ ] Search functionality
 - [ ] Tags and metadata
 - [ ] Shared folders between users
+- [ ] Import skills, feats, and spells from PathCompanion
+- [ ] Two-way sync with PathCompanion
+- [ ] Support for additional character systems (D&D 5e, etc.)
 
 ## License
 
@@ -289,7 +320,9 @@ MIT
 For issues, please check:
 1. [TAILSCALE.md](TAILSCALE.md) - VPN setup
 2. [MATRIX.md](MATRIX.md) - Messaging setup
-3. GitHub Issues (if public repo)
+3. [PATHCOMPANION_INTEGRATION.md](PATHCOMPANION_INTEGRATION.md) - PathCompanion integration
+4. [PATHCOMPANION_TESTING.md](PATHCOMPANION_TESTING.md) - Testing guide
+5. GitHub Issues (if public repo)
 
 ---
 

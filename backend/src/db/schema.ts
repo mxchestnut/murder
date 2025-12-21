@@ -31,10 +31,35 @@ export const sharedDocuments = pgTable('shared_documents', {
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
+export const characterSheets = pgTable('character_sheets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  name: text('name').notNull(),
+  // Core stats (3-18 range typical for D&D)
+  strength: integer('strength').notNull().default(10),
+  dexterity: integer('dexterity').notNull().default(10),
+  constitution: integer('constitution').notNull().default(10),
+  intelligence: integer('intelligence').notNull().default(10),
+  wisdom: integer('wisdom').notNull().default(10),
+  charisma: integer('charisma').notNull().default(10),
+  // Additional info
+  characterClass: text('character_class'),
+  level: integer('level').default(1),
+  // PathCompanion integration
+  isPathCompanion: boolean('is_path_companion').default(false),
+  pathCompanionId: text('path_companion_id'), // Character ID in PlayFab
+  pathCompanionData: text('path_companion_data'), // JSON string of full character data
+  pathCompanionSession: text('path_companion_session'), // Session ticket for syncing
+  lastSynced: timestamp('last_synced'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   documents: many(documents),
-  sharedDocuments: many(sharedDocuments)
+  sharedDocuments: many(sharedDocuments),
+  characterSheets: many(characterSheets)
 }));
 
 export const documentsRelations = relations(documents, ({ one, many }) => ({
@@ -57,6 +82,13 @@ export const sharedDocumentsRelations = relations(sharedDocuments, ({ one }) => 
   }),
   user: one(users, {
     fields: [sharedDocuments.userId],
+    references: [users.id]
+  })
+}));
+
+export const characterSheetsRelations = relations(characterSheets, ({ one }) => ({
+  user: one(users, {
+    fields: [characterSheets.userId],
     references: [users.id]
   })
 }));
