@@ -396,7 +396,17 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
       rollType = 'skill';
       const skills = character.skills as any;
       if (skills && typeof skills === 'object') {
-        const skillKey = Object.keys(skills).find(k => k.toLowerCase().includes(statName));
+        // Try exact match first, then partial match
+        let skillKey = Object.keys(skills).find(k => k.toLowerCase() === statName);
+        if (!skillKey) {
+          // Try partial match - check if the search term is in the skill name
+          skillKey = Object.keys(skills).find(k => k.toLowerCase().includes(statName));
+        }
+        if (!skillKey) {
+          // Try reverse - check if skill name starts with search term
+          skillKey = Object.keys(skills).find(k => statName.includes(k.toLowerCase()));
+        }
+        
         if (skillKey && skills[skillKey]) {
           modifier = skills[skillKey].total || 0;
           rollDescription = `${skillKey} Check`;
