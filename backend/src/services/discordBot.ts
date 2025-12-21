@@ -3,6 +3,7 @@ import { db } from '../db';
 import { channelCharacterMappings, characterSheets, users } from '../db/schema';
 import { eq, and, or, sql } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
+import crypto from 'crypto';
 
 let botClient: Client | null = null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
@@ -68,6 +69,9 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'roll':
           await handleRoll(message, args);
+          break;
+        case 'connect':
+          await handleConnect(message, args);
           break;
         case 'syncall':
           await handleSyncAll(message);
@@ -278,6 +282,80 @@ async function handleRoll(message: Message, args: string[]) {
   await message.reply({ embeds: [embed] });
 }
 
+// Encryption utilities for PathCompanion password
+const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const ALGORITHM = 'aes-256-cbc';
+
+function encryptPassword(password: string): string {
+  const iv = crypto.randomBytes(16);
+  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  let encrypted = cipher.update(password, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+async function handleConnect(message: Message, args: string[]) {
+  // Delete the message immediately to protect credentials
+  await message.delete().catch(() => {});
+
+  if (args.length < 2) {
+    await message.author.send('❌ **Usage:** `!connect <username/email> <password>`\n\n' +
+      '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only stored encrypted in the database.\n\n' +
+      '**Example:** `!connect myemail@example.com mypassword`\n\n' +
+      'After connecting, you can use `!syncall` to import all your PathCompanion characters.');
+    return;
+  }
+
+  const username = args[0];
+  const password = args.slice(1).join(' '); // Allow passwords with spaces
+
+  try {
+    // Send a DM to the user for privacy
+    await message.author.send('🔐 Connecting to PathCompanion...');
+
+    // Try to login to PathCompanion
+    const auth = await PlayFabService.loginToPlayFab(username, password);
+
+    // Get the user record
+    const userRecords = await db.select().from(users).limit(1);
+    if (userRecords.length === 0) {
+      await message.author.send('❌ No user found in database. Please create an account on the Cyarika Portal first.');
+      return;
+    }
+
+    const user = userRecords[0];
+
+    // Encrypt and store the credentials
+    const encryptedPassword = encryptPassword(password);
+
+    await db.update(users)
+      .set({
+        pathCompanionUsername: username,
+        pathCompanionPassword: encryptedPassword,
+        pathCompanionSessionTicket: auth.sessionTicket,
+        pathCompanionPlayfabId: auth.playfabId,
+        pathCompanionConnectedAt: new Date()
+      })
+      .where(eq(users.id, user.id));
+
+    await message.author.send('✅ **Successfully connected to PathCompanion!**\n\n' +
+      `Account: ${username}\n` +
+      `PlayFab ID: ${auth.playfabId}\n\n` +
+      'You can now use `!syncall` to import all your characters from PathCompanion.');
+
+    console.log(`PathCompanion connected for user via Discord: ${username}`);
+
+  } catch (error) {
+    console.error('Discord PathCompanion connect error:', error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    
+    await message.author.send('❌ **Failed to connect to PathCompanion.**\n\n' +
+      `Error: ${errorMsg}\n\n` +
+      'Please check your username/email and password and try again.');
+  }
+}
+
 async function handleSyncAll(message: Message) {
   await message.reply('🔄 Syncing all characters from PathCompanion... This may take a moment.');
 
@@ -470,11 +548,12 @@ async function handleSyncAll(message: Message) {
     
     if (errorMsg.includes('Must be logged in') || errorMsg.includes('session')) {
       await message.reply('❌ **PathCompanion session expired.**\n\n' +
-        '**To fix this:**\n' +
-        '1. Go to http://54.242.214.56 (Cyarika Portal)\n' +
-        '2. Click **Settings** (gear icon)\n' +
-        '3. Re-enter your PathCompanion credentials and click **Connect**\n' +
-        '4. Come back to Discord and try `!syncall` again');
+        '**Quick fix from Discord:**\n' +
+        '`!connect <your_email> <your_password>`\n\n' +
+        '**Or via Portal:**\n' +
+        '1. Go to http://54.242.214.56\n' +
+        '2. Click Settings → Re-enter PathCompanion credentials\n\n' +
+        '⚠️ The `!connect` command will be deleted for security, and your credentials are stored encrypted.');
     } else {
       await message.reply('❌ Failed to sync characters. Error: ' + errorMsg);
     }
@@ -487,10 +566,11 @@ async function handleHelp(message: Message) {
     .setTitle('📖 Cyarika Bot Commands')
     .setDescription('Roll dice, proxy as characters, and manage your Pathfinder characters!')
     .addFields(
+      { name: '!connect <email> <password>', value: 'Connect your PathCompanion account (sent via DM for security)', inline: false },
+      { name: '!syncall', value: 'Import/sync all characters from PathCompanion', inline: false },
       { name: '!setchar <name>', value: 'Link this channel to a character', inline: false },
       { name: '!char', value: 'Show which character is linked to this channel', inline: false },
       { name: '!roll <stat/save/skill>', value: 'Roll a check for the linked character', inline: false },
-      { name: '!syncall', value: 'Import/sync all characters from PathCompanion', inline: false },
       { name: '!CharName <stat/save/skill>', value: 'Roll a check for any character by name\nExample: `!Ogun strength`', inline: false },
       { name: 'CharName: message', value: 'Speak as a character (proxying)\nExample: `Ogun: Hello everyone!`', inline: false },
       { name: '!help', value: 'Show this help message', inline: false }
