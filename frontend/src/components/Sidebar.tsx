@@ -298,26 +298,66 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
           {characters.map((char) => (
             <div
               key={char.id}
-              onClick={() => onSelectCharacter(char)}
               style={{
                 padding: '0.5rem',
                 borderRadius: '4px',
-                cursor: 'pointer',
                 background: currentCharacter?.id === char.id ? 'var(--accent-2)' : 'transparent',
                 marginBottom: '0.25rem',
                 color: 'var(--text-primary)',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
             >
-              <div style={{ fontWeight: 500 }}>
-                {char.name}
-                {char.isPathCompanion && (
-                  <ExternalLink size={10} style={{ marginLeft: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
-                )}
+              <div 
+                onClick={() => onSelectCharacter(char)}
+                style={{ flex: 1, cursor: 'pointer' }}
+              >
+                <div style={{ fontWeight: 500 }}>
+                  {char.name}
+                  {char.isPathCompanion && (
+                    <ExternalLink size={10} style={{ marginLeft: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
+                  )}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                  {char.characterClass && `${char.characterClass} `}Level {char.level}
+                </div>
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-                {char.characterClass && `${char.characterClass} `}Level {char.level}
-              </div>
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (confirm(`Delete character "${char.name}"? This cannot be undone.`)) {
+                    try {
+                      await api.delete(`/characters/${char.id}`);
+                      loadCharacters();
+                      if (currentCharacter?.id === char.id) {
+                        onSelectCharacter(null);
+                      }
+                    } catch (error) {
+                      console.error('Error deleting character:', error);
+                      alert('Failed to delete character');
+                    }
+                  }
+                }}
+                style={{
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                title="Delete character"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
           ))}
         </div>

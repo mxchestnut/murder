@@ -3,6 +3,7 @@ import PlayFabClient from 'playfab-sdk/Scripts/PlayFab/PlayFabClient';
 // @ts-ignore - PlayFab SDK doesn't have full TypeScript definitions
 import PlayFabServer from 'playfab-sdk/Scripts/PlayFab/PlayFabServer';
 import * as zlib from 'zlib';
+import axios from 'axios';
 
 // PathCompanion Title ID (publicly visible)
 const TITLE_ID = 'BCA4C';
@@ -624,11 +625,115 @@ export function extractCasterInfo(characterData: any) {
   };
 }
 
+/**
+ * Export character data TO PathCompanion
+ */
+export async function exportCharacterToPathCompanion(
+  sessionTicket: string,
+  characterName: string,
+  characterData: any
+): Promise<{ characterId: string; message: string }> {
+  try {
+    // Get existing user data to find next available slot
+    const userData = await getUserData(sessionTicket);
+    
+    // Find next available character slot (character1, character2, etc.)
+    let slotNumber = 1;
+    while (userData[`character${slotNumber}`] && slotNumber < 100) {
+      slotNumber++;
+    }
+    
+    const characterId = `character${slotNumber}`;
+    
+    // Format character data for PathCompanion
+    const pathCompanionData = {
+      name: characterData.name,
+      characterInfo: {
+        name: characterData.name,
+        race: characterData.race || '',
+        characterClass: characterData.characterClass || '',
+        level: characterData.level || 1,
+        alignment: characterData.alignment || '',
+        deity: characterData.deity || '',
+        size: characterData.size || 'Medium',
+        portrait: characterData.avatarUrl || '',
+      },
+      abilityScores: {
+        Strength: characterData.strength || 10,
+        Dexterity: characterData.dexterity || 10,
+        Constitution: characterData.constitution || 10,
+        Intelligence: characterData.intelligence || 10,
+        Wisdom: characterData.wisdom || 10,
+        Charisma: characterData.charisma || 10,
+      },
+      combat: {
+        currentHp: characterData.currentHp || characterData.maxHp || 10,
+        maxHp: characterData.maxHp || 10,
+        tempHp: characterData.tempHp || 0,
+        armorClass: characterData.armorClass || 10,
+        touchAc: characterData.touchAc || 10,
+        flatFootedAc: characterData.flatFootedAc || 10,
+        initiative: characterData.initiative || 0,
+        speed: characterData.speed || 30,
+        baseAttackBonus: characterData.baseAttackBonus || 0,
+        cmb: characterData.cmb || 0,
+        cmd: characterData.cmd || 10,
+      },
+      saves: {
+        fortitude: characterData.fortitudeSave || 0,
+        reflex: characterData.reflexSave || 0,
+        will: characterData.willSave || 0,
+      },
+      skills: characterData.skills || {},
+      feats: characterData.feats || [],
+      specialAbilities: characterData.specialAbilities || [],
+      weapons: characterData.weapons || [],
+      armor: characterData.armor || {},
+      spells: characterData.spells || {},
+    };
+    
+    // Update user data in PlayFab
+    const response = await axios.post(
+      'https://pathcompanion.com/Server/UpdateUserData',
+      {
+        SessionTicket: sessionTicket,
+        Data: {
+          [characterId]: JSON.stringify(pathCompanionData),
+        },
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    if (response.data.code !== 200) {
+      throw new Error(response.data.errorMessage || 'Failed to export character');
+    }
+    
+    return {
+      characterId,
+      message: `Character exported successfully to PathCompanion as ${characterId}`,
+    };
+  } catch (error) {
+    console.error('Error exporting character to PathCompanion:', error);
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as any;
+      if (axiosError.response) {
+        throw new Error(axiosError.response.data.errorMessage || 'Failed to export character to PathCompanion');
+      }
+    }
+    throw new Error('Failed to export character to PathCompanion');
+  }
+}
+
 export default {
   loginToPlayFab,
   getUserData,
   getCharacterFromShareKey,
   getCharacter,
+  exportCharacterToPathCompanion,
   extractAbilityScores,
   extractCharacterLevel,
   calculateModifier,

@@ -15,7 +15,8 @@ import {
   MessageCircle,
   Download,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Upload
 } from 'lucide-react';
 
 interface CharacterSheet {
@@ -410,6 +411,26 @@ export default function CharacterSheets() {
     }
   };
 
+  const exportToPathCompanion = async (sheetId: number) => {
+    if (!confirm('This will export this character to your PathCompanion account. Continue?')) {
+      return;
+    }
+    
+    try {
+      const response = await api.post(`/pathcompanion/export/${sheetId}`);
+      const updatedSheets = sheets.map(s => s.id === sheetId ? { ...s, isPathCompanion: true, pathCompanionId: response.data.characterId } : s);
+      setSheets(updatedSheets);
+      if (selectedSheet?.id === sheetId) {
+        setSelectedSheet({ ...selectedSheet, isPathCompanion: true, pathCompanionId: response.data.characterId });
+      }
+      alert(response.data.message || 'Character exported successfully!');
+    } catch (error: any) {
+      console.error('Failed to export to PathCompanion:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to export character to PathCompanion.';
+      alert(errorMsg);
+    }
+  };
+
   const importAllCharacters = async () => {
     if (pathCompanionCharacters.length === 0) {
       alert('No characters to import');
@@ -547,7 +568,7 @@ export default function CharacterSheets() {
                 </div>
               </div>
               <div className="character-item-actions">
-                {sheet.isPathCompanion && (
+                {sheet.isPathCompanion ? (
                   <button 
                     className="icon-button secondary"
                     onClick={(e) => {
@@ -557,6 +578,17 @@ export default function CharacterSheets() {
                     title="Sync from PathCompanion"
                   >
                     <RefreshCw size={16} />
+                  </button>
+                ) : (
+                  <button 
+                    className="icon-button secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      exportToPathCompanion(sheet.id);
+                    }}
+                    title="Export to PathCompanion"
+                  >
+                    <Upload size={16} />
                   </button>
                 )}
                 <button 

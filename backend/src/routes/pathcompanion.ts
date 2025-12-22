@@ -613,4 +613,98 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
   }
 });
 
+/**
+ * Export character TO PathCompanion
+ * POST /api/pathcompanion/export/:id
+ */
+router.post('/export/:id', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const sheetId = parseInt(req.params.id);
+    const user = req.user as any;
+
+    if (!user.pathCompanionSessionTicket) {
+      return res.status(400).json({ 
+        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.' 
+      });
+    }
+
+    // Get the character sheet
+    const [sheet] = await db.select().from(characterSheets).where(
+      eq(characterSheets.id, sheetId)
+    );
+
+    if (!sheet) {
+      return res.status(404).json({ error: 'Character sheet not found' });
+    }
+
+    if (sheet.userId !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Export character to PathCompanion
+    const result = await PlayFabService.exportCharacterToPathCompanion(
+      user.pathCompanionSessionTicket,
+      sheet.name,
+      {
+        name: sheet.name,
+        race: sheet.race,
+        characterClass: sheet.characterClass,
+        level: sheet.level,
+        alignment: sheet.alignment,
+        deity: sheet.deity,
+        size: sheet.size,
+        avatarUrl: sheet.avatarUrl,
+        strength: sheet.strength,
+        dexterity: sheet.dexterity,
+        constitution: sheet.constitution,
+        intelligence: sheet.intelligence,
+        wisdom: sheet.wisdom,
+        charisma: sheet.charisma,
+        currentHp: sheet.currentHp,
+        maxHp: sheet.maxHp,
+        tempHp: sheet.tempHp,
+        armorClass: sheet.armorClass,
+        touchAc: sheet.touchAc,
+        flatFootedAc: sheet.flatFootedAc,
+        initiative: sheet.initiative,
+        speed: sheet.speed,
+        baseAttackBonus: sheet.baseAttackBonus,
+        cmb: sheet.cmb,
+        cmd: sheet.cmd,
+        fortitudeSave: sheet.fortitudeSave,
+        reflexSave: sheet.reflexSave,
+        willSave: sheet.willSave,
+        skills: sheet.skills,
+        feats: sheet.feats,
+        specialAbilities: sheet.specialAbilities,
+        weapons: sheet.weapons,
+        armor: sheet.armor,
+        spells: sheet.spells,
+      }
+    );
+
+    // Update the character sheet to mark it as linked to PathCompanion
+    await db.update(characterSheets)
+      .set({
+        isPathCompanion: true,
+        pathCompanionId: result.characterId,
+        pathCompanionSession: user.pathCompanionSessionTicket,
+        lastSynced: new Date(),
+      })
+      .where(eq(characterSheets.id, sheetId));
+
+    res.json({
+      message: result.message,
+      characterId: result.characterId,
+    });
+  } catch (error) {
+    console.error('Failed to export character to PathCompanion:', error);
+    res.status(500).json({ 
+      error: 'Failed to export character to PathCompanion',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
