@@ -1,0 +1,41 @@
+# Allow example/template credentials in documentation and config files
+your-secret-key
+your-secret-key-change-in-production
+your_random_secret_here
+your-session-secret-here
+your-matrix-access-token-here
+your_bot_token
+your-access-key
+your-aws-access-key-here
+your-secret
+your-secret-key-here
+YOUR_WEBHOOK_ID
+YOUR_WEBHOOK_TOKEN
+YOUR_TOKEN
+username:password@localhost
+username:password@host
+username:password@ep-xxx
+user:password@host/database
+generate-a-long-random-string-here
+your_password
+mypassword
+change_this_password
+OPENAI_API_KEY=your_openai_key
+<long_generated_secret>
+
+# Allow environment variable references in code
+process\.env\.DATABASE_URL
+process\.env\.SESSION_SECRET
+process\.env\.DISCORD_BOT_TOKEN
+process\.env\.PATHCOMPANION_ENCRYPTION_KEY
+process\.env\.ENCRYPTION_KEY
+Buffer\.from\(ENCRYPTION_KEY
+
+# Allow documentation references
+DATABASE_URL in \.env
+your Neon DATABASE_URL
+strong SESSION_SECRET
+DISCORD_BOT_TOKEN=\.\.\.
+DATABASE_URL=postgresql://\.\.\.
+
+

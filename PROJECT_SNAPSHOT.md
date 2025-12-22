@@ -149,15 +149,15 @@ Located at: `/home/ubuntu/cyarika/.env`
 ```env
 NODE_ENV=production
 PORT=3000
-FRONTEND_URL=https://cyarika.com
-DATABASE_URL=postgresql://neondb_owner:npg_RkD5GsQSg4wl@ep-floral-surf-ad39gk34-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-SESSION_SECRET=<long_generated_secret>
+FRONTEND_URL=https://writepretend.com
+DATABASE_URL=postgresql://username:password@host/database?sslmode=require
+SESSION_SECRET=your-session-secret-here
 MATRIX_HOMESERVER_URL=https://matrix.org
-MATRIX_ACCESS_TOKEN=mat_1JL4Yj3ZdXwmJ1sW42CnbB407kAnik_0hC8Zp
+MATRIX_ACCESS_TOKEN=your-matrix-access-token-here
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your-aws-access-key-here
 AWS_SECRET_ACCESS_KEY=your-aws-secret-key-here
-AWS_S3_BUCKET=cyarika-documents
+AWS_S3_BUCKET=writepretend-documents
 ```
 
 ## 🚀 Deployment Process

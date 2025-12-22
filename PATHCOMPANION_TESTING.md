@@ -144,7 +144,7 @@ Check that data is correctly stored:
 
 ```bash
 # Connect to Neon database
-psql "postgresql://neondb_owner:npg_RkD5GsQSg4wl@ep-floral-surf-ad39gk34-pooler.us-east-1.aws.neon.tech/neondb"
+psql "postgresql://username:password@host/database"
 
 # Query character sheets
 SELECT id, name, "characterClass", level, "isPathCompanion", "pathCompanionId" 
