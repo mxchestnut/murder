@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Link, Unlink, Loader, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Link, Unlink, Loader, Save, Sun, Moon, Palette } from 'lucide-react';
 import { api } from '../utils/api';
+import { useTheme } from '../utils/useTheme';
 
 interface PathCompanionConnectionStatus {
   connected: boolean;
@@ -13,6 +14,8 @@ interface DiscordSettings {
 }
 
 export default function Settings() {
+  const { theme, setThemeMode, setAccentColor, presetColors } = useTheme();
+  
   const [pathCompanion, setPathCompanion] = useState<PathCompanionConnectionStatus>({
     connected: false
   });
@@ -115,6 +118,72 @@ export default function Settings() {
       </div>
 
       <div className="settings-content">
+        {/* Appearance Settings */}
+        <section className="settings-section">
+          <h2>
+            <Palette size={24} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            Appearance
+          </h2>
+          <p className="section-description">
+            Customize the look and feel of Write Pretend with your preferred theme and accent color.
+          </p>
+
+          <div className="appearance-controls">
+            {/* Theme Mode Toggle */}
+            <div className="theme-mode-selector">
+              <label className="theme-label">Theme Mode</label>
+              <div className="mode-buttons">
+                <button
+                  className={`mode-button ${theme.mode === 'light' ? 'active' : ''}`}
+                  onClick={() => setThemeMode('light')}
+                  aria-label="Light mode"
+                >
+                  <Sun size={20} />
+                  <span>Light</span>
+                </button>
+                <button
+                  className={`mode-button ${theme.mode === 'dark' ? 'active' : ''}`}
+                  onClick={() => setThemeMode('dark')}
+                  aria-label="Dark mode"
+                >
+                  <Moon size={20} />
+                  <span>Dark</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Accent Color Picker */}
+            <div className="accent-color-selector">
+              <label className="theme-label">Accent Color</label>
+              <div className="color-grid">
+                {presetColors.map((color) => (
+                  <button
+                    key={color.value}
+                    className={`color-swatch ${theme.accentColor === color.value ? 'active' : ''}`}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => setAccentColor(color.value)}
+                    aria-label={`${color.name} accent color`}
+                    title={color.name}
+                  >
+                    {theme.accentColor === color.value && (
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2"
+                      >
+                        <path d="M3 8l3 3 7-7" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="settings-section">
           <h2>PathCompanion Integration</h2>
           <p className="section-description">
@@ -304,8 +373,8 @@ export default function Settings() {
         }
 
         .settings-section {
-          background-color: var(--card-bg, #ffffff);
-          border: 1px solid var(--border-color, #e2e8f0);
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
           border-radius: 12px;
           padding: 2rem;
         }
@@ -328,9 +397,9 @@ export default function Settings() {
         }
 
         .message.success {
-          background-color: #f0fdf4;
-          color: #166534;
-          border: 1px solid #bbf7d0;
+          background-color: var(--accent-light);
+          color: var(--accent-color);
+          border: 1px solid var(--accent-color);
         }
 
         .message.error {
@@ -349,8 +418,8 @@ export default function Settings() {
         }
 
         .connection-status.connected {
-          border-color: #10b981;
-          background-color: #f0fdf4;
+          border-color: var(--accent-color);
+          background-color: var(--accent-light);
         }
 
         .status-icon {
@@ -360,8 +429,8 @@ export default function Settings() {
           width: 48px;
           height: 48px;
           border-radius: 50%;
-          background-color: #10b981;
-          color: white;
+          background-color: var(--accent-color);
+          color: var(--accent-text);
         }
 
         .status-info {
@@ -403,8 +472,8 @@ export default function Settings() {
 
         .form-group input:focus {
           outline: none;
-          border-color: var(--primary-color, #667eea);
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          border-color: var(--accent-color);
+          box-shadow: 0 0 0 3px var(--accent-light);
         }
 
         .button {
@@ -421,11 +490,12 @@ export default function Settings() {
         }
 
         .button.primary {
-          background-color: var(--primary-color, #667eea);
-          color: white;
+          background-color: var(--accent-color);
+          color: var(--accent-text);
         }
 
         .button.primary:hover:not(:disabled) {
+          background-color: var(--accent-hover);
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
@@ -458,6 +528,90 @@ export default function Settings() {
           to {
             transform: rotate(360deg);
           }
+        }
+
+        /* Appearance Controls */
+        .appearance-controls {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+
+        .theme-mode-selector,
+        .accent-color-selector {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .theme-label {
+          font-weight: 600;
+          font-size: 0.95rem;
+          color: var(--text-primary);
+        }
+
+        .mode-buttons {
+          display: flex;
+          gap: 1rem;
+        }
+
+        .mode-button {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 1rem;
+          background: var(--bg-secondary);
+          border: 2px solid var(--border-color);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: var(--text-primary);
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        .mode-button:hover {
+          background: var(--hover-bg);
+          transform: translateY(-2px);
+        }
+
+        .mode-button.active {
+          border-color: var(--accent-color);
+          background: var(--accent-light);
+          color: var(--accent-color);
+        }
+
+        .color-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+          gap: 0.75rem;
+          max-width: 500px;
+        }
+
+        .color-swatch {
+          width: 48px;
+          height: 48px;
+          border-radius: 8px;
+          border: 3px solid transparent;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
+        .color-swatch:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .color-swatch.active {
+          border-color: var(--text-primary);
+          transform: scale(1.15);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
       `}</style>
     </div>

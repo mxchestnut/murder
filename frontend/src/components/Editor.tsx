@@ -69,12 +69,13 @@ export default function Editor({ document, onSave, onShare }: EditorProps) {
       style={{
         padding: '0.5rem',
         border: 'none',
-        background: active ? 'var(--accent-2)' : 'transparent',
-        color: 'var(--text-primary)',
+        background: active ? 'var(--accent-color)' : 'transparent',
+        color: active ? 'var(--accent-text)' : 'var(--text-primary)',
         cursor: 'pointer',
         borderRadius: '4px',
         display: 'flex',
-        alignItems: 'center'
+        alignItems: 'center',
+        transition: 'all 0.2s'
       }}
     >
       {children}
@@ -228,8 +229,8 @@ export default function Editor({ document, onSave, onShare }: EditorProps) {
               style={{
                 padding: '0.5rem 1rem',
                 border: 'none',
-                background: 'var(--accent-2)',
-                color: 'var(--text-primary)',
+                background: 'var(--accent-color)',
+                color: 'var(--accent-text)',
                 cursor: 'pointer',
                 borderRadius: '4px',
                 display: 'flex',
