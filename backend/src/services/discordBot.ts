@@ -512,13 +512,17 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
     // Convert relative avatar URL to absolute URL
     let avatarUrl = character.avatarUrl;
+    console.log('Original avatarUrl from character:', avatarUrl);
+    
     if (avatarUrl && avatarUrl.startsWith('/')) {
       // Relative URL, make it absolute
       const baseUrl = process.env.FRONTEND_URL || 'http://54.242.214.56';
       avatarUrl = baseUrl + avatarUrl;
+      console.log('Converted to absolute URL:', avatarUrl);
     } else if (!avatarUrl) {
       // No avatar, use default
       avatarUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(character.name) + '&size=256&background=random';
+      console.log('Using default avatar URL:', avatarUrl);
     }
     
     try {
