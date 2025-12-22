@@ -295,6 +295,46 @@ function encryptPassword(password: string): string {
   return iv.toString('hex') + ':' + encrypted;
 }
 
+function decryptPassword(encryptedPassword: string): string {
+  const parts = encryptedPassword.split(':');
+  if (parts.length !== 2) {
+    throw new Error('Invalid encrypted password format');
+  }
+  const iv = Buffer.from(parts[0], 'hex');
+  const encrypted = parts[1];
+  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
+
+// Automatically refresh PathCompanion session if expired
+async function refreshPathCompanionSession(user: any): Promise<string> {
+  if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
+    throw new Error('No PathCompanion credentials stored. Please use !connect first.');
+  }
+
+  console.log(`Auto-refreshing PathCompanion session for user ${user.pathCompanionUsername}`);
+
+  // Decrypt stored password
+  const password = decryptPassword(user.pathCompanionPassword);
+
+  // Re-authenticate with PathCompanion
+  const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, password);
+
+  // Update session ticket in database
+  await db.update(users)
+    .set({
+      pathCompanionSessionTicket: auth.sessionTicket,
+      pathCompanionConnectedAt: new Date()
+    })
+    .where(eq(users.id, user.id));
+
+  console.log(`Successfully refreshed session for ${user.pathCompanionUsername}`);
+  return auth.sessionTicket;
+}
+
 async function handleConnect(message: Message, args: string[]) {
   // Delete the message immediately to protect credentials
   await message.delete().catch(() => {});
@@ -370,13 +410,40 @@ async function handleSyncAll(message: Message) {
     const user = userRecords[0];
     const userId = user.id;
 
-    if (!user.pathCompanionSessionTicket) {
-      await message.reply('❌ PathCompanion session expired. Please log into the Cyarika Portal to refresh.');
+    // Check if we have credentials stored
+    if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
+      await message.reply('❌ No PathCompanion credentials stored.\n\n' +
+        'Please use `!connect <email> <password>` to securely link your PathCompanion account.');
       return;
     }
 
-    // Get user data from PathCompanion
-    const userData = await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+    // Try to get session ticket, refresh if needed
+    let sessionTicket: string;
+    
+    // Get user data from PathCompanion (this will throw if session is invalid)
+    let userData;
+    try {
+      // If we don't have a session ticket yet, or if it's null, refresh immediately
+      if (!user.pathCompanionSessionTicket) {
+        console.log('No session ticket, refreshing...');
+        await message.reply('🔄 Connecting to PathCompanion...');
+        sessionTicket = await refreshPathCompanionSession(user);
+      } else {
+        sessionTicket = user.pathCompanionSessionTicket;
+      }
+      
+      userData = await PlayFabService.getUserData(sessionTicket);
+    } catch (error: any) {
+      // If session expired, automatically refresh it
+      if (error.message?.includes('Must be logged in') || error.message?.includes('session')) {
+        console.log('Session expired, auto-refreshing...');
+        await message.reply('🔄 Session expired, refreshing automatically...');
+        sessionTicket = await refreshPathCompanionSession(user);
+        userData = await PlayFabService.getUserData(sessionTicket);
+      } else {
+        throw error;
+      }
+    }
 
     // Filter to character entries only
     const characterKeys = Object.keys(userData)
@@ -399,7 +466,7 @@ async function handleSyncAll(message: Message) {
     // Import each character
     for (const characterId of characterKeys) {
       try {
-        const character = await PlayFabService.getCharacter(user.pathCompanionSessionTicket, characterId);
+        const character = await PlayFabService.getCharacter(sessionTicket, characterId);
 
         if (!character) {
           results.failed.push({ id: characterId, reason: 'Character not found' });
@@ -463,7 +530,7 @@ async function handleSyncAll(message: Message) {
               armor: JSON.stringify(armor),
               spells: JSON.stringify(spells),
               pathCompanionData: JSON.stringify(character.data),
-              pathCompanionSession: user.pathCompanionSessionTicket,
+              pathCompanionSession: sessionTicket,
               lastSynced: new Date(),
               updatedAt: new Date()
             })
@@ -509,7 +576,7 @@ async function handleSyncAll(message: Message) {
             armor: JSON.stringify(armor),
             spells: JSON.stringify(spells),
             pathCompanionData: JSON.stringify(character.data),
-            pathCompanionSession: user.pathCompanionSessionTicket,
+            pathCompanionSession: sessionTicket,
             pathCompanionId: characterId,
             isPathCompanion: true,
             lastSynced: new Date()
@@ -546,14 +613,13 @@ async function handleSyncAll(message: Message) {
     console.error('Error in handleSyncAll:', error);
     const errorMsg = error instanceof Error ? error.message : String(error);
     
-    if (errorMsg.includes('Must be logged in') || errorMsg.includes('session')) {
-      await message.reply('❌ **PathCompanion session expired.**\n\n' +
-        '**Quick fix from Discord:**\n' +
-        '`!connect <your_email> <your_password>`\n\n' +
-        '**Or via Portal:**\n' +
-        '1. Go to http://54.242.214.56\n' +
-        '2. Click Settings → Re-enter PathCompanion credentials\n\n' +
-        '⚠️ The `!connect` command will be deleted for security, and your credentials are stored encrypted.');
+    if (errorMsg.includes('No PathCompanion credentials')) {
+      // Already handled above with specific message
+      return;
+    } else if (errorMsg.includes('Invalid encrypted password')) {
+      await message.reply('❌ **Stored credentials are corrupted.**\n\n' +
+        'Please reconnect with `!connect <email> <password>`\n\n' +
+        '⚠️ Your message will be deleted immediately for security.');
     } else {
       await message.reply('❌ Failed to sync characters. Error: ' + errorMsg);
     }
