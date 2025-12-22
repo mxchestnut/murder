@@ -9,7 +9,7 @@ interface PathCompanionConnectionStatus {
 }
 
 export default function Settings() {
-  const { theme, setThemeMode, setAccentColor, presetColors } = useTheme();
+  const { theme, setThemeMode, setAccentColor } = useTheme();
   
   const [pathCompanion, setPathCompanion] = useState<PathCompanionConnectionStatus>({
     connected: false
@@ -117,30 +117,52 @@ export default function Settings() {
             {/* Accent Color Picker */}
             <div className="accent-color-selector">
               <label className="theme-label">Accent Color</label>
-              <div className="color-grid">
-                {presetColors.map((color) => (
-                  <button
-                    key={color.value}
-                    className={`color-swatch ${theme.accentColor === color.value ? 'active' : ''}`}
-                    style={{ backgroundColor: color.value }}
-                    onClick={() => setAccentColor(color.value)}
-                    aria-label={`${color.name} accent color`}
-                    title={color.name}
-                  >
-                    {theme.accentColor === color.value && (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <path d="M3 8l3 3 7-7" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <input
+                  type="color"
+                  value={theme.accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  style={{
+                    width: '60px',
+                    height: '40px',
+                    border: '2px solid var(--border-color)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    padding: '2px'
+                  }}
+                />
+                <input
+                  type="text"
+                  value={theme.accentColor}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow typing # and hex characters
+                    if (/^#[0-9A-Fa-f]{0,6}$/.test(value) || value === '') {
+                      setAccentColor(value);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validate on blur and reset to previous if invalid
+                    if (!/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                      setAccentColor(theme.accentColor);
+                    }
+                  }}
+                  placeholder="#6366f1"
+                  style={{
+                    flex: 1,
+                    maxWidth: '120px',
+                    padding: '0.5rem 0.75rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    fontFamily: 'monospace',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)'
+                  }}
+                />
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Choose any color
+                </span>
               </div>
             </div>
           </div>
@@ -467,37 +489,6 @@ export default function Settings() {
           border-color: var(--accent-color);
           background: var(--accent-light);
           color: var(--accent-color);
-        }
-
-        .color-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
-          gap: 0.75rem;
-          max-width: 500px;
-        }
-
-        .color-swatch {
-          width: 48px;
-          height: 48px;
-          border-radius: 8px;
-          border: 3px solid transparent;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-
-        .color-swatch:hover {
-          transform: scale(1.1);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .color-swatch.active {
-          border-color: var(--text-primary);
-          transform: scale(1.15);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
       `}</style>
     </div>
