@@ -3,8 +3,8 @@
 
 set -e
 
-EC2_IP="3.238.25.49"
-KEY_PATH="${HOME}/.ssh/cyarika-key.pem"
+EC2_IP="100.49.41.171"
+KEY_PATH="${HOME}/.ssh/cyarika-deploy-key.pem"
 REMOTE_USER="ec2-user"
 
 echo "🚀 Cyar'ika Deployment Script"

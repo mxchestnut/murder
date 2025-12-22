@@ -6,7 +6,7 @@
 ✅ **Database configured** (Neon PostgreSQL)  
 ✅ **Discord bot configured** (Token set)  
 ✅ **AWS EC2 instance created** (t3.small)  
-✅ **DNS configured** (cyarika.com → 3.238.25.49)  
+✅ **DNS configured** (cyarika.com → 100.49.41.171)  
 ✅ **Git remote updated** (github.com/mxchestnut/cyarika.git)
 
 ## 🚀 To Deploy NOW
@@ -29,22 +29,22 @@ This will automatically:
 
 ### Server Access
 ```bash
-ssh -i ~/.ssh/cyarika-key.pem ec2-user@3.238.25.49
+ssh -i ~/.ssh/cyarika-deploy-key.pem ec2-user@100.49.41.171
 ```
 
 ### EC2 Instance
-- **IP:** 3.238.25.49
+- **IP:** 100.49.41.171
 - **Type:** t3.small
 - **Region:** us-east-1
-- **Instance ID:** i-0e796336836901c07
+- **Instance ID:** i-0a7d5f108d60dab09
 
 ### Domain
 - **Primary:** cyarika.com
 - **WWW:** www.cyarika.com
-- **Both point to:** 3.238.25.49
+- **Both point to:** 100.49.41.171
 
 ### Application URLs
-- **Direct IP:** http://3.238.25.49:3000
+- **Direct IP:** http://100.49.41.171:3000
 - **Domain:** http://cyarika.com (after DNS propagates)
 
 ## 📦 What's Been Configured
@@ -78,7 +78,7 @@ ssh -i ~/.ssh/cyarika-key.pem ec2-user@3.238.25.49
 ## 🔐 Security Reminders
 - `.env` file contains sensitive credentials
 - Never commit `.env` to git
-- SSH key is at `~/.ssh/cyarika-key.pem`
+- SSH key is at `~/.ssh/cyarika-deploy-key.pem`
 - Discord bot token and database password are configured
 
 ## 💰 Monthly Costs
@@ -92,10 +92,10 @@ ssh -i ~/.ssh/cyarika-key.pem ec2-user@3.238.25.49
 ### If deployment fails:
 ```bash
 # Check EC2 instance status
-aws ec2 describe-instances --instance-ids i-0e796336836901c07 --region us-east-1
+aws ec2 describe-instances --instance-ids i-0a7d5f108d60dab09 --region us-east-1
 
 # SSH into server and check manually
-ssh -i ~/.ssh/cyarika-key.pem ec2-user@3.238.25.49
+ssh -i ~/.ssh/cyarika-deploy-key.pem ec2-user@100.49.41.171
 ```
 
 ### After deployment:

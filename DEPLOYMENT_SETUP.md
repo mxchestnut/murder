@@ -6,9 +6,9 @@
 ## Infrastructure Setup
 
 ### EC2 Instance
-- **Instance ID:** i-0e796336836901c07
+- **Instance ID:** i-0a7d5f108d60dab09
 - **Instance Type:** t3.small
-- **Public IP:** 3.238.25.49
+- **Public IP:** 100.49.41.171
 - **Region:** us-east-1 (US East - N. Virginia)
 - **AMI:** Amazon Linux 2 (ami-03f9680ef0c07a3d1)
 - **Key Pair:** cyarika-key
@@ -23,8 +23,8 @@
 ### DNS Configuration (Route 53)
 - **Domain:** cyarika.com
 - **Hosted Zone ID:** Z01482473LHFKM7LFNJKR
-- **A Record:** cyarika.com → 3.238.25.49
-- **A Record:** www.cyarika.com → 3.238.25.49
+- **A Record:** cyarika.com → 100.49.41.171
+- **A Record:** www.cyarika.com → 100.49.41.171
 - **TTL:** 300 seconds
 
 ### Database
@@ -40,7 +40,7 @@
 
 ### 1. SSH into the EC2 Instance
 ```bash
-ssh -i ~/.ssh/cyarika-key.pem ec2-user@3.238.25.49
+ssh -i ~/.ssh/cyarika-deploy-key.pem ec2-user@100.49.41.171
 ```
 
 ### 2. Install Node.js and Dependencies
