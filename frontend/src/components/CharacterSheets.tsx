@@ -687,12 +687,28 @@ export default function CharacterSheets() {
         ) : selectedSheet ? (
           <div className="character-display">
             <div className="character-header">
-              <div>
-                <h1>{selectedSheet.name}</h1>
-                <p className="character-subtitle">
-                  {selectedSheet.characterClass && `${selectedSheet.characterClass} • `}
-                  Level {selectedSheet.level}
-                </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                {selectedSheet.avatarUrl && (
+                  <img 
+                    src={selectedSheet.avatarUrl} 
+                    alt={selectedSheet.name}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '4px solid var(--primary-color)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    }}
+                  />
+                )}
+                <div>
+                  <h1>{selectedSheet.name}</h1>
+                  <p className="character-subtitle">
+                    {selectedSheet.characterClass && `${selectedSheet.characterClass} • `}
+                    Level {selectedSheet.level}
+                  </p>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 {!selectedSheet.isPathCompanion && (
