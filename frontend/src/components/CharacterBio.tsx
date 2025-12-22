@@ -295,8 +295,8 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       marginBottom: '1.5rem'
     }}>
       {/* Avatar Section */}
-      {character.avatarUrl && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem', gap: '0.75rem' }}>
+        {character.avatarUrl ? (
           <img 
             src={character.avatarUrl} 
             alt={character.name}
@@ -309,8 +309,73 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
               boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
             }}
           />
-        </div>
-      )}
+        ) : (
+          <div
+            style={{
+              width: '200px',
+              height: '200px',
+              borderRadius: '50%',
+              border: '3px dashed var(--border-color)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--background-secondary)',
+              color: 'var(--text-muted)',
+              fontSize: '0.9rem',
+              textAlign: 'center',
+              padding: '1rem'
+            }}
+          >
+            No Avatar
+          </div>
+        )}
+        <input
+          type="file"
+          id="bio-avatar-upload"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              try {
+                const formData = new FormData();
+                formData.append('avatar', file);
+                
+                const uploadResponse = await api.post('/characters/upload-avatar', formData, {
+                  headers: {
+                    'Content-Type': 'multipart/form-data'
+                  }
+                });
+                const avatarUrl = uploadResponse.data.url;
+                
+                await api.put(`/characters/${character.id}`, { avatarUrl });
+                onUpdate();
+                setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
+                setTimeout(() => setMessage(null), 3000);
+              } catch (error) {
+                console.error('Error uploading avatar:', error);
+                setMessage({ type: 'error', text: 'Failed to upload avatar' });
+                setTimeout(() => setMessage(null), 3000);
+              }
+            }
+            e.target.value = '';
+          }}
+        />
+        <button
+          onClick={() => document.getElementById('bio-avatar-upload')?.click()}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '6px',
+            border: '1px solid var(--border-color)',
+            background: 'var(--background-secondary)',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            fontSize: '0.85rem'
+          }}
+        >
+          {character.avatarUrl ? 'Change Avatar' : 'Upload Avatar'}
+        </button>
+      </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

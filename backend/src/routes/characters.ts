@@ -41,7 +41,19 @@ const upload = multer({
   }
 });
 
-// All routes require authentication
+// Serve avatar files (public - no authentication required for Discord webhooks)
+router.get('/avatars/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filepath = path.join(__dirname, '../../uploads/avatars', filename);
+  
+  if (fs.existsSync(filepath)) {
+    res.sendFile(filepath);
+  } else {
+    res.status(404).json({ error: 'Avatar not found' });
+  }
+});
+
+// All other routes require authentication
 router.use(isAuthenticated);
 
 // Helper function to calculate D&D modifier from stat
@@ -52,28 +64,22 @@ const calculateModifier = (stat: number): number => {
 // Avatar upload endpoint
 router.post('/upload-avatar', upload.single('avatar'), async (req, res) => {
   try {
+    console.log('Avatar upload request received');
+    console.log('req.file:', req.file);
+    console.log('req.body:', req.body);
+    
     if (!req.file) {
+      console.log('No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     // Return the URL to access the uploaded file
     const avatarUrl = `/api/characters/avatars/${req.file.filename}`;
+    console.log('Avatar uploaded successfully:', avatarUrl);
     res.json({ url: avatarUrl });
   } catch (error) {
     console.error('Error uploading avatar:', error);
     res.status(500).json({ error: 'Failed to upload avatar' });
-  }
-});
-
-// Serve avatar files
-router.get('/avatars/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const filepath = path.join(__dirname, '../../uploads/avatars', filename);
-  
-  if (fs.existsSync(filepath)) {
-    res.sendFile(filepath);
-  } else {
-    res.status(404).json({ error: 'Avatar not found' });
   }
 });
 

@@ -10,6 +10,15 @@ import axios from 'axios';
 let botClient: Client | null = null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
 
+// Normalize string by removing accents and converting to lowercase
+function normalizeString(str: string): string {
+  return str
+    .normalize('NFD') // Decompose combined characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+    .toLowerCase()
+    .trim();
+}
+
 export function initializeDiscordBot(token: string) {
   if (!token) {
     console.log('No Discord bot token provided, skipping bot initialization');
@@ -34,14 +43,14 @@ export function initializeDiscordBot(token: string) {
     const content = message.content.trim();
 
     // Check for character proxying patterns: "CharName: message" or "!CharName: message"
-    const proxyMatch = content.match(/^!?([A-Za-z0-9\s]+):\s*(.+)$/);
+    const proxyMatch = content.match(/^!?([\p{L}\p{N}\s]+):\s*(.+)$/u);
     if (proxyMatch) {
       await handleProxy(message, proxyMatch[1].trim(), proxyMatch[2]);
       return;
     }
 
     // Check for name-based rolling: "!CharName stat"
-    const nameRollMatch = content.match(/^!([A-Za-z0-9\s]+)\s+(.+)$/);
+    const nameRollMatch = content.match(/^!([\p{L}\p{N}\s]+)\s+(.+)$/u);
     if (nameRollMatch) {
       const potentialName = nameRollMatch[1].trim();
       const potentialStat = nameRollMatch[2].trim();
@@ -190,19 +199,24 @@ async function handleProfile(message: Message, args: string[]) {
   let character: any;
 
   if (args.length > 0) {
-    // Profile for a specific character by name
+    // Profile for a specific character by name (fuzzy matching)
     const characterName = args.join(' ');
-    const characters = await db
+    const normalizedInput = normalizeString(characterName);
+    
+    const allCharacters = await db
       .select()
-      .from(characterSheets)
-      .where(eq(characterSheets.name, characterName));
+      .from(characterSheets);
+    
+    const matchedCharacters = allCharacters.filter(char => 
+      normalizeString(char.name) === normalizedInput
+    );
 
-    if (characters.length === 0) {
+    if (matchedCharacters.length === 0) {
       await message.reply(`❌ Character "${characterName}" not found.`);
       return;
     }
 
-    character = characters[0];
+    character = matchedCharacters[0];
   } else {
     // Profile for channel-linked character
     const channelId = message.channel.id;
@@ -601,7 +615,7 @@ async function handleConnect(message: Message, args: string[]) {
     console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Write Pretend user: ${username}`);
 
   } catch (error: any) {
-    console.error('Discord Cyarika connect error:', error);
+    console.error('Discord Write Pretend connect error:', error);
     
     let errorMsg = 'Unknown error occurred';
     if (error.response?.data?.error) {
@@ -641,7 +655,7 @@ async function handleSyncAll(message: Message) {
       .where(eq(characterSheets.userId, user.id));
 
     if (characters.length === 0) {
-      await message.reply('ℹ️ **No characters found in your Cyarika account.**\n\n' +
+      await message.reply('ℹ️ **No characters found in your Write Pretend account.**\n\n' +
         '**Create characters:**\n' +
         '• Visit http://54.242.214.56 and create a character manually\n' +
         (user.pathCompanionUsername ? '• Or import from PathCompanion in the web portal\n' : '') +
@@ -685,18 +699,24 @@ async function handleHelp(message: Message) {
 
 async function handleProxy(message: Message, characterName: string, messageText: string) {
   try {
-    // Find character by name (case-insensitive)
-    const characters = await db
+    // Find character by name (fuzzy matching - normalize accents)
+    const normalizedInput = normalizeString(characterName);
+    
+    // Get all characters and filter in JavaScript for fuzzy matching
+    const allCharacters = await db
       .select()
-      .from(characterSheets)
-      .where(sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`);
+      .from(characterSheets);
+    
+    const matchedCharacters = allCharacters.filter(char => 
+      normalizeString(char.name) === normalizedInput
+    );
 
-    if (characters.length === 0) {
+    if (matchedCharacters.length === 0) {
       // Silently ignore if character not found (might just be regular text)
       return;
     }
 
-    const character = characters[0];
+    const character = matchedCharacters[0];
     const channel = message.channel;
 
     // Only work in text channels
@@ -784,17 +804,23 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
 async function handleNameRoll(message: Message, characterName: string, rollParam: string): Promise<boolean> {
   try {
-    // Find character by name (case-insensitive)
-    const characters = await db
+    // Find character by name (fuzzy matching - normalize accents)
+    const normalizedInput = normalizeString(characterName);
+    
+    // Get all characters and filter in JavaScript for fuzzy matching
+    const allCharacters = await db
       .select()
-      .from(characterSheets)
-      .where(sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`);
+      .from(characterSheets);
+    
+    const matchedCharacters = allCharacters.filter(char => 
+      normalizeString(char.name) === normalizedInput
+    );
 
-    if (characters.length === 0) {
+    if (matchedCharacters.length === 0) {
       return false; // Not a character name
     }
 
-    const character = characters[0];
+    const character = matchedCharacters[0];
 
     // Determine roll type and calculate
     let rollType = 'ability';
@@ -915,7 +941,7 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
           .setColor(rollData.diceRoll === 20 ? 0x00ff00 : rollData.diceRoll === 1 ? 0xff0000 : 0x0099ff)
           .setTitle(`🎲 ${character.name} - ${rollData.rollDescription}`)
           .setDescription(`**${rollData.diceRoll}** ${rollData.modifier >= 0 ? '+' : ''}${rollData.modifier} = **${rollData.total}**`)
-          .setFooter({ text: 'Rolled from Cyarika Portal' })
+          .setFooter({ text: 'Rolled from Write Pretend Portal' })
           .setTimestamp();
 
         if (rollData.diceRoll === 20) {
