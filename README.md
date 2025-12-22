@@ -100,6 +100,7 @@ DATABASE_URL=postgresql://user:password@host/database
 
 # Authentication
 SESSION_SECRET=your_random_secret_here
+PATHCOMPANION_ENCRYPTION_KEY=your_64_char_hex_string
 
 # Discord Bot
 DISCORD_BOT_TOKEN=your_bot_token
