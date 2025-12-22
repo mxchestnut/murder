@@ -70,11 +70,16 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/mxchestnut/cyarika.git
-cd cyarika
+git clone https://github.com/mxchestnut/writepretend.git
+cd writepretend
 ```
 
-2. **Install dependencies**
+2. **Set up git-secrets** (IMPORTANT - Prevents committing secrets)
+```bash
+./.git-secrets-setup.sh
+```
+
+3. **Install dependencies**
 ```bash
 # Root dependencies
 npm install
@@ -86,7 +91,7 @@ cd backend && npm install
 cd ../frontend && npm install
 ```
 
-3. **Configure environment variables**
+4. **Configure environment variables**
 
 Create `backend/.env`:
 ```env
@@ -244,13 +249,48 @@ See [WRITEPRETEND_ROADMAP.md](WRITEPRETEND_ROADMAP.md) for the complete feature 
 **Help:**
 - `!help` - Show all commands
 
+## Security
+
+### 🔒 Protecting Secrets
+
+This project uses [git-secrets](https://github.com/awslabs/git-secrets) to prevent accidentally committing sensitive information.
+
+**Setup (Required for Contributors):**
+```bash
+./.git-secrets-setup.sh
+```
+
+**What's Protected:**
+- Database connection strings
+- API tokens and secrets
+- Discord bot tokens
+- AWS credentials
+- Session secrets
+
+**Before Committing:**
+```bash
+git secrets --scan
+```
+
+The `.gitallowed` file contains approved patterns for example/template values in documentation.
+
+**Never commit:**
+- Real `.env` files
+- Private keys (`.pem`, `.key`)
+- Real database passwords
+- Production tokens
+
 ## Contributing
 
-This is a private project, but suggestions and feedback are welcome!
+Contributions are welcome! Please ensure:
+1. git-secrets is installed and configured
+2. All tests pass
+3. No secrets are committed
+4. Code follows the existing style
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/mxchestnut/cyarika/issues)
+- **Issues:** [GitHub Issues](https://github.com/mxchestnut/writepretend/issues)
 - **Discord:** Join our test server (link coming soon)
 - **Website:** [writepretend.com](http://writepretend.com)
 
