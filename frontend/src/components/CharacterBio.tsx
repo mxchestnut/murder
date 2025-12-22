@@ -4,6 +4,7 @@ import {
   Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save 
 } from 'lucide-react';
 import { api } from '../utils/api';
+import TiptapField from './TiptapField';
 
 interface CharacterBioProps {
   character: any;
@@ -234,6 +235,19 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           resize: 'vertical',
           fontFamily: 'inherit'
         }}
+      />
+    </div>
+  );
+
+  const renderRichTextarea = (field: string, label: string, placeholder: string, rows: number = 4) => (
+    <div style={{ marginBottom: '1rem' }}>
+      <TiptapField
+        value={(bioData as any)[field]}
+        onChange={(value) => handleChange(field, value)}
+        placeholder={placeholder}
+        label={label}
+        rows={rows}
+        maxLength={1024}
       />
     </div>
   );
@@ -475,20 +489,20 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
 
       {renderSection('backstory', BookOpen, 'Backstory', (
         <>
-          {renderTextarea('origin', 'Origin or Formative Past Event', 'Where did they come from? What shaped them?', 4)}
-          {renderTextarea('greatestSuccess', 'Greatest Success', 'Their proudest moment', 3)}
-          {renderTextarea('greatestFailure', 'Greatest Failure', 'Their biggest mistake or loss', 3)}
-          {renderTextarea('regret', 'Regret or Unresolved Guilt', 'What haunts them?', 3)}
-          {renderTextarea('trauma', 'Trauma or Defining Wound (Optional)', 'Deep emotional or physical scars', 3)}
+          {renderRichTextarea('origin', 'Origin or Formative Past Event', 'Where did they come from? What shaped them?', 4)}
+          {renderRichTextarea('greatestSuccess', 'Greatest Success', 'Their proudest moment', 3)}
+          {renderRichTextarea('greatestFailure', 'Greatest Failure', 'Their biggest mistake or loss', 3)}
+          {renderRichTextarea('regret', 'Regret or Unresolved Guilt', 'What haunts them?', 3)}
+          {renderRichTextarea('trauma', 'Trauma or Defining Wound (Optional)', 'Deep emotional or physical scars', 3)}
         </>
       ))}
 
       {renderSection('relationships', Users, 'Relationships', (
         <>
-          {renderTextarea('importantRelationships', 'Important Relationships', 'Family, friends, mentors, lovers', 4)}
-          {renderTextarea('protectedRelationship', 'Relationship They Protect', 'Who would they die for?', 3)}
-          {renderTextarea('avoidedRelationship', 'Relationship They Avoid or Fear', 'Who do they keep at distance?', 3)}
-          {renderTextarea('rival', 'Rival or Opposing Force', 'Their nemesis or antagonist', 3)}
+          {renderRichTextarea('importantRelationships', 'Important Relationships', 'Family, friends, mentors, lovers', 4)}
+          {renderRichTextarea('protectedRelationship', 'Relationship They Protect', 'Who would they die for?', 3)}
+          {renderRichTextarea('avoidedRelationship', 'Relationship They Avoid or Fear', 'Who do they keep at distance?', 3)}
+          {renderRichTextarea('rival', 'Rival or Opposing Force', 'Their nemesis or antagonist', 3)}
           {renderTextarea('affiliatedGroups', 'Affiliated Groups or Factions', 'Guilds, orders, organizations they belong to', 3)}
         </>
       ))}
@@ -509,10 +523,10 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
 
       {renderSection('growth', TrendingUp, 'Growth & Change', (
         <>
-          {renderTextarea('recentChange', 'How They\'ve Changed Recently', 'Recent character development', 3)}
-          {renderTextarea('potentialChange', 'How They Might Change Next', 'Potential arc or growth', 3)}
-          {renderTextarea('breakingPoint', 'What Would Break Them', 'What could destroy them?', 3)}
-          {renderTextarea('redemption', 'What Could Redeem Them', 'Path to healing or salvation', 3)}
+          {renderRichTextarea('recentChange', 'How They\'ve Changed Recently', 'Recent character development', 3)}
+          {renderRichTextarea('potentialChange', 'How They Might Change Next', 'Potential arc or growth', 3)}
+          {renderRichTextarea('breakingPoint', 'What Would Break Them', 'What could destroy them?', 3)}
+          {renderRichTextarea('redemption', 'What Could Redeem Them', 'Path to healing or salvation', 3)}
         </>
       ))}
 
