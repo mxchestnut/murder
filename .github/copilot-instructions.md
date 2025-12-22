@@ -1,7 +1,7 @@
-# Cyarika Private Portal - Project Instructions
+# Write Pretend Private Portal - Project Instructions
 
 ## Project Overview
-A secure private portal with Tailscale authentication, document management, and Matrix messaging.
+A secure private portal with username/password authentication, document management, and Matrix messaging.
 
 ## Tech Stack
 - **Backend**: Node.js, Express, TypeScript, Passport.js
