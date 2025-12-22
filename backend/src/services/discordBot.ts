@@ -412,8 +412,10 @@ async function handleSyncAll(message: Message) {
 
     // Check if we have credentials stored
     if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
-      await message.reply('❌ No PathCompanion credentials stored.\n\n' +
-        'Please use `!connect <email> <password>` to securely link your PathCompanion account.');
+      await message.reply('❌ No PathCompanion credentials stored for syncing.\n\n' +
+        '**Option 1 (Portal):** Log in at http://54.242.214.56 and import characters there\n' +
+        '**Option 2 (Discord):** Use `!connect <email> <password>` to sync from Discord\n\n' +
+        '💡 Once characters are imported, you can roll and proxy without any credentials!');
       return;
     }
 
@@ -630,18 +632,14 @@ async function handleHelp(message: Message) {
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle('📖 Cyarika Bot Commands')
-    .setDescription('Roll dice, proxy as characters, and manage your Pathfinder characters!')
+    .setDescription('🎲 **Getting Started:**\n1. Import characters (Portal or `!connect` + `!syncall`)\n2. Roll & proxy forever (no credentials needed!)\n\n**Commands:**')
     .addFields(
-      { name: '!connect <email> <password>', value: 'Connect your PathCompanion account (sent via DM for security)', inline: false },
-      { name: '!syncall', value: 'Import/sync all characters from PathCompanion', inline: false },
-      { name: '!setchar <name>', value: 'Link this channel to a character', inline: false },
-      { name: '!char', value: 'Show which character is linked to this channel', inline: false },
-      { name: '!roll <stat/save/skill>', value: 'Roll a check for the linked character', inline: false },
-      { name: '!CharName <stat/save/skill>', value: 'Roll a check for any character by name\nExample: `!Ogun strength`', inline: false },
-      { name: 'CharName: message', value: 'Speak as a character (proxying)\nExample: `Ogun: Hello everyone!`', inline: false },
-      { name: '!help', value: 'Show this help message', inline: false }
+      { name: '🎭 Using Characters (No Login Required)', value: '`!CharName <stat/save/skill>` - Roll for any character\n`CharName: message` - Speak as a character\n`!setchar <name>` - Link character to channel\n`!roll <stat>` - Roll for linked character', inline: false },
+      { name: '📥 Importing Characters', value: '**Portal:** http://54.242.214.56 (recommended)\n**Discord:** `!connect <email> <password>` then `!syncall`\n\n💡 Import once, characters stored in our database!', inline: false },
+      { name: '🔄 Syncing/Updating', value: '`!syncall` - Refresh all characters from PathCompanion\n(Requires prior `!connect` or portal login)', inline: false },
+      { name: 'ℹ️ Other', value: '`!char` - Show linked character\n`!help` - Show this message', inline: false }
     )
-    .setFooter({ text: 'Cyarika Portal v1.0' });
+    .setFooter({ text: 'Your character data is stored securely - no PathCompanion needed for rolling!' });
 
   await message.reply({ embeds: [embed] });
 }
