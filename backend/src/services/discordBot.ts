@@ -510,14 +510,52 @@ async function handleProxy(message: Message, characterName: string, messageText:
     // Delete the original message
     await message.delete().catch(() => {});
 
-    // Send message as character
-    const avatarUrl = character.avatarUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(character.name) + '&size=256&background=random';
+    // Convert relative avatar URL to absolute URL
+    let avatarUrl = character.avatarUrl;
+    if (avatarUrl && avatarUrl.startsWith('/')) {
+      // Relative URL, make it absolute
+      const baseUrl = process.env.FRONTEND_URL || 'http://54.242.214.56';
+      avatarUrl = baseUrl + avatarUrl;
+    } else if (!avatarUrl) {
+      // No avatar, use default
+      avatarUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(character.name) + '&size=256&background=random';
+    }
     
-    await webhook.send({
-      content: messageText,
-      username: character.name,
-      avatarURL: avatarUrl
-    });
+    try {
+      await webhook.send({
+        content: messageText,
+        username: character.name,
+        avatarURL: avatarUrl
+      });
+    } catch (webhookError: any) {
+      // If webhook fails (e.g., Unknown Webhook error), clear cache and retry once
+      if (webhookError.code === 10015) {
+        console.log('Webhook became invalid, clearing cache and retrying...');
+        webhookCache.delete(channel.id);
+        
+        // Recreate webhook
+        const webhooks = await channel.fetchWebhooks();
+        webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Cyarika Proxy');
+        
+        if (!webhook) {
+          webhook = await channel.createWebhook({
+            name: 'Cyarika Proxy',
+            reason: 'Character proxying for Cyarika Portal'
+          });
+        }
+        
+        webhookCache.set(channel.id, webhook);
+        
+        // Retry send
+        await webhook.send({
+          content: messageText,
+          username: character.name,
+          avatarURL: avatarUrl
+        });
+      } else {
+        throw webhookError;
+      }
+    }
 
   } catch (error) {
     console.error('Error in handleProxy:', error);
