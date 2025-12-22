@@ -4,7 +4,7 @@ import {
   Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save, Edit3 
 } from 'lucide-react';
 import { api } from '../utils/api';
-import RichTextModal from './RichTextModal';
+import RichTextPanel from './RichTextPanel';
 
 interface CharacterBioProps {
   character: any;
@@ -215,37 +215,6 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           background: 'var(--bg-secondary)',
           color: 'var(--text-primary)',
           fontSize: '0.9rem'
-        }}
-      />
-    </div>
-  );
-
-  const renderTextarea = (field: string, label: string, placeholder: string, rows: number = 3) => (
-    <div style={{ marginBottom: '1rem' }}>
-      <label style={{ 
-        display: 'block', 
-        color: 'var(--text-primary)', 
-        fontSize: '0.85rem', 
-        marginBottom: '0.5rem', 
-        fontWeight: 500 
-      }}>
-        {label}
-      </label>
-      <textarea
-        value={(bioData as any)[field]}
-        onChange={(e) => handleChange(field, e.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        style={{
-          width: '100%',
-          padding: '0.5rem',
-          borderRadius: '6px',
-          border: '1px solid var(--border-color)',
-          background: 'var(--bg-secondary)',
-          color: 'var(--text-primary)',
-          fontSize: '0.9rem',
-          resize: 'vertical',
-          fontFamily: 'inherit'
         }}
       />
     </div>
@@ -514,41 +483,41 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
 
       {renderSection('goals', Target, 'Goals & Motivations', (
         <>
-          {renderTextarea('currentGoal', 'Current Goal', 'What are they trying to achieve right now?')}
-          {renderTextarea('longTermDesire', 'Long-term Desire', 'What do they ultimately want?')}
-          {renderTextarea('coreMotivation', 'Core Motivation', 'What drives them forward?')}
-          {renderTextarea('deepestFear', 'Deepest Fear', 'What terrifies them most?')}
-          {renderTextarea('coreBelief', 'Core Belief About the World', 'What fundamental truth do they hold?')}
-          {renderTextarea('coreMisconception', 'Core Misconception or Lie They Believe', 'What falsehood shapes their worldview?')}
-          {renderTextarea('moralCode', 'Moral Code or Red Line They Will Not Cross', 'What lines won\'t they cross?')}
+          {renderRichTextarea('currentGoal', 'Current Goal', 'What are they trying to achieve right now?')}
+          {renderRichTextarea('longTermDesire', 'Long-term Desire', 'What do they ultimately want?')}
+          {renderRichTextarea('coreMotivation', 'Core Motivation', 'What drives them forward?')}
+          {renderRichTextarea('deepestFear', 'Deepest Fear', 'What terrifies them most?')}
+          {renderRichTextarea('coreBelief', 'Core Belief About the World', 'What fundamental truth do they hold?')}
+          {renderRichTextarea('coreMisconception', 'Core Misconception or Lie They Believe', 'What falsehood shapes their worldview?')}
+          {renderRichTextarea('moralCode', 'Moral Code or Red Line They Will Not Cross', 'What lines won\'t they cross?')}
           {renderInput('alignmentTendency', 'Alignment or Ethical Tendency', 'e.g., Chaotic Good, Lawful Neutral')}
         </>
       ))}
 
       {renderSection('personality', Smile, 'Personality', (
         <>
-          {renderTextarea('personalityOneSentence', 'Personality in One Sentence', 'Sum up their personality')}
+          {renderRichTextarea('personalityOneSentence', 'Personality in One Sentence', 'Sum up their personality')}
           {renderInput('keyVirtues', 'Key Virtues', 'e.g., Brave, Compassionate, Honest')}
           {renderInput('keyFlaws', 'Key Flaws', 'e.g., Impulsive, Stubborn, Cynical')}
-          {renderTextarea('stressBehavior', 'Stress Behavior', 'How do they act under pressure?')}
-          {renderTextarea('habitsOrTells', 'Habits or Tells', 'Nervous tics, repeated phrases, mannerisms')}
-          {renderTextarea('speechStyle', 'Speech Style or Voice Notes', 'How do they speak? Accent, vocabulary, tone')}
+          {renderRichTextarea('stressBehavior', 'Stress Behavior', 'How do they act under pressure?')}
+          {renderRichTextarea('habitsOrTells', 'Habits or Tells', 'Nervous tics, repeated phrases, mannerisms')}
+          {renderRichTextarea('speechStyle', 'Speech Style or Voice Notes', 'How do they speak? Accent, vocabulary, tone')}
         </>
       ))}
 
       {renderSection('appearance', Palette, 'Appearance', (
         <>
-          {renderTextarea('physicalPresence', 'Physical Presence (Overall Impression)', 'First impression they make')}
-          {renderTextarea('identifyingTraits', 'Identifying Physical Traits', 'Scars, tattoos, unique features')}
-          {renderTextarea('clothingAesthetic', 'Clothing or Gear Aesthetic', 'Style, colors, practical or decorative?')}
+          {renderRichTextarea('physicalPresence', 'Physical Presence (Overall Impression)', 'First impression they make')}
+          {renderRichTextarea('identifyingTraits', 'Identifying Physical Traits', 'Scars, tattoos, unique features')}
+          {renderRichTextarea('clothingAesthetic', 'Clothing or Gear Aesthetic', 'Style, colors, practical or decorative?')}
         </>
       ))}
 
       {renderSection('skills', Sword, 'Skills & Abilities', (
         <>
-          {renderTextarea('notableEquipment', 'Notable Equipment or Abilities', 'Signature weapons, magic items, powers')}
-          {renderTextarea('skillsReliedOn', 'Skills They Rely On Most', 'What are they good at?')}
-          {renderTextarea('skillsAvoided', 'Skills They Avoid or Lack', 'What do they struggle with?')}
+          {renderRichTextarea('notableEquipment', 'Notable Equipment or Abilities', 'Signature weapons, magic items, powers')}
+          {renderRichTextarea('skillsReliedOn', 'Skills They Rely On Most', 'What are they good at?')}
+          {renderRichTextarea('skillsAvoided', 'Skills They Avoid or Lack', 'What do they struggle with?')}
         </>
       ))}
 
@@ -568,21 +537,21 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           {renderRichTextarea('protectedRelationship', 'Relationship They Protect', 'Who would they die for?', 3)}
           {renderRichTextarea('avoidedRelationship', 'Relationship They Avoid or Fear', 'Who do they keep at distance?', 3)}
           {renderRichTextarea('rival', 'Rival or Opposing Force', 'Their nemesis or antagonist', 3)}
-          {renderTextarea('affiliatedGroups', 'Affiliated Groups or Factions', 'Guilds, orders, organizations they belong to', 3)}
+          {renderRichTextarea('affiliatedGroups', 'Affiliated Groups or Factions', 'Guilds, orders, organizations they belong to', 3)}
         </>
       ))}
 
       {renderSection('beliefs', Brain, 'Beliefs & Philosophy', (
         <>
-          {renderTextarea('beliefsPhilosophy', 'Beliefs, Faith, or Philosophy', 'Religious views, personal code, worldview', 4)}
+          {renderRichTextarea('beliefsPhilosophy', 'Beliefs, Faith, or Philosophy', 'Religious views, personal code, worldview', 4)}
         </>
       ))}
 
       {renderSection('publicPrivate', Eye, 'Public vs Private Self', (
         <>
-          {renderTextarea('publicFacade', 'What They Want Others to See', 'The mask they wear', 3)}
-          {renderTextarea('hiddenAspect', 'What They Hide', 'True feelings, vulnerabilities', 3)}
-          {renderTextarea('secret', 'Secret (Known or Unknown to Others)', 'Hidden truth about them', 3)}
+          {renderRichTextarea('publicFacade', 'What They Want Others to See', 'The mask they wear', 3)}
+          {renderRichTextarea('hiddenAspect', 'What They Hide', 'True feelings, vulnerabilities', 3)}
+          {renderRichTextarea('secret', 'Secret (Known or Unknown to Others)', 'Hidden truth about them', 3)}
         </>
       ))}
 
@@ -598,12 +567,12 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       {renderSection('legacy', Award, 'Legacy & Symbol', (
         <>
           {renderInput('symbolOrMotif', 'Symbol, Motif, or Image Associated with Them', 'e.g., A raven, storm clouds, a broken sword')}
-          {renderTextarea('legacy', 'Legacy or Impact on the World', 'What mark will they leave?', 3)}
-          {renderTextarea('rememberedAs', 'If They Died Today, How Would They Be Remembered?', 'Their epitaph or legend', 3)}
+          {renderRichTextarea('legacy', 'Legacy or Impact on the World', 'What mark will they leave?', 3)}
+          {renderRichTextarea('rememberedAs', 'If They Died Today, How Would They Be Remembered?', 'Their epitaph or legend', 3)}
         </>
       ))}
 
-      <RichTextModal
+      <RichTextPanel
         isOpen={richTextModal.isOpen}
         onClose={() => setRichTextModal({ ...richTextModal, isOpen: false })}
         onSave={(value) => handleChange(richTextModal.field, value)}
