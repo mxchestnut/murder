@@ -316,14 +316,68 @@ router.put('/:id', async (req, res) => {
       specialAbilities,
       spells,
       avatarUrl,
+      // Basic Identity
+      fullName,
+      titles,
+      species,
+      ageDescription,
+      culturalBackground,
       pronouns,
+      genderIdentity,
       sexuality,
-      age,
-      height,
-      weight,
-      appearance,
-      personality,
-      backstory
+      occupation,
+      currentLocation,
+      // Goals & Motivations
+      currentGoal,
+      longTermDesire,
+      coreMotivation,
+      deepestFear,
+      coreBelief,
+      coreMisconception,
+      moralCode,
+      alignmentTendency,
+      // Personality
+      personalityOneSentence,
+      keyVirtues,
+      keyFlaws,
+      stressBehavior,
+      habitsOrTells,
+      speechStyle,
+      // Appearance
+      physicalPresence,
+      identifyingTraits,
+      clothingAesthetic,
+      // Skills & Abilities
+      notableEquipment,
+      skillsReliedOn,
+      skillsAvoided,
+      // Backstory (Markdown)
+      origin,
+      greatestSuccess,
+      greatestFailure,
+      regret,
+      trauma,
+      // Relationships (Markdown)
+      importantRelationships,
+      protectedRelationship,
+      avoidedRelationship,
+      rival,
+      affiliatedGroups,
+      // Beliefs
+      beliefsPhilosophy,
+      // Public vs Private
+      publicFacade,
+      hiddenAspect,
+      secret,
+      // Growth & Change (Markdown)
+      recentChange,
+      potentialChange,
+      breakingPoint,
+      redemption,
+      // Legacy
+      symbolOrMotif,
+      legacy,
+      rememberedAs
     } = req.body;
 
     const [updatedSheet] = await db.update(characterSheets)
@@ -362,14 +416,68 @@ router.put('/:id', async (req, res) => {
         ...(specialAbilities !== undefined && { specialAbilities: JSON.stringify(specialAbilities) }),
         ...(spells !== undefined && { spells: JSON.stringify(spells) }),
         ...(avatarUrl !== undefined && { avatarUrl }),
+        // Basic Identity
+        ...(fullName !== undefined && { fullName }),
+        ...(titles !== undefined && { titles }),
+        ...(species !== undefined && { species }),
+        ...(ageDescription !== undefined && { ageDescription }),
+        ...(culturalBackground !== undefined && { culturalBackground }),
         ...(pronouns !== undefined && { pronouns }),
+        ...(genderIdentity !== undefined && { genderIdentity }),
         ...(sexuality !== undefined && { sexuality }),
-        ...(age !== undefined && { age }),
-        ...(height !== undefined && { height }),
-        ...(weight !== undefined && { weight }),
-        ...(appearance !== undefined && { appearance }),
-        ...(personality !== undefined && { personality }),
-        ...(backstory !== undefined && { backstory }),
+        ...(occupation !== undefined && { occupation }),
+        ...(currentLocation !== undefined && { currentLocation }),
+        // Goals & Motivations
+        ...(currentGoal !== undefined && { currentGoal }),
+        ...(longTermDesire !== undefined && { longTermDesire }),
+        ...(coreMotivation !== undefined && { coreMotivation }),
+        ...(deepestFear !== undefined && { deepestFear }),
+        ...(coreBelief !== undefined && { coreBelief }),
+        ...(coreMisconception !== undefined && { coreMisconception }),
+        ...(moralCode !== undefined && { moralCode }),
+        ...(alignmentTendency !== undefined && { alignmentTendency }),
+        // Personality
+        ...(personalityOneSentence !== undefined && { personalityOneSentence }),
+        ...(keyVirtues !== undefined && { keyVirtues }),
+        ...(keyFlaws !== undefined && { keyFlaws }),
+        ...(stressBehavior !== undefined && { stressBehavior }),
+        ...(habitsOrTells !== undefined && { habitsOrTells }),
+        ...(speechStyle !== undefined && { speechStyle }),
+        // Appearance
+        ...(physicalPresence !== undefined && { physicalPresence }),
+        ...(identifyingTraits !== undefined && { identifyingTraits }),
+        ...(clothingAesthetic !== undefined && { clothingAesthetic }),
+        // Skills & Abilities
+        ...(notableEquipment !== undefined && { notableEquipment }),
+        ...(skillsReliedOn !== undefined && { skillsReliedOn }),
+        ...(skillsAvoided !== undefined && { skillsAvoided }),
+        // Backstory (Markdown)
+        ...(origin !== undefined && { origin }),
+        ...(greatestSuccess !== undefined && { greatestSuccess }),
+        ...(greatestFailure !== undefined && { greatestFailure }),
+        ...(regret !== undefined && { regret }),
+        ...(trauma !== undefined && { trauma }),
+        // Relationships (Markdown)
+        ...(importantRelationships !== undefined && { importantRelationships }),
+        ...(protectedRelationship !== undefined && { protectedRelationship }),
+        ...(avoidedRelationship !== undefined && { avoidedRelationship }),
+        ...(rival !== undefined && { rival }),
+        ...(affiliatedGroups !== undefined && { affiliatedGroups }),
+        // Beliefs
+        ...(beliefsPhilosophy !== undefined && { beliefsPhilosophy }),
+        // Public vs Private
+        ...(publicFacade !== undefined && { publicFacade }),
+        ...(hiddenAspect !== undefined && { hiddenAspect }),
+        ...(secret !== undefined && { secret }),
+        // Growth & Change (Markdown)
+        ...(recentChange !== undefined && { recentChange }),
+        ...(potentialChange !== undefined && { potentialChange }),
+        ...(breakingPoint !== undefined && { breakingPoint }),
+        ...(redemption !== undefined && { redemption }),
+        // Legacy
+        ...(symbolOrMotif !== undefined && { symbolOrMotif }),
+        ...(legacy !== undefined && { legacy }),
+        ...(rememberedAs !== undefined && { rememberedAs }),
         updatedAt: new Date()
       })
       .where(eq(characterSheets.id, sheetId))

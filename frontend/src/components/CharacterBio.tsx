@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { User, Heart, Calendar, Ruler, Weight, Palette, Smile, BookOpen, Save } from 'lucide-react';
+import { 
+  User, Target, Brain, Smile, Palette, Sword, BookOpen, 
+  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save 
+} from 'lucide-react';
 import { api } from '../utils/api';
 
 interface CharacterBioProps {
@@ -9,30 +12,154 @@ interface CharacterBioProps {
 
 export default function CharacterBio({ character, onUpdate }: CharacterBioProps) {
   const [bioData, setBioData] = useState({
+    // Basic Identity
+    fullName: character.fullName || '',
+    titles: character.titles || '',
+    species: character.species || '',
+    ageDescription: character.ageDescription || '',
+    culturalBackground: character.culturalBackground || '',
     pronouns: character.pronouns || '',
+    genderIdentity: character.genderIdentity || '',
     sexuality: character.sexuality || '',
-    age: character.age || '',
-    height: character.height || '',
-    weight: character.weight || '',
-    appearance: character.appearance || '',
-    personality: character.personality || '',
-    backstory: character.backstory || ''
+    occupation: character.occupation || '',
+    currentLocation: character.currentLocation || '',
+    // Goals & Motivations
+    currentGoal: character.currentGoal || '',
+    longTermDesire: character.longTermDesire || '',
+    coreMotivation: character.coreMotivation || '',
+    deepestFear: character.deepestFear || '',
+    coreBelief: character.coreBelief || '',
+    coreMisconception: character.coreMisconception || '',
+    moralCode: character.moralCode || '',
+    alignmentTendency: character.alignmentTendency || '',
+    // Personality
+    personalityOneSentence: character.personalityOneSentence || '',
+    keyVirtues: character.keyVirtues || '',
+    keyFlaws: character.keyFlaws || '',
+    stressBehavior: character.stressBehavior || '',
+    habitsOrTells: character.habitsOrTells || '',
+    speechStyle: character.speechStyle || '',
+    // Appearance
+    physicalPresence: character.physicalPresence || '',
+    identifyingTraits: character.identifyingTraits || '',
+    clothingAesthetic: character.clothingAesthetic || '',
+    // Skills
+    notableEquipment: character.notableEquipment || '',
+    skillsReliedOn: character.skillsReliedOn || '',
+    skillsAvoided: character.skillsAvoided || '',
+    // Backstory
+    origin: character.origin || '',
+    greatestSuccess: character.greatestSuccess || '',
+    greatestFailure: character.greatestFailure || '',
+    regret: character.regret || '',
+    trauma: character.trauma || '',
+    // Relationships
+    importantRelationships: character.importantRelationships || '',
+    protectedRelationship: character.protectedRelationship || '',
+    avoidedRelationship: character.avoidedRelationship || '',
+    rival: character.rival || '',
+    affiliatedGroups: character.affiliatedGroups || '',
+    // Beliefs
+    beliefsPhilosophy: character.beliefsPhilosophy || '',
+    // Public vs Private
+    publicFacade: character.publicFacade || '',
+    hiddenAspect: character.hiddenAspect || '',
+    secret: character.secret || '',
+    // Growth
+    recentChange: character.recentChange || '',
+    potentialChange: character.potentialChange || '',
+    breakingPoint: character.breakingPoint || '',
+    redemption: character.redemption || '',
+    // Legacy
+    symbolOrMotif: character.symbolOrMotif || '',
+    legacy: character.legacy || '',
+    rememberedAs: character.rememberedAs || ''
   });
+
+  const [expandedSections, setExpandedSections] = useState({
+    identity: true,
+    goals: false,
+    personality: false,
+    appearance: false,
+    skills: false,
+    backstory: false,
+    relationships: false,
+    beliefs: false,
+    publicPrivate: false,
+    growth: false,
+    legacy: false
+  });
+
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
+    // Update bio data when character changes
     setBioData({
+      fullName: character.fullName || '',
+      titles: character.titles || '',
+      species: character.species || '',
+      ageDescription: character.ageDescription || '',
+      culturalBackground: character.culturalBackground || '',
       pronouns: character.pronouns || '',
+      genderIdentity: character.genderIdentity || '',
       sexuality: character.sexuality || '',
-      age: character.age || '',
-      height: character.height || '',
-      weight: character.weight || '',
-      appearance: character.appearance || '',
-      personality: character.personality || '',
-      backstory: character.backstory || ''
+      occupation: character.occupation || '',
+      currentLocation: character.currentLocation || '',
+      currentGoal: character.currentGoal || '',
+      longTermDesire: character.longTermDesire || '',
+      coreMotivation: character.coreMotivation || '',
+      deepestFear: character.deepestFear || '',
+      coreBelief: character.coreBelief || '',
+      coreMisconception: character.coreMisconception || '',
+      moralCode: character.moralCode || '',
+      alignmentTendency: character.alignmentTendency || '',
+      personalityOneSentence: character.personalityOneSentence || '',
+      keyVirtues: character.keyVirtues || '',
+      keyFlaws: character.keyFlaws || '',
+      stressBehavior: character.stressBehavior || '',
+      habitsOrTells: character.habitsOrTells || '',
+      speechStyle: character.speechStyle || '',
+      physicalPresence: character.physicalPresence || '',
+      identifyingTraits: character.identifyingTraits || '',
+      clothingAesthetic: character.clothingAesthetic || '',
+      notableEquipment: character.notableEquipment || '',
+      skillsReliedOn: character.skillsReliedOn || '',
+      skillsAvoided: character.skillsAvoided || '',
+      origin: character.origin || '',
+      greatestSuccess: character.greatestSuccess || '',
+      greatestFailure: character.greatestFailure || '',
+      regret: character.regret || '',
+      trauma: character.trauma || '',
+      importantRelationships: character.importantRelationships || '',
+      protectedRelationship: character.protectedRelationship || '',
+      avoidedRelationship: character.avoidedRelationship || '',
+      rival: character.rival || '',
+      affiliatedGroups: character.affiliatedGroups || '',
+      beliefsPhilosophy: character.beliefsPhilosophy || '',
+      publicFacade: character.publicFacade || '',
+      hiddenAspect: character.hiddenAspect || '',
+      secret: character.secret || '',
+      recentChange: character.recentChange || '',
+      potentialChange: character.potentialChange || '',
+      breakingPoint: character.breakingPoint || '',
+      redemption: character.redemption || '',
+      symbolOrMotif: character.symbolOrMotif || '',
+      legacy: character.legacy || '',
+      rememberedAs: character.rememberedAs || ''
     });
   }, [character]);
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !(prev as any)[section]
+    }));
+  };
+
+  const handleChange = (field: string, value: string) => {
+    setBioData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -51,8 +178,112 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
     }
   };
 
-  const handleChange = (field: string, value: string) => {
-    setBioData(prev => ({ ...prev, [field]: value }));
+  const renderInput = (field: string, label: string, placeholder: string) => (
+    <div style={{ marginBottom: '1rem' }}>
+      <label style={{ 
+        display: 'block', 
+        color: 'var(--text-primary)', 
+        fontSize: '0.85rem', 
+        marginBottom: '0.5rem', 
+        fontWeight: 500 
+      }}>
+        {label}
+      </label>
+      <input
+        type="text"
+        value={(bioData as any)[field]}
+        onChange={(e) => handleChange(field, e.target.value)}
+        placeholder={placeholder}
+        style={{
+          width: '100%',
+          padding: '0.5rem',
+          borderRadius: '6px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-secondary)',
+          color: 'var(--text-primary)',
+          fontSize: '0.9rem'
+        }}
+      />
+    </div>
+  );
+
+  const renderTextarea = (field: string, label: string, placeholder: string, rows: number = 3) => (
+    <div style={{ marginBottom: '1rem' }}>
+      <label style={{ 
+        display: 'block', 
+        color: 'var(--text-primary)', 
+        fontSize: '0.85rem', 
+        marginBottom: '0.5rem', 
+        fontWeight: 500 
+      }}>
+        {label}
+      </label>
+      <textarea
+        value={(bioData as any)[field]}
+        onChange={(e) => handleChange(field, e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        style={{
+          width: '100%',
+          padding: '0.5rem',
+          borderRadius: '6px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-secondary)',
+          color: 'var(--text-primary)',
+          fontSize: '0.9rem',
+          resize: 'vertical',
+          fontFamily: 'inherit'
+        }}
+      />
+    </div>
+  );
+
+  const renderSection = (
+    key: string,
+    icon: any,
+    title: string,
+    children: React.ReactNode
+  ) => {
+    const Icon = icon;
+    const isExpanded = (expandedSections as any)[key];
+
+    return (
+      <div style={{
+        marginBottom: '1rem',
+        border: '1px solid var(--border-color)',
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }}>
+        <div
+          onClick={() => toggleSection(key)}
+          style={{
+            padding: '1rem',
+            background: isExpanded ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            userSelect: 'none',
+            borderBottom: isExpanded ? '1px solid var(--border-color)' : 'none'
+          }}
+        >
+          {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          <Icon size={18} style={{ color: 'var(--accent-color)' }} />
+          <span style={{ 
+            color: 'var(--text-primary)', 
+            fontWeight: 600, 
+            fontSize: '0.95rem' 
+          }}>
+            {title}
+          </span>
+        </div>
+        {isExpanded && (
+          <div style={{ padding: '1.5rem' }}>
+            {children}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -66,7 +297,7 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <User size={20} />
-          Character Bio
+          Character Profile
         </h3>
         <button
           onClick={handleSave}
@@ -104,189 +335,111 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-        <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <User size={14} />
-            Pronouns
-          </label>
-          <input
-            type="text"
-            value={bioData.pronouns}
-            onChange={(e) => handleChange('pronouns', e.target.value)}
-            placeholder="he/him, she/her, they/them..."
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem'
-            }}
-          />
-        </div>
+      {renderSection('identity', User, 'Basic Identity', (
+        <>
+          {renderInput('fullName', 'Full Name', 'e.g., Aria Stormwind')}
+          {renderInput('titles', 'Titles, Epithets, or Aliases', 'e.g., The Wanderer, Stormcaller')}
+          {renderInput('species', 'Species / Ancestry', 'e.g., Half-elf, Human, Tiefling')}
+          {renderInput('ageDescription', 'Age or Life Stage', 'e.g., 25 years, Young adult, Ancient')}
+          {renderInput('culturalBackground', 'Cultural Background', 'e.g., Raised in coastal trading city')}
+          {renderInput('pronouns', 'Pronouns', 'e.g., she/her, he/him, they/them')}
+          {renderInput('genderIdentity', 'Gender Identity', 'e.g., Woman, Non-binary, Genderfluid')}
+          {renderInput('sexuality', 'Sexuality', 'e.g., Bisexual, Asexual, Pansexual')}
+          {renderInput('occupation', 'Occupation or Role', 'e.g., Mercenary, Scholar, Innkeeper')}
+          {renderInput('currentLocation', 'Current Location', 'e.g., Waterdeep, On the road')}
+        </>
+      ))}
 
-        <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <Heart size={14} />
-            Sexuality
-          </label>
-          <input
-            type="text"
-            value={bioData.sexuality}
-            onChange={(e) => handleChange('sexuality', e.target.value)}
-            placeholder="straight, gay, bi, ace..."
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem'
-            }}
-          />
-        </div>
+      {renderSection('goals', Target, 'Goals & Motivations', (
+        <>
+          {renderTextarea('currentGoal', 'Current Goal', 'What are they trying to achieve right now?')}
+          {renderTextarea('longTermDesire', 'Long-term Desire', 'What do they ultimately want?')}
+          {renderTextarea('coreMotivation', 'Core Motivation', 'What drives them forward?')}
+          {renderTextarea('deepestFear', 'Deepest Fear', 'What terrifies them most?')}
+          {renderTextarea('coreBelief', 'Core Belief About the World', 'What fundamental truth do they hold?')}
+          {renderTextarea('coreMisconception', 'Core Misconception or Lie They Believe', 'What falsehood shapes their worldview?')}
+          {renderTextarea('moralCode', 'Moral Code or Red Line They Will Not Cross', 'What lines won\'t they cross?')}
+          {renderInput('alignmentTendency', 'Alignment or Ethical Tendency', 'e.g., Chaotic Good, Lawful Neutral')}
+        </>
+      ))}
 
-        <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <Calendar size={14} />
-            Age
-          </label>
-          <input
-            type="text"
-            value={bioData.age}
-            onChange={(e) => handleChange('age', e.target.value)}
-            placeholder="25, appears 30, etc..."
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem'
-            }}
-          />
-        </div>
+      {renderSection('personality', Smile, 'Personality', (
+        <>
+          {renderTextarea('personalityOneSentence', 'Personality in One Sentence', 'Sum up their personality')}
+          {renderInput('keyVirtues', 'Key Virtues', 'e.g., Brave, Compassionate, Honest')}
+          {renderInput('keyFlaws', 'Key Flaws', 'e.g., Impulsive, Stubborn, Cynical')}
+          {renderTextarea('stressBehavior', 'Stress Behavior', 'How do they act under pressure?')}
+          {renderTextarea('habitsOrTells', 'Habits or Tells', 'Nervous tics, repeated phrases, mannerisms')}
+          {renderTextarea('speechStyle', 'Speech Style or Voice Notes', 'How do they speak? Accent, vocabulary, tone')}
+        </>
+      ))}
 
-        <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <Ruler size={14} />
-            Height
-          </label>
-          <input
-            type="text"
-            value={bioData.height}
-            onChange={(e) => handleChange('height', e.target.value)}
-            placeholder="5'10&quot;, 178cm..."
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem'
-            }}
-          />
-        </div>
+      {renderSection('appearance', Palette, 'Appearance', (
+        <>
+          {renderTextarea('physicalPresence', 'Physical Presence (Overall Impression)', 'First impression they make')}
+          {renderTextarea('identifyingTraits', 'Identifying Physical Traits', 'Scars, tattoos, unique features')}
+          {renderTextarea('clothingAesthetic', 'Clothing or Gear Aesthetic', 'Style, colors, practical or decorative?')}
+        </>
+      ))}
 
-        <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <Weight size={14} />
-            Weight
-          </label>
-          <input
-            type="text"
-            value={bioData.weight}
-            onChange={(e) => handleChange('weight', e.target.value)}
-            placeholder="180 lbs, 82 kg..."
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem'
-            }}
-          />
-        </div>
-      </div>
+      {renderSection('skills', Sword, 'Skills & Abilities', (
+        <>
+          {renderTextarea('notableEquipment', 'Notable Equipment or Abilities', 'Signature weapons, magic items, powers')}
+          {renderTextarea('skillsReliedOn', 'Skills They Rely On Most', 'What are they good at?')}
+          {renderTextarea('skillsAvoided', 'Skills They Avoid or Lack', 'What do they struggle with?')}
+        </>
+      ))}
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-          <Palette size={14} />
-          Appearance
-        </label>
-        <textarea
-          value={bioData.appearance}
-          onChange={(e) => handleChange('appearance', e.target.value)}
-          placeholder="Physical description, clothing, distinguishing features..."
-          rows={3}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            borderRadius: '6px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem',
-            resize: 'vertical',
-            fontFamily: 'inherit'
-          }}
-        />
-      </div>
+      {renderSection('backstory', BookOpen, 'Backstory', (
+        <>
+          {renderTextarea('origin', 'Origin or Formative Past Event', 'Where did they come from? What shaped them?', 4)}
+          {renderTextarea('greatestSuccess', 'Greatest Success', 'Their proudest moment', 3)}
+          {renderTextarea('greatestFailure', 'Greatest Failure', 'Their biggest mistake or loss', 3)}
+          {renderTextarea('regret', 'Regret or Unresolved Guilt', 'What haunts them?', 3)}
+          {renderTextarea('trauma', 'Trauma or Defining Wound (Optional)', 'Deep emotional or physical scars', 3)}
+        </>
+      ))}
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-          <Smile size={14} />
-          Personality
-        </label>
-        <textarea
-          value={bioData.personality}
-          onChange={(e) => handleChange('personality', e.target.value)}
-          placeholder="Personality traits, mannerisms, quirks..."
-          rows={3}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            borderRadius: '6px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem',
-            resize: 'vertical',
-            fontFamily: 'inherit'
-          }}
-        />
-      </div>
+      {renderSection('relationships', Users, 'Relationships', (
+        <>
+          {renderTextarea('importantRelationships', 'Important Relationships', 'Family, friends, mentors, lovers', 4)}
+          {renderTextarea('protectedRelationship', 'Relationship They Protect', 'Who would they die for?', 3)}
+          {renderTextarea('avoidedRelationship', 'Relationship They Avoid or Fear', 'Who do they keep at distance?', 3)}
+          {renderTextarea('rival', 'Rival or Opposing Force', 'Their nemesis or antagonist', 3)}
+          {renderTextarea('affiliatedGroups', 'Affiliated Groups or Factions', 'Guilds, orders, organizations they belong to', 3)}
+        </>
+      ))}
 
-      <div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-          <BookOpen size={14} />
-          Backstory
-        </label>
-        <textarea
-          value={bioData.backstory}
-          onChange={(e) => handleChange('backstory', e.target.value)}
-          placeholder="Character history, motivations, goals..."
-          rows={4}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            borderRadius: '6px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem',
-            resize: 'vertical',
-            fontFamily: 'inherit'
-          }}
-        />
-      </div>
+      {renderSection('beliefs', Brain, 'Beliefs & Philosophy', (
+        <>
+          {renderTextarea('beliefsPhilosophy', 'Beliefs, Faith, or Philosophy', 'Religious views, personal code, worldview', 4)}
+        </>
+      ))}
+
+      {renderSection('publicPrivate', Eye, 'Public vs Private Self', (
+        <>
+          {renderTextarea('publicFacade', 'What They Want Others to See', 'The mask they wear', 3)}
+          {renderTextarea('hiddenAspect', 'What They Hide', 'True feelings, vulnerabilities', 3)}
+          {renderTextarea('secret', 'Secret (Known or Unknown to Others)', 'Hidden truth about them', 3)}
+        </>
+      ))}
+
+      {renderSection('growth', TrendingUp, 'Growth & Change', (
+        <>
+          {renderTextarea('recentChange', 'How They\'ve Changed Recently', 'Recent character development', 3)}
+          {renderTextarea('potentialChange', 'How They Might Change Next', 'Potential arc or growth', 3)}
+          {renderTextarea('breakingPoint', 'What Would Break Them', 'What could destroy them?', 3)}
+          {renderTextarea('redemption', 'What Could Redeem Them', 'Path to healing or salvation', 3)}
+        </>
+      ))}
+
+      {renderSection('legacy', Award, 'Legacy & Symbol', (
+        <>
+          {renderInput('symbolOrMotif', 'Symbol, Motif, or Image Associated with Them', 'e.g., A raven, storm clouds, a broken sword')}
+          {renderTextarea('legacy', 'Legacy or Impact on the World', 'What mark will they leave?', 3)}
+          {renderTextarea('rememberedAs', 'If They Died Today, How Would They Be Remembered?', 'Their epitaph or legend', 3)}
+        </>
+      ))}
     </div>
   );
 }

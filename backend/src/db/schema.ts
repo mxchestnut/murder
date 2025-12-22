@@ -90,15 +90,69 @@ export const characterSheets = pgTable('character_sheets', {
   lastSynced: timestamp('last_synced'),
   // Discord proxying
   avatarUrl: text('avatar_url'), // Avatar URL for Discord webhooks
-  // Character Bio
+  // Character Bio - Comprehensive Profile
+  // Basic Identity
+  fullName: text('full_name'),
+  titles: text('titles'),
+  species: text('species'),
+  ageDescription: text('age_description'),
+  culturalBackground: text('cultural_background'),
   pronouns: text('pronouns'),
+  genderIdentity: text('gender_identity'),
   sexuality: text('sexuality'),
-  age: text('age'),
-  height: text('height'),
-  weight: text('weight'),
-  appearance: text('appearance'),
-  personality: text('personality'),
-  backstory: text('backstory'),
+  occupation: text('occupation'),
+  currentLocation: text('current_location'),
+  // Goals & Motivations
+  currentGoal: text('current_goal'),
+  longTermDesire: text('long_term_desire'),
+  coreMotivation: text('core_motivation'),
+  deepestFear: text('deepest_fear'),
+  coreBelief: text('core_belief'),
+  coreMisconception: text('core_misconception'),
+  moralCode: text('moral_code'),
+  alignmentTendency: text('alignment_tendency'),
+  // Personality
+  personalityOneSentence: text('personality_one_sentence'),
+  keyVirtues: text('key_virtues'),
+  keyFlaws: text('key_flaws'),
+  stressBehavior: text('stress_behavior'),
+  habitsOrTells: text('habits_or_tells'),
+  speechStyle: text('speech_style'),
+  // Appearance
+  physicalPresence: text('physical_presence'),
+  identifyingTraits: text('identifying_traits'),
+  clothingAesthetic: text('clothing_aesthetic'),
+  // Skills & Abilities
+  notableEquipment: text('notable_equipment'),
+  skillsReliedOn: text('skills_relied_on'),
+  skillsAvoided: text('skills_avoided'),
+  // Backstory (Markdown)
+  origin: text('origin'),
+  greatestSuccess: text('greatest_success'),
+  greatestFailure: text('greatest_failure'),
+  regret: text('regret'),
+  trauma: text('trauma'),
+  // Relationships (Markdown)
+  importantRelationships: text('important_relationships'),
+  protectedRelationship: text('protected_relationship'),
+  avoidedRelationship: text('avoided_relationship'),
+  rival: text('rival'),
+  affiliatedGroups: text('affiliated_groups'),
+  // Beliefs
+  beliefsPhilosophy: text('beliefs_philosophy'),
+  // Public vs Private
+  publicFacade: text('public_facade'),
+  hiddenAspect: text('hidden_aspect'),
+  secret: text('secret'),
+  // Growth & Change (Markdown)
+  recentChange: text('recent_change'),
+  potentialChange: text('potential_change'),
+  breakingPoint: text('breaking_point'),
+  redemption: text('redemption'),
+  // Legacy
+  symbolOrMotif: text('symbol_or_motif'),
+  legacy: text('legacy'),
+  rememberedAs: text('remembered_as'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
