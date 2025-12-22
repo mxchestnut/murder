@@ -121,7 +121,13 @@ export default function Settings() {
                 <input
                   type="color"
                   value={theme.accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
+                  onChange={(e) => {
+                    // Only update if it's a valid hex color (native picker always provides valid values)
+                    const value = e.target.value;
+                    if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                      setAccentColor(value);
+                    }
+                  }}
                   style={{
                     width: '60px',
                     height: '40px',
