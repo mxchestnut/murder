@@ -28,7 +28,9 @@ initializeDiscordBot(process.env.DISCORD_BOT_TOKEN || '');
 app.set('trust proxy', 1);
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for serving frontend
+}));
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
@@ -51,14 +53,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
-  saveUninitialized: true,
-  proxy: true, // Trust the reverse proxy
+  saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
-    domain: process.env.NODE_ENV === 'production' ? '.writepretend.com' : undefined, // Share cookie across www and apex domain
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.cyarika.com' : undefined, // Share cookie across www and apex domain
     path: '/'
   }
 }));
@@ -68,7 +69,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 setupPassport();
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/characters', characterRoutes);
@@ -78,6 +79,15 @@ app.use('/api/discord', discordRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Serve static frontend files
+const frontendPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendPath));
+
+// Serve index.html for all non-API routes (SPA support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Error handling middleware
