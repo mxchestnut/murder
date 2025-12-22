@@ -89,6 +89,8 @@ export default function CharacterSheets() {
   const [pathCompanionCampaigns, setPathCompanionCampaigns] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [loadingCharacters, setLoadingCharacters] = useState(false);
   const [linkingCharacter, setLinkingCharacter] = useState<number | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [formData, setFormData] = useState<{
     name: string;
     characterClass: string;
@@ -180,11 +182,25 @@ export default function CharacterSheets() {
 
   const handleCreate = async () => {
     try {
-      const response = await api.post('/characters', formData);
+      let avatarUrl = formData.avatarUrl;
+      
+      // Upload avatar if a file was selected
+      if (avatarFile) {
+        const formDataFile = new FormData();
+        formDataFile.append('avatar', avatarFile);
+        const uploadResponse = await api.post('/characters/upload-avatar', formDataFile, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        avatarUrl = uploadResponse.data.url;
+      }
+      
+      const response = await api.post('/characters', { ...formData, avatarUrl });
       setSheets([...sheets, response.data]);
       setSelectedSheet(response.data);
       setIsCreating(false);
       resetForm();
+      setAvatarFile(null);
+      setAvatarPreview('');
     } catch (error) {
       console.error('Error creating character sheet:', error);
     }
@@ -193,11 +209,25 @@ export default function CharacterSheets() {
   const handleUpdate = async () => {
     if (!selectedSheet) return;
     try {
-      const response = await api.put(`/characters/${selectedSheet.id}`, formData);
+      let avatarUrl = formData.avatarUrl;
+      
+      // Upload avatar if a file was selected
+      if (avatarFile) {
+        const formDataFile = new FormData();
+        formDataFile.append('avatar', avatarFile);
+        const uploadResponse = await api.post('/characters/upload-avatar', formDataFile, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        avatarUrl = uploadResponse.data.url;
+      }
+      
+      const response = await api.put(`/characters/${selectedSheet.id}`, { ...formData, avatarUrl });
       const updatedSheets = sheets.map(s => s.id === selectedSheet.id ? response.data : s);
       setSheets(updatedSheets);
       setSelectedSheet(response.data);
       setIsEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview('');
     } catch (error) {
       console.error('Error updating character sheet:', error);
     }
@@ -599,14 +629,38 @@ export default function CharacterSheets() {
 
             <h3>Discord Avatar</h3>
             <div className="form-group">
-              <label>Avatar URL (optional)</label>
+              <label>Avatar Image (optional)</label>
               <input
-                type="text"
-                value={formData.avatarUrl}
-                onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                placeholder="https://example.com/avatar.png"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setAvatarFile(file);
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setAvatarPreview(reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
               />
-              <small>URL for character avatar when using Discord proxying. Leave empty for auto-generated avatar.</small>
+              {(avatarPreview || formData.avatarUrl) && (
+                <div style={{ marginTop: '1rem' }}>
+                  <img 
+                    src={avatarPreview || formData.avatarUrl} 
+                    alt="Avatar preview" 
+                    style={{ 
+                      width: '100px', 
+                      height: '100px', 
+                      borderRadius: '50%', 
+                      objectFit: 'cover',
+                      border: '2px solid var(--border-color)'
+                    }} 
+                  />
+                </div>
+              )}
+              <small>Upload an image for character avatar when using Discord proxying. Leave empty for auto-generated avatar.</small>
             </div>
 
             <div className="form-actions">
@@ -1406,6 +1460,11 @@ export default function CharacterSheets() {
         .icon-button.primary {
           background-color: var(--primary-color);
           color: white;
+        }
+
+        .icon-button.primary:hover {
+          background-color: #4c51bf;
+          transform: scale(1.05);
         }
 
         .icon-button.secondary {
