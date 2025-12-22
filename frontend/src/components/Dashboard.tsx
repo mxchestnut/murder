@@ -46,10 +46,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const handleSelectDocument = (doc: any) => {
     setCurrentDocument(doc);
+    setShowSettings(false);
+    setShowCharacterSheets(false);
+    setShowDiscordCommands(false);
   };
 
   const handleSelectCharacter = (character: any) => {
     setCurrentCharacter(character);
+    setShowSettings(false);
+    setShowCharacterSheets(true);
+    setShowDiscordCommands(false);
   };
 
   useEffect(() => {
@@ -160,28 +166,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
-                setShowCharacterSheets(!showCharacterSheets);
-                setShowSettings(false);
-                setShowDiscordCommands(false);
-              }}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showCharacterSheets ? 'var(--accent-2)' : 'var(--accent-1)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <Dices size={18} />
-              Characters
-            </button>
-
-            <button
-              onClick={() => {
                 setShowDiscordCommands(!showDiscordCommands);
                 setShowSettings(false);
                 setShowCharacterSheets(false);
@@ -190,8 +174,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
                 border: 'none',
-                background: showDiscordCommands ? 'var(--accent-2)' : 'var(--accent-1)',
-                color: 'var(--text-primary)',
+                background: showDiscordCommands ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showDiscordCommands ? 'var(--accent-text)' : 'var(--text-primary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -212,8 +196,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
                 border: 'none',
-                background: showSettings ? 'var(--accent-2)' : 'var(--accent-1)',
-                color: 'var(--text-primary)',
+                background: showSettings ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showSettings ? 'var(--accent-text)' : 'var(--text-primary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -232,8 +216,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 padding: '0.5rem 1rem',
                 borderRadius: '4px',
                 border: 'none',
-                background: '#c74444',
-                color: 'white',
+                background: 'var(--accent-color)',
+                color: 'var(--accent-text)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',

@@ -210,7 +210,8 @@ export default function DiscordCommands() {
         }
 
         .command-section {
-          background: var(--surface-color);
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
           border-radius: 8px;
           padding: 1.5rem;
         }
@@ -237,7 +238,7 @@ export default function DiscordCommands() {
         }
 
         .command-card {
-          background: var(--background-color);
+          background: var(--bg-primary);
           border: 1px solid var(--border-color);
           border-radius: 8px;
           padding: 1.25rem;
@@ -245,8 +246,8 @@ export default function DiscordCommands() {
         }
 
         .command-card.highlight {
-          border-color: var(--primary-color);
-          background: linear-gradient(135deg, var(--background-color) 0%, rgba(88, 101, 242, 0.05) 100%);
+          border-color: var(--accent-color);
+          background: var(--accent-light);
         }
 
         .command-syntax {
@@ -254,14 +255,15 @@ export default function DiscordCommands() {
           font-size: 1.1rem;
           font-weight: 600;
           margin-bottom: 0.75rem;
-          color: var(--primary-color);
+          color: var(--accent-color);
         }
 
         .command-syntax code {
-          background: rgba(88, 101, 242, 0.1);
+          background: var(--accent-light);
           padding: 0.5rem 0.75rem;
           border-radius: 4px;
-          border-left: 3px solid var(--primary-color);
+          border-left: 3px solid var(--accent-color);
+          color: var(--text-primary);
         }
 
         .command-description {
@@ -284,26 +286,28 @@ export default function DiscordCommands() {
 
         .command-examples code {
           display: block;
-          background: rgba(0, 0, 0, 0.3);
+          background: var(--bg-tertiary);
           padding: 0.5rem 0.75rem;
           border-radius: 4px;
           font-family: 'Monaco', 'Courier New', monospace;
           font-size: 0.9rem;
           margin-bottom: 0.5rem;
-          color: #7dd3fc;
+          color: var(--accent-color);
         }
 
         .command-note {
           margin-top: 1rem;
           padding: 0.75rem;
-          background: rgba(250, 204, 21, 0.1);
-          border-left: 3px solid #facc15;
+          background: var(--accent-light);
+          border-left: 3px solid var(--accent-color);
           border-radius: 4px;
           font-size: 0.9rem;
+          color: var(--text-primary);
         }
 
         .setup-section {
-          background: var(--surface-color);
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
           border-radius: 8px;
           padding: 1.5rem;
           margin-top: 2rem;
@@ -325,11 +329,12 @@ export default function DiscordCommands() {
         }
 
         .setup-section code {
-          background: rgba(88, 101, 242, 0.1);
+          background: var(--accent-light);
           padding: 0.25rem 0.5rem;
           border-radius: 4px;
           font-family: 'Monaco', 'Courier New', monospace;
           font-size: 0.875rem;
+          color: var(--text-primary);
         }
       `}</style>
     </div>

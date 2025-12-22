@@ -1,16 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Link, Unlink, Loader, Save, Sun, Moon, Palette } from 'lucide-react';
+import { Settings as SettingsIcon, Link, Unlink, Loader, Sun, Moon, Palette } from 'lucide-react';
 import { api } from '../utils/api';
 import { useTheme } from '../utils/useTheme';
 
 interface PathCompanionConnectionStatus {
   connected: boolean;
   username?: string;
-}
-
-interface DiscordSettings {
-  hasToken: boolean;
-  botToken?: string;
 }
 
 export default function Settings() {
@@ -23,14 +18,9 @@ export default function Settings() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
-  const [discordSettings, setDiscordSettings] = useState<DiscordSettings>({ hasToken: false, botToken: '' });
-  const [isSavingDiscord, setIsSavingDiscord] = useState(false);
-  const [discordMessage, setDiscordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadConnectionStatus();
-    loadDiscordSettings();
   }, []);
 
   const loadConnectionStatus = async () => {
@@ -42,34 +32,6 @@ export default function Settings() {
       });
     } catch (error) {
       console.error('Failed to load connection status:', error);
-    }
-  };
-
-  const loadDiscordSettings = async () => {
-    try {
-      const response = await api.get('/auth/discord-settings');
-      setDiscordSettings({ hasToken: response.data.hasToken || false, botToken: '' });
-    } catch (error) {
-      console.error('Failed to load Discord settings:', error);
-    }
-  };
-
-  const handleSaveDiscord = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingDiscord(true);
-    setDiscordMessage(null);
-
-    try {
-      await api.post('/auth/discord-settings', { botToken: discordSettings.botToken });
-      setDiscordMessage({ type: 'success', text: 'Discord bot token saved successfully!' });
-      setDiscordSettings({ ...discordSettings, hasToken: true, botToken: '' });
-    } catch (error: any) {
-      setDiscordMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || 'Failed to save Discord settings.' 
-      });
-    } finally {
-      setIsSavingDiscord(false);
     }
   };
 
@@ -268,82 +230,6 @@ export default function Settings() {
               </form>
             </div>
           )}
-        </section>
-
-        <section className="settings-section">
-          <h2>Discord Bot Integration</h2>
-          <p className="section-description">
-            Set up a Discord bot to enable dice rolling commands and channel-based character linking. 
-            Your rolls will automatically post to channels you've linked with !setchar.
-          </p>
-
-          {discordMessage && (
-            <div className={`message ${discordMessage.type}`}>
-              {discordMessage.text}
-            </div>
-          )}
-
-          <div className="connection-form">
-            {discordSettings.hasToken && (
-              <div className="info-box" style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                <p style={{ margin: 0, color: 'var(--success)' }}>✓ Discord bot is configured</p>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                  Bot commands: !setchar, !char, !roll, !help
-                </p>
-              </div>
-            )}
-
-            <div className="setup-instructions" style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-              <h4 style={{ marginTop: 0 }}>Setup Instructions:</h4>
-              <ol style={{ fontSize: '0.9rem', paddingLeft: '1.5rem' }}>
-                <li>Go to <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a></li>
-                <li>Create a "New Application" and give it a name (e.g., "Write Pretend Bot")</li>
-                <li>Go to "Bot" tab → Reset Token → Copy the bot token</li>
-                <li>Paste the bot token below</li>
-                <li>Go to "OAuth2" → "URL Generator"</li>
-                <li>Select scopes: "bot", permissions: "Send Messages", "Embed Links"</li>
-                <li>Copy the generated URL and invite the bot to your server</li>
-                <li>In Discord, use !setchar &lt;character name&gt; to link a channel</li>
-              </ol>
-            </div>
-
-            <form onSubmit={handleSaveDiscord}>
-              <div className="form-group">
-                <label htmlFor="discord-token">Discord Bot Token</label>
-                <input
-                  id="discord-token"
-                  type="password"
-                  value={discordSettings.botToken}
-                  onChange={(e) => setDiscordSettings({ ...discordSettings, botToken: e.target.value })}
-                  placeholder="Your Discord bot token (will be stored securely)"
-                />
-                <p style={{ 
-                  fontSize: '0.85rem', 
-                  color: 'var(--text-secondary)', 
-                  marginTop: '0.5rem' 
-                }}>
-                  Your bot token is encrypted and never shared.
-                </p>
-              </div>
-              <button 
-                type="submit" 
-                className="button primary"
-                disabled={isSavingDiscord}
-              >
-                {isSavingDiscord ? (
-                  <>
-                    <Loader size={18} className="spinner" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save size={18} />
-                    Save Bot Token
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
         </section>
       </div>
 
