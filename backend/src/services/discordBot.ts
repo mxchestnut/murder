@@ -342,14 +342,14 @@ async function handleConnect(message: Message, args: string[]) {
   await message.delete().catch(() => {});
 
   if (args.length < 2) {
-    await message.author.send('❌ **Usage:** `!connect <cyarika_username> <password>`\n\n' +
+    await message.author.send('❌ **Usage:** `!connect <username> <password>`\n\n' +
       '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only used for authentication.\n\n' +
       '**Example:** `!connect myusername mypassword`\n\n' +
-      '🔗 **Linking your Discord account** to Cyarika will allow you to:\n' +
-      '• Use all your Cyarika characters in Discord\n' +
+      '🔗 **Linking your Discord account** to Write Pretend will allow you to:\n' +
+      '• Use all your Write Pretend characters in Discord\n' +
       '• Roll dice with your character stats\n' +
       '• Proxy messages as your characters\n\n' +
-      '💡 Don\'t have a Cyarika account? Create one at http://54.242.214.56');
+      '💡 Don\'t have a Write Pretend account? Create one at http://writepretend.com');
     return;
   }
 
@@ -358,7 +358,7 @@ async function handleConnect(message: Message, args: string[]) {
 
   try {
     // Send a DM to the user for privacy
-    await message.author.send('🔐 Connecting to Cyarika...');
+    await message.author.send('🔐 Connecting to Write Pretend...');
 
     // Authenticate with Cyarika backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -370,7 +370,7 @@ async function handleConnect(message: Message, args: string[]) {
 
     const { user, characters } = response.data;
 
-    await message.author.send('✅ **Successfully connected to Cyarika!**\n\n' +
+    await message.author.send('✅ **Successfully connected to Write Pretend!**\n\n' +
       `🎭 Account: **${user.username}**\n` +
       `🎲 Characters: **${characters.length}**\n` +
       (user.pathCompanionConnected ? '🔗 PathCompanion: **Connected**\n' : '') +
@@ -382,7 +382,7 @@ async function handleConnect(message: Message, args: string[]) {
       '• Type `CharName: message` to proxy as that character\n' +
       '• Use `!help` for more commands');
 
-    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Cyarika user: ${username}`);
+    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Write Pretend user: ${username}`);
 
   } catch (error: any) {
     console.error('Discord Cyarika connect error:', error);
@@ -394,15 +394,15 @@ async function handleConnect(message: Message, args: string[]) {
       errorMsg = error.message;
     }
     
-    await message.author.send('❌ **Failed to connect to Cyarika.**\n\n' +
+    await message.author.send('❌ **Failed to connect to Write Pretend.**\n\n' +
       `Error: ${errorMsg}\n\n` +
       'Please check your username and password and try again.\n\n' +
-      '💡 Need help? Visit http://54.242.214.56 to manage your account.');
+      '💡 Need help? Visit http://writepretend.com to manage your account.');
   }
 }
 
 async function handleSyncAll(message: Message) {
-  await message.reply('🔄 Refreshing your character list from Cyarika...');
+  await message.reply('🔄 Refreshing your character list from Write Pretend...');
 
   try {
     // Get user by Discord ID
@@ -453,16 +453,16 @@ async function handleSyncAll(message: Message) {
 
 async function handleHelp(message: Message) {
   const embed = new EmbedBuilder()
-    .setColor(0x5865f2)
-    .setTitle('📖 Cyarika Bot Commands')
-    .setDescription('🎲 **Getting Started:**\n1. Link your Discord to Cyarika with `!connect`\n2. Your characters are automatically available!\n\n**Commands:**')
+    .setColor(0x6B46C1) // Write Pretend purple
+    .setTitle('🎭 Write Pretend Bot Commands')
+    .setDescription('✨ **Getting Started:**\n1. Link your Discord to Write Pretend with `!connect`\n2. Your characters are automatically available!\n\n**Commands:**')
     .addFields(
-      { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord to Cyarika\n`!syncall` - Refresh character list\n\n💡 Create an account at http://54.242.214.56', inline: false },
+      { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord to Write Pretend\n`!syncall` - Refresh character list\n\n💡 Create an account at http://writepretend.com', inline: false },
       { name: '🎭 Using Characters', value: '`!CharName <stat/save/skill>` - Roll for any character\n`CharName: message` - Speak as a character\n`!setchar <name>` - Link character to channel\n`!roll <stat>` - Roll for linked character', inline: false },
-      { name: '📥 Creating Characters', value: '**Web Portal:** http://54.242.214.56 (recommended)\n• Create manually with name + stats\n• Import from PathCompanion (optional)\n\n💡 All characters instantly available in Discord!', inline: false },
+      { name: '📥 Creating Characters', value: '**Web Portal:** http://writepretend.com (recommended)\n• Create manually with name + stats\n• Import from PathCompanion (optional)\n\n✨ All characters instantly available in Discord!', inline: false },
       { name: 'ℹ️ Other', value: '`!char` - Show linked character\n`!help` - Show this message', inline: false }
     )
-    .setFooter({ text: 'PathCompanion is optional - create characters directly in Cyarika!' });
+    .setFooter({ text: 'PathCompanion is optional - create characters directly in Write Pretend!' });
 
   await message.reply({ embeds: [embed] });
 }
@@ -494,13 +494,13 @@ async function handleProxy(message: Message, characterName: string, messageText:
     if (!webhook) {
       // Check if a webhook already exists
       const webhooks = await channel.fetchWebhooks();
-      webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Cyarika Proxy');
+      webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Write Pretend Proxy');
       
       if (!webhook) {
         // Create new webhook
         webhook = await channel.createWebhook({
-          name: 'Cyarika Proxy',
-          reason: 'Character proxying for Cyarika Portal'
+          name: 'Write Pretend Proxy',
+          reason: 'Character proxying for Write Pretend Portal'
         });
       }
       
@@ -539,12 +539,12 @@ async function handleProxy(message: Message, characterName: string, messageText:
         
         // Recreate webhook
         const webhooks = await channel.fetchWebhooks();
-        webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Cyarika Proxy');
+        webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Write Pretend Proxy');
         
         if (!webhook) {
           webhook = await channel.createWebhook({
-            name: 'Cyarika Proxy',
-            reason: 'Character proxying for Cyarika Portal'
+            name: 'Write Pretend Proxy',
+            reason: 'Character proxying for Write Pretend Portal'
           });
         }
         

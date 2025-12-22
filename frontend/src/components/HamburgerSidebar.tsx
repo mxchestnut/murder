@@ -201,7 +201,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
         overflowY: 'auto'
       }}>
         <div style={{ padding: '1rem', paddingTop: '4rem', borderBottom: `1px solid var(--border-color)` }}>
-          <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Cyarika</h2>
+          <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Write Pretend</h2>
         </div>
 
         {/* Campaigns Section */}

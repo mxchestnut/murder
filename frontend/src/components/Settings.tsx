@@ -228,7 +228,7 @@ export default function Settings() {
               <h4 style={{ marginTop: 0 }}>Setup Instructions:</h4>
               <ol style={{ fontSize: '0.9rem', paddingLeft: '1.5rem' }}>
                 <li>Go to <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a></li>
-                <li>Create a "New Application" and give it a name (e.g., "Cyarika Dice Bot")</li>
+                <li>Create a "New Application" and give it a name (e.g., "Write Pretend Bot")</li>
                 <li>Go to "Bot" tab → Reset Token → Copy the bot token</li>
                 <li>Paste the bot token below</li>
                 <li>Go to "OAuth2" → "URL Generator"</li>
