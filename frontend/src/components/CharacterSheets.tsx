@@ -88,6 +88,7 @@ export default function CharacterSheets() {
   const [pathCompanionCharacters, setPathCompanionCharacters] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [pathCompanionCampaigns, setPathCompanionCampaigns] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [loadingCharacters, setLoadingCharacters] = useState(false);
+  const [linkingCharacter, setLinkingCharacter] = useState<number | null>(null);
   const [formData, setFormData] = useState<{
     name: string;
     characterClass: string;
@@ -419,6 +420,30 @@ export default function CharacterSheets() {
     }
   };
 
+  const linkToPathCompanion = async (sheetId: number, pathCompanionCharacterId: string) => {
+    try {
+      const response = await api.post(`/characters/${sheetId}/link-pathcompanion`, {
+        pathCompanionCharacterId
+      });
+      
+      const updatedSheets = sheets.map(s => s.id === sheetId ? response.data : s);
+      setSheets(updatedSheets);
+      if (selectedSheet?.id === sheetId) {
+        setSelectedSheet(response.data);
+      }
+      
+      setLinkingCharacter(null);
+      setPathCompanionCharacters([]);
+      setPathCompanionCampaigns([]);
+      
+      alert('Character successfully linked to PathCompanion!');
+    } catch (error: any) {
+      console.error('Failed to link character to PathCompanion:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to link character.';
+      alert(`Link failed: ${errorMsg}`);
+    }
+  };
+
   const StatBlock = ({ stat, value, modifier }: { stat: string; value: number; modifier: number }) => {
     const Icon = statIcons[stat as keyof typeof statIcons];
     const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
@@ -615,9 +640,23 @@ export default function CharacterSheets() {
                   Level {selectedSheet.level}
                 </p>
               </div>
-              <button className="icon-button" onClick={startEdit}>
-                <Edit size={20} />
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {!selectedSheet.isPathCompanion && (
+                  <button 
+                    className="icon-button secondary" 
+                    onClick={() => {
+                      setLinkingCharacter(selectedSheet.id);
+                      loadPathCompanionCharacters();
+                    }}
+                    title="Link to PathCompanion"
+                  >
+                    <ExternalLink size={20} />
+                  </button>
+                )}
+                <button className="icon-button" onClick={startEdit}>
+                  <Edit size={20} />
+                </button>
+              </div>
             </div>
 
             {rollResult && (
@@ -920,12 +959,13 @@ export default function CharacterSheets() {
         >
           <div className="pathcompanion-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="pathcompanion-modal-header">
-              <h3>Import from PathCompanion</h3>
+              <h3>{linkingCharacter ? 'Link to PathCompanion' : 'Import from PathCompanion'}</h3>
               <button 
                 className="icon-button"
                 onClick={() => {
                   setShowPathCompanionImport(false);
                   setCharacterId('');
+                  setLinkingCharacter(null);
                 }}
               >
                 <X size={20} />
@@ -971,7 +1011,7 @@ export default function CharacterSheets() {
                           <div
                             key={char.id}
                             className="pathcompanion-character-item"
-                            onClick={() => !importingPC && importPathCompanionCharacter(char.id)}
+                            onClick={() => !importingPC && (linkingCharacter ? linkToPathCompanion(linkingCharacter, char.id) : importPathCompanionCharacter(char.id))}
                             style={{ cursor: importingPC ? 'not-allowed' : 'pointer', opacity: importingPC ? 0.5 : 1 }}
                           >
                             <div className="pathcompanion-character-name">{char.name}</div>
