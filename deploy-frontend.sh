@@ -19,17 +19,12 @@ scp -i ~/.ssh/cyarika-debug-key.pem \
   dist/assets/* \
   ubuntu@54.242.214.56:/tmp/
 
-echo "🔧 Deploying with timestamp cache-busting..."
+echo "🔧 Deploying to production..."
 ssh -i ~/.ssh/cyarika-debug-key.pem ubuntu@54.242.214.56 << 'ENDSSH'
-  # Move assets
+  # Move assets first
   mv /tmp/index-*.js /tmp/index-*.css /home/ubuntu/cyarika/frontend/dist/assets/
   
-  # Add timestamp to index.html for cache-busting
-  TIMESTAMP=$(date +%s)
-  sed -i "s|src=\"/assets/index-[^\"]*\.js\"|src=\"/assets/index-*.js?v=$TIMESTAMP\"|g" /tmp/index.html
-  sed -i "s|href=\"/assets/index-[^\"]*\.css\"|href=\"/assets/index-*.css?v=$TIMESTAMP\"|g" /tmp/index.html
-  
-  # Move index.html
+  # Move index.html directly without modification (Vite already handles hashing)
   mv /tmp/index.html /home/ubuntu/cyarika/frontend/dist/
   
   echo "✅ Deployment complete!"

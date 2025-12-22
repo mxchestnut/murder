@@ -294,6 +294,24 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       border: '1px solid var(--border-color)',
       marginBottom: '1.5rem'
     }}>
+      {/* Avatar Section */}
+      {character.avatarUrl && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <img 
+            src={character.avatarUrl} 
+            alt={character.name}
+            style={{
+              width: '200px',
+              height: '200px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '4px solid var(--accent-color)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+            }}
+          />
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <User size={20} />
