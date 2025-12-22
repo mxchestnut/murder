@@ -6,13 +6,14 @@ export const users = pgTable('users', {
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
   email: text('email'),
-  // PathCompanion account binding
+  // PathCompanion account binding (optional)
   pathCompanionUsername: text('path_companion_username'),
   pathCompanionPassword: text('path_companion_password'), // Encrypted
   pathCompanionSessionTicket: text('path_companion_session_ticket'),
   pathCompanionPlayfabId: text('path_companion_playfab_id'),
   pathCompanionConnectedAt: timestamp('path_companion_connected_at'),
   // Discord integration
+  discordUserId: text('discord_user_id').unique(), // Discord user ID for bot authentication
   discordBotToken: text('discord_bot_token'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });

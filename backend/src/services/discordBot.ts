@@ -4,6 +4,8 @@ import { channelCharacterMappings, characterSheets, users } from '../db/schema';
 import { eq, and, or, sql } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import axios from 'axios';
 
 let botClient: Client | null = null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
@@ -340,10 +342,14 @@ async function handleConnect(message: Message, args: string[]) {
   await message.delete().catch(() => {});
 
   if (args.length < 2) {
-    await message.author.send('❌ **Usage:** `!connect <username/email> <password>`\n\n' +
-      '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only stored encrypted in the database.\n\n' +
-      '**Example:** `!connect myemail@example.com mypassword`\n\n' +
-      'After connecting, you can use `!syncall` to import all your PathCompanion characters.');
+    await message.author.send('❌ **Usage:** `!connect <cyarika_username> <password>`\n\n' +
+      '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only used for authentication.\n\n' +
+      '**Example:** `!connect myusername mypassword`\n\n' +
+      '🔗 **Linking your Discord account** to Cyarika will allow you to:\n' +
+      '• Use all your Cyarika characters in Discord\n' +
+      '• Roll dice with your character stats\n' +
+      '• Proxy messages as your characters\n\n' +
+      '💡 Don\'t have a Cyarika account? Create one at http://54.242.214.56');
     return;
   }
 
@@ -352,279 +358,96 @@ async function handleConnect(message: Message, args: string[]) {
 
   try {
     // Send a DM to the user for privacy
-    await message.author.send('🔐 Connecting to PathCompanion...');
+    await message.author.send('🔐 Connecting to Cyarika...');
 
-    // Try to login to PathCompanion
-    const auth = await PlayFabService.loginToPlayFab(username, password);
+    // Authenticate with Cyarika backend
+    const API_URL = process.env.API_URL || 'http://localhost:3000';
+    const response = await axios.post(`${API_URL}/api/discord/login`, {
+      username,
+      password,
+      discordUserId: message.author.id
+    });
 
-    // Get the user record
-    const userRecords = await db.select().from(users).limit(1);
-    if (userRecords.length === 0) {
-      await message.author.send('❌ No user found in database. Please create an account on the Cyarika Portal first.');
-      return;
-    }
+    const { user, characters } = response.data;
 
-    const user = userRecords[0];
+    await message.author.send('✅ **Successfully connected to Cyarika!**\n\n' +
+      `🎭 Account: **${user.username}**\n` +
+      `🎲 Characters: **${characters.length}**\n` +
+      (user.pathCompanionConnected ? '🔗 PathCompanion: **Connected**\n' : '') +
+      '\n**Your available characters:**\n' +
+      characters.map((c: any) => `• ${c.name}${c.isPathCompanion ? ' (PathCompanion)' : ''}`).join('\n') +
+      '\n\n**Next steps:**\n' +
+      '• Use `!setchar <name>` in a channel to link it to a character\n' +
+      '• Use `!roll <stat>` to roll dice\n' +
+      '• Type `CharName: message` to proxy as that character\n' +
+      '• Use `!help` for more commands');
 
-    // Encrypt and store the credentials
-    const encryptedPassword = encryptPassword(password);
+    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Cyarika user: ${username}`);
 
-    await db.update(users)
-      .set({
-        pathCompanionUsername: username,
-        pathCompanionPassword: encryptedPassword,
-        pathCompanionSessionTicket: auth.sessionTicket,
-        pathCompanionPlayfabId: auth.playfabId,
-        pathCompanionConnectedAt: new Date()
-      })
-      .where(eq(users.id, user.id));
-
-    await message.author.send('✅ **Successfully connected to PathCompanion!**\n\n' +
-      `Account: ${username}\n` +
-      `PlayFab ID: ${auth.playfabId}\n\n` +
-      'You can now use `!syncall` to import all your characters from PathCompanion.');
-
-    console.log(`PathCompanion connected for user via Discord: ${username}`);
-
-  } catch (error) {
-    console.error('Discord PathCompanion connect error:', error);
-    const errorMsg = error instanceof Error ? error.message : String(error);
+  } catch (error: any) {
+    console.error('Discord Cyarika connect error:', error);
     
-    await message.author.send('❌ **Failed to connect to PathCompanion.**\n\n' +
+    let errorMsg = 'Unknown error occurred';
+    if (error.response?.data?.error) {
+      errorMsg = error.response.data.error;
+    } else if (error.message) {
+      errorMsg = error.message;
+    }
+    
+    await message.author.send('❌ **Failed to connect to Cyarika.**\n\n' +
       `Error: ${errorMsg}\n\n` +
-      'Please check your username/email and password and try again.');
+      'Please check your username and password and try again.\n\n' +
+      '💡 Need help? Visit http://54.242.214.56 to manage your account.');
   }
 }
 
 async function handleSyncAll(message: Message) {
-  await message.reply('🔄 Syncing all characters from PathCompanion... This may take a moment.');
+  await message.reply('🔄 Refreshing your character list from Cyarika...');
 
   try {
-    // Get the user (assuming single user for now - you may want to expand this)
-    const userRecords = await db.select().from(users).limit(1);
-    if (userRecords.length === 0) {
-      await message.reply('❌ No PathCompanion account linked. Please log into the Cyarika Portal first.');
+    // Get user by Discord ID
+    const [user] = await db.select()
+      .from(users)
+      .where(eq(users.discordUserId, message.author.id));
+
+    if (!user) {
+      await message.reply('❌ **Discord account not linked to Cyarika.**\n\n' +
+        '**To link your account:**\n' +
+        '1. Use `!connect <username> <password>` in Discord, OR\n' +
+        '2. Visit http://54.242.214.56 to create/manage your account\n\n' +
+        '💡 Once linked, all your Cyarika characters will be available!');
       return;
     }
 
-    const user = userRecords[0];
-    const userId = user.id;
+    // Get all characters for this user
+    const characters = await db.select()
+      .from(characterSheets)
+      .where(eq(characterSheets.userId, user.id));
 
-    // Check if we have credentials stored
-    if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
-      await message.reply('❌ No PathCompanion credentials stored for syncing.\n\n' +
-        '**Option 1 (Portal):** Log in at http://54.242.214.56 and import characters there\n' +
-        '**Option 2 (Discord):** Use `!connect <email> <password>` to sync from Discord\n\n' +
-        '💡 Once characters are imported, you can roll and proxy without any credentials!');
+    if (characters.length === 0) {
+      await message.reply('ℹ️ **No characters found in your Cyarika account.**\n\n' +
+        '**Create characters:**\n' +
+        '• Visit http://54.242.214.56 and create a character manually\n' +
+        (user.pathCompanionUsername ? '• Or import from PathCompanion in the web portal\n' : '') +
+        '\n💡 Characters you create will automatically be available in Discord!');
       return;
     }
 
-    // Try to get session ticket, refresh if needed
-    let sessionTicket: string;
-    
-    // Get user data from PathCompanion (this will throw if session is invalid)
-    let userData;
-    try {
-      // If we don't have a session ticket yet, or if it's null, refresh immediately
-      if (!user.pathCompanionSessionTicket) {
-        console.log('No session ticket, refreshing...');
-        await message.reply('🔄 Connecting to PathCompanion...');
-        sessionTicket = await refreshPathCompanionSession(user);
-      } else {
-        sessionTicket = user.pathCompanionSessionTicket;
-      }
-      
-      userData = await PlayFabService.getUserData(sessionTicket);
-    } catch (error: any) {
-      // If session expired, automatically refresh it
-      if (error.message?.includes('Must be logged in') || error.message?.includes('session')) {
-        console.log('Session expired, auto-refreshing...');
-        await message.reply('🔄 Session expired, refreshing automatically...');
-        sessionTicket = await refreshPathCompanionSession(user);
-        userData = await PlayFabService.getUserData(sessionTicket);
-      } else {
-        throw error;
-      }
-    }
+    // Build response with character list
+    const charList = characters.map(c => 
+      `• **${c.name}** - Level ${c.level} ${c.characterClass || 'Character'}${c.isPathCompanion ? ' (PathCompanion)' : ''}`
+    ).join('\n');
 
-    // Filter to character entries only
-    const characterKeys = Object.keys(userData)
-      .filter(key => /^character\d+$/.test(key))
-      .slice(0, 50);
-
-    if (characterKeys.length === 0) {
-      await message.reply('ℹ️ No characters found in your PathCompanion account.');
-      return;
-    }
-
-    const results: {
-      success: Array<{ name: string; action: string }>;
-      failed: Array<{ id: string; reason: string }>;
-    } = {
-      success: [],
-      failed: []
-    };
-
-    // Import each character
-    for (const characterId of characterKeys) {
-      try {
-        const character = await PlayFabService.getCharacter(sessionTicket, characterId);
-
-        if (!character) {
-          results.failed.push({ id: characterId, reason: 'Character not found' });
-          continue;
-        }
-
-        // Extract all data
-        const abilities = PlayFabService.extractAbilityScores(character.data);
-        const level = PlayFabService.extractCharacterLevel(character.data);
-        const combatStats = PlayFabService.extractCombatStats(character.data);
-        const saves = PlayFabService.extractSavingThrows(character.data);
-        const basicInfo = PlayFabService.extractBasicInfo(character.data);
-        const skills = PlayFabService.extractSkills(character.data);
-        const feats = PlayFabService.extractFeats(character.data);
-        const specialAbilities = PlayFabService.extractSpecialAbilities(character.data);
-        const weapons = PlayFabService.extractWeapons(character.data);
-        const armor = PlayFabService.extractArmor(character.data);
-        const spells = PlayFabService.extractSpells(character.data);
-
-        // Check if character already exists
-        const existing = await db.select().from(characterSheets).where(
-          eq(characterSheets.pathCompanionId, characterId)
-        );
-
-        if (existing.length > 0) {
-          // Update existing character
-          await db.update(characterSheets)
-            .set({
-              name: character.characterName,
-              strength: abilities.strength,
-              dexterity: abilities.dexterity,
-              constitution: abilities.constitution,
-              intelligence: abilities.intelligence,
-              wisdom: abilities.wisdom,
-              charisma: abilities.charisma,
-              characterClass: character.data.class || character.data.className,
-              level: level,
-              race: basicInfo.race,
-              alignment: basicInfo.alignment,
-              deity: basicInfo.deity,
-              size: basicInfo.size,
-              avatarUrl: basicInfo.avatarUrl,
-              currentHp: combatStats.currentHp,
-              maxHp: combatStats.maxHp,
-              tempHp: combatStats.tempHp,
-              armorClass: combatStats.armorClass,
-              touchAc: combatStats.touchAc,
-              flatFootedAc: combatStats.flatFootedAc,
-              initiative: combatStats.initiative,
-              speed: combatStats.speed,
-              baseAttackBonus: combatStats.baseAttackBonus,
-              cmb: combatStats.cmb,
-              cmd: combatStats.cmd,
-              fortitudeSave: saves.fortitudeSave,
-              reflexSave: saves.reflexSave,
-              willSave: saves.willSave,
-              skills: JSON.stringify(skills),
-              feats: JSON.stringify(feats),
-              specialAbilities: JSON.stringify(specialAbilities),
-              weapons: JSON.stringify(weapons),
-              armor: JSON.stringify(armor),
-              spells: JSON.stringify(spells),
-              pathCompanionData: JSON.stringify(character.data),
-              pathCompanionSession: sessionTicket,
-              lastSynced: new Date(),
-              updatedAt: new Date()
-            })
-            .where(eq(characterSheets.id, existing[0].id));
-
-          results.success.push({ name: character.characterName, action: 'updated' });
-        } else {
-          // Create new character
-          await db.insert(characterSheets).values({
-            userId,
-            name: character.characterName,
-            strength: abilities.strength,
-            dexterity: abilities.dexterity,
-            constitution: abilities.constitution,
-            intelligence: abilities.intelligence,
-            wisdom: abilities.wisdom,
-            charisma: abilities.charisma,
-            characterClass: character.data.class || character.data.className,
-            level: level,
-            race: basicInfo.race,
-            alignment: basicInfo.alignment,
-            deity: basicInfo.deity,
-            size: basicInfo.size,
-            avatarUrl: basicInfo.avatarUrl,
-            currentHp: combatStats.currentHp,
-            maxHp: combatStats.maxHp,
-            tempHp: combatStats.tempHp,
-            armorClass: combatStats.armorClass,
-            touchAc: combatStats.touchAc,
-            flatFootedAc: combatStats.flatFootedAc,
-            initiative: combatStats.initiative,
-            speed: combatStats.speed,
-            baseAttackBonus: combatStats.baseAttackBonus,
-            cmb: combatStats.cmb,
-            cmd: combatStats.cmd,
-            fortitudeSave: saves.fortitudeSave,
-            reflexSave: saves.reflexSave,
-            willSave: saves.willSave,
-            skills: JSON.stringify(skills),
-            feats: JSON.stringify(feats),
-            specialAbilities: JSON.stringify(specialAbilities),
-            weapons: JSON.stringify(weapons),
-            armor: JSON.stringify(armor),
-            spells: JSON.stringify(spells),
-            pathCompanionData: JSON.stringify(character.data),
-            pathCompanionSession: sessionTicket,
-            pathCompanionId: characterId,
-            isPathCompanion: true,
-            lastSynced: new Date()
-          });
-
-          results.success.push({ name: character.characterName, action: 'imported' });
-        }
-      } catch (error) {
-        console.error(`Failed to sync character ${characterId}:`, error);
-        results.failed.push({ 
-          id: characterId, 
-          reason: error instanceof Error ? error.message : 'Unknown error' 
-        });
-      }
-    }
-
-    // Send success message
-    const imported = results.success.filter(r => r.action === 'imported').length;
-    const updated = results.success.filter(r => r.action === 'updated').length;
-    const failed = results.failed.length;
-
-    let resultMessage = '✅ **PathCompanion Sync Complete!**\n';
-    if (imported > 0) resultMessage += `\n• **${imported}** character${imported !== 1 ? 's' : ''} imported`;
-    if (updated > 0) resultMessage += `\n• **${updated}** character${updated !== 1 ? 's' : ''} updated`;
-    if (failed > 0) resultMessage += `\n• ⚠️ **${failed}** character${failed !== 1 ? 's' : ''} failed`;
-
-    if (results.success.length > 0) {
-      resultMessage += '\n\n**Characters:**\n' + results.success.map(r => `• ${r.name} (${r.action})`).join('\n');
-    }
-
-    await message.reply(resultMessage);
+    await message.reply(`✅ **Synced ${characters.length} character${characters.length !== 1 ? 's' : ''}!**\n\n` +
+      charList +
+      '\n\n**Usage:**\n' +
+      '• `!setchar <name>` - Link a channel to a character\n' +
+      '• `!roll <stat>` - Roll dice for your character\n' +
+      '• `CharName: message` - Proxy as a character');
 
   } catch (error) {
-    console.error('Error in handleSyncAll:', error);
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    
-    if (errorMsg.includes('No PathCompanion credentials')) {
-      // Already handled above with specific message
-      return;
-    } else if (errorMsg.includes('Invalid encrypted password')) {
-      await message.reply('❌ **Stored credentials are corrupted.**\n\n' +
-        'Please reconnect with `!connect <email> <password>`\n\n' +
-        '⚠️ Your message will be deleted immediately for security.');
-    } else {
-      await message.reply('❌ Failed to sync characters. Error: ' + errorMsg);
-    }
+    console.error('Discord syncall error:', error);
+    await message.reply('❌ Failed to sync characters. Please try again or check your connection.');
   }
 }
 
@@ -632,14 +455,14 @@ async function handleHelp(message: Message) {
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle('📖 Cyarika Bot Commands')
-    .setDescription('🎲 **Getting Started:**\n1. Import characters (Portal or `!connect` + `!syncall`)\n2. Roll & proxy forever (no credentials needed!)\n\n**Commands:**')
+    .setDescription('🎲 **Getting Started:**\n1. Link your Discord to Cyarika with `!connect`\n2. Your characters are automatically available!\n\n**Commands:**')
     .addFields(
-      { name: '🎭 Using Characters (No Login Required)', value: '`!CharName <stat/save/skill>` - Roll for any character\n`CharName: message` - Speak as a character\n`!setchar <name>` - Link character to channel\n`!roll <stat>` - Roll for linked character', inline: false },
-      { name: '📥 Importing Characters', value: '**Portal:** http://54.242.214.56 (recommended)\n**Discord:** `!connect <email> <password>` then `!syncall`\n\n💡 Import once, characters stored in our database!', inline: false },
-      { name: '🔄 Syncing/Updating', value: '`!syncall` - Refresh all characters from PathCompanion\n(Requires prior `!connect` or portal login)', inline: false },
+      { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord to Cyarika\n`!syncall` - Refresh character list\n\n💡 Create an account at http://54.242.214.56', inline: false },
+      { name: '🎭 Using Characters', value: '`!CharName <stat/save/skill>` - Roll for any character\n`CharName: message` - Speak as a character\n`!setchar <name>` - Link character to channel\n`!roll <stat>` - Roll for linked character', inline: false },
+      { name: '📥 Creating Characters', value: '**Web Portal:** http://54.242.214.56 (recommended)\n• Create manually with name + stats\n• Import from PathCompanion (optional)\n\n💡 All characters instantly available in Discord!', inline: false },
       { name: 'ℹ️ Other', value: '`!char` - Show linked character\n`!help` - Show this message', inline: false }
     )
-    .setFooter({ text: 'Your character data is stored securely - no PathCompanion needed for rolling!' });
+    .setFooter({ text: 'PathCompanion is optional - create characters directly in Cyarika!' });
 
   await message.reply({ embeds: [embed] });
 }
