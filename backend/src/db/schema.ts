@@ -90,6 +90,15 @@ export const characterSheets = pgTable('character_sheets', {
   lastSynced: timestamp('last_synced'),
   // Discord proxying
   avatarUrl: text('avatar_url'), // Avatar URL for Discord webhooks
+  // Character Bio
+  pronouns: text('pronouns'),
+  sexuality: text('sexuality'),
+  age: text('age'),
+  height: text('height'),
+  weight: text('weight'),
+  appearance: text('appearance'),
+  personality: text('personality'),
+  backstory: text('backstory'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });

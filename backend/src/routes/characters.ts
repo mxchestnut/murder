@@ -315,7 +315,15 @@ router.put('/:id', async (req, res) => {
       feats,
       specialAbilities,
       spells,
-      avatarUrl
+      avatarUrl,
+      pronouns,
+      sexuality,
+      age,
+      height,
+      weight,
+      appearance,
+      personality,
+      backstory
     } = req.body;
 
     const [updatedSheet] = await db.update(characterSheets)
@@ -354,6 +362,14 @@ router.put('/:id', async (req, res) => {
         ...(specialAbilities !== undefined && { specialAbilities: JSON.stringify(specialAbilities) }),
         ...(spells !== undefined && { spells: JSON.stringify(spells) }),
         ...(avatarUrl !== undefined && { avatarUrl }),
+        ...(pronouns !== undefined && { pronouns }),
+        ...(sexuality !== undefined && { sexuality }),
+        ...(age !== undefined && { age }),
+        ...(height !== undefined && { height }),
+        ...(weight !== undefined && { weight }),
+        ...(appearance !== undefined && { appearance }),
+        ...(personality !== undefined && { personality }),
+        ...(backstory !== undefined && { backstory }),
         updatedAt: new Date()
       })
       .where(eq(characterSheets.id, sheetId))

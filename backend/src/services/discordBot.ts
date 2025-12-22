@@ -69,6 +69,9 @@ export function initializeDiscordBot(token: string) {
         case 'char':
           await handleShowChar(message);
           break;
+        case 'profile':
+          await handleProfile(message, args);
+          break;
         case 'roll':
           await handleRoll(message, args);
           break;
@@ -181,6 +184,131 @@ async function handleShowChar(message: Message) {
 
   const character = mapping[0].character_sheets;
   await message.reply(`📋 This channel is linked to **${character.name}** (Level ${character.level} ${character.characterClass || 'Character'})`);
+}
+
+async function handleProfile(message: Message, args: string[]) {
+  let character: any;
+
+  if (args.length > 0) {
+    // Profile for a specific character by name
+    const characterName = args.join(' ');
+    const characters = await db
+      .select()
+      .from(characterSheets)
+      .where(eq(characterSheets.name, characterName));
+
+    if (characters.length === 0) {
+      await message.reply(`❌ Character "${characterName}" not found.`);
+      return;
+    }
+
+    character = characters[0];
+  } else {
+    // Profile for channel-linked character
+    const channelId = message.channel.id;
+    const guildId = message.guild?.id || '';
+
+    const mapping = await db
+      .select()
+      .from(channelCharacterMappings)
+      .innerJoin(characterSheets, eq(channelCharacterMappings.characterId, characterSheets.id))
+      .where(
+        and(
+          eq(channelCharacterMappings.channelId, channelId),
+          eq(channelCharacterMappings.guildId, guildId)
+        )
+      );
+
+    if (mapping.length === 0) {
+      await message.reply('❌ No character linked to this channel. Use `!profile <character_name>` or `!setchar <name>` first.');
+      return;
+    }
+
+    character = mapping[0].character_sheets;
+  }
+
+  // Build profile embed
+  const embed = new EmbedBuilder()
+    .setTitle(`${character.name}`)
+    .setColor('#6366f1');
+
+  if (character.avatarUrl) {
+    embed.setThumbnail(character.avatarUrl);
+  }
+
+  // Basic Info
+  const basicInfo = [];
+  if (character.characterClass) basicInfo.push(`**Class:** ${character.characterClass}`);
+  if (character.race) basicInfo.push(`**Race:** ${character.race}`);
+  if (character.level) basicInfo.push(`**Level:** ${character.level}`);
+  if (character.alignment) basicInfo.push(`**Alignment:** ${character.alignment}`);
+  if (basicInfo.length > 0) {
+    embed.addFields({ name: '⚔️ Basic Info', value: basicInfo.join('\n'), inline: false });
+  }
+
+  // Bio Info
+  const bioInfo = [];
+  if (character.pronouns) bioInfo.push(`**Pronouns:** ${character.pronouns}`);
+  if (character.sexuality) bioInfo.push(`**Sexuality:** ${character.sexuality}`);
+  if (character.age) bioInfo.push(`**Age:** ${character.age}`);
+  if (character.height) bioInfo.push(`**Height:** ${character.height}`);
+  if (character.weight) bioInfo.push(`**Weight:** ${character.weight}`);
+  if (bioInfo.length > 0) {
+    embed.addFields({ name: '👤 Bio', value: bioInfo.join('\n'), inline: false });
+  }
+
+  // Appearance
+  if (character.appearance) {
+    const truncatedAppearance = character.appearance.length > 1024 
+      ? character.appearance.substring(0, 1021) + '...' 
+      : character.appearance;
+    embed.addFields({ name: '🎨 Appearance', value: truncatedAppearance, inline: false });
+  }
+
+  // Personality
+  if (character.personality) {
+    const truncatedPersonality = character.personality.length > 1024 
+      ? character.personality.substring(0, 1021) + '...' 
+      : character.personality;
+    embed.addFields({ name: '😊 Personality', value: truncatedPersonality, inline: false });
+  }
+
+  // Backstory
+  if (character.backstory) {
+    const truncatedBackstory = character.backstory.length > 1024 
+      ? character.backstory.substring(0, 1021) + '...' 
+      : character.backstory;
+    embed.addFields({ name: '📖 Backstory', value: truncatedBackstory, inline: false });
+  }
+
+  // Stats
+  const statModifier = (stat: number) => {
+    const mod = Math.floor((stat - 10) / 2);
+    return mod >= 0 ? `+${mod}` : `${mod}`;
+  };
+
+  const statsInfo = [
+    `**STR:** ${character.strength} (${statModifier(character.strength)})`,
+    `**DEX:** ${character.dexterity} (${statModifier(character.dexterity)})`,
+    `**CON:** ${character.constitution} (${statModifier(character.constitution)})`,
+    `**INT:** ${character.intelligence} (${statModifier(character.intelligence)})`,
+    `**WIS:** ${character.wisdom} (${statModifier(character.wisdom)})`,
+    `**CHA:** ${character.charisma} (${statModifier(character.charisma)})`
+  ];
+  embed.addFields({ name: '📊 Ability Scores', value: statsInfo.join(' • '), inline: false });
+
+  // Combat Stats
+  const combatInfo = [
+    `**HP:** ${character.currentHp || 0}/${character.maxHp || 0}`,
+    `**AC:** ${character.armorClass || 10}`,
+    `**Initiative:** ${(character.initiative || 0) >= 0 ? '+' : ''}${character.initiative || 0}`,
+    `**Speed:** ${character.speed || 30}ft`
+  ];
+  embed.addFields({ name: '⚔️ Combat', value: combatInfo.join(' • '), inline: false });
+
+  embed.setFooter({ text: `Use !roll <stat> to roll for ${character.name}` });
+
+  await message.reply({ embeds: [embed] });
 }
 
 async function handleRoll(message: Message, args: string[]) {
@@ -458,7 +586,7 @@ async function handleHelp(message: Message) {
     .setDescription('✨ **Getting Started:**\n1. Link your Discord to Write Pretend with `!connect`\n2. Your characters are automatically available!\n\n**Commands:**')
     .addFields(
       { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord to Write Pretend\n`!syncall` - Refresh character list\n\n💡 Create an account at http://writepretend.com', inline: false },
-      { name: '🎭 Using Characters', value: '`!CharName <stat/save/skill>` - Roll for any character\n`CharName: message` - Speak as a character\n`!setchar <name>` - Link character to channel\n`!roll <stat>` - Roll for linked character', inline: false },
+      { name: '🎭 Using Characters', value: '`!CharName <stat/save/skill>` - Roll for any character\n`CharName: message` - Speak as a character\n`!setchar <name>` - Link character to channel\n`!roll <stat>` - Roll for linked character\n`!profile [name]` - View character bio/profile', inline: false },
       { name: '📥 Creating Characters', value: '**Web Portal:** http://writepretend.com (recommended)\n• Create manually with name + stats\n• Import from PathCompanion (optional)\n\n✨ All characters instantly available in Discord!', inline: false },
       { name: 'ℹ️ Other', value: '`!char` - Show linked character\n`!help` - Show this message', inline: false }
     )

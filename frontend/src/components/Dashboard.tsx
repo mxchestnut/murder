@@ -3,6 +3,7 @@ import HamburgerSidebar from './HamburgerSidebar';
 import Editor from './Editor';
 import Settings from './Settings';
 import DiscordCommands from './DiscordCommands';
+import CharacterBio from './CharacterBio';
 import { api } from '../utils/api';
 import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle } from 'lucide-react';
 
@@ -54,6 +55,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setShowSettings(false);
     setShowDiscordCommands(false);
     setCharacterPanelCollapsed(false);
+  };
+
+  const reloadCurrentCharacter = async () => {
+    if (!currentCharacter) return;
+    try {
+      const response = await api.get(`/characters/${currentCharacter.id}`);
+      setCurrentCharacter(response.data);
+    } catch (error) {
+      console.error('Error reloading character:', error);
+    }
   };
 
   useEffect(() => {
@@ -300,6 +311,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                           <X size={18} />
                         </button>
                       </div>
+
+                      {/* Character Bio */}
+                      <CharacterBio character={currentCharacter} onUpdate={reloadCurrentCharacter} />
 
                       {/* Roll Result */}
                       {rollResult && (
