@@ -1,6 +1,6 @@
-import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, sceneMessages, hallOfFame, gmNotes, gameTime, botSettings } from '../db/schema';
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -20,6 +20,12 @@ function normalizeString(str: string): string {
     .trim();
 }
 
+// Check if user has admin permissions
+function isAdmin(message: Message): boolean {
+  if (!message.member) return false;
+  return message.member.permissions.has('Administrator');
+}
+
 export function initializeDiscordBot(token: string) {
   if (!token) {
     console.log('No Discord bot token provided, skipping bot initialization');
@@ -31,7 +37,9 @@ export function initializeDiscordBot(token: string) {
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMessageReactions,
     ],
+    partials: [Partials.Message, Partials.Reaction],
   });
 
   botClient.on('ready', () => {
@@ -64,7 +72,7 @@ export function initializeDiscordBot(token: string) {
       const potentialStat = nameRollMatch[2].trim();
       
       // Check if this is a known command first
-      const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'stats', 'leaderboard'];
+      const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'stats', 'leaderboard', 'prompt', 'trope', 'session', 'scene', 'time', 'note', 'npc', 'music', 'recap', 'hall', 'botset'];
       if (!knownCommands.includes(potentialName.toLowerCase())) {
         // Try to handle as name-based roll
         const handled = await handleNameRoll(message, potentialName, potentialStat);
@@ -110,6 +118,39 @@ export function initializeDiscordBot(token: string) {
         case 'leaderboard':
           await handleLeaderboard(message, args);
           break;
+        case 'prompt':
+          await handlePrompt(message, args);
+          break;
+        case 'trope':
+          await handleTrope(message, args);
+          break;
+        case 'session':
+          await handleSession(message, args);
+          break;
+        case 'scene':
+          await handleScene(message, args);
+          break;
+        case 'time':
+          await handleTime(message, args);
+          break;
+        case 'note':
+          await handleNote(message, args);
+          break;
+        case 'npc':
+          await handleNPC(message, args);
+          break;
+        case 'music':
+          await handleMusic(message);
+          break;
+        case 'recap':
+          await handleRecap(message);
+          break;
+        case 'hall':
+          await handleHall(message, args);
+          break;
+        case 'botset':
+          await handleBotSet(message, args);
+          break;
         case 'help':
           await handleHelp(message);
           break;
@@ -117,6 +158,43 @@ export function initializeDiscordBot(token: string) {
     } catch (error) {
       console.error('Error handling Discord command:', error);
       await message.reply('❌ An error occurred processing your command.');
+    }
+  });
+
+  // Hall of Fame - Star Reaction Handler
+  botClient.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot) return;
+    
+    // Fetch partial reactions
+    if (reaction.partial) {
+      try {
+        await reaction.fetch();
+      } catch (error) {
+        console.error('Error fetching reaction:', error);
+        return;
+      }
+    }
+
+    // Check if it's a star reaction
+    if (reaction.emoji.name === '⭐') {
+      await handleStarReaction(reaction);
+    }
+  });
+
+  botClient.on('messageReactionRemove', async (reaction, user) => {
+    if (user.bot) return;
+    
+    if (reaction.partial) {
+      try {
+        await reaction.fetch();
+      } catch (error) {
+        console.error('Error fetching reaction:', error);
+        return;
+      }
+    }
+
+    if (reaction.emoji.name === '⭐') {
+      await handleStarReaction(reaction);
     }
   });
 
@@ -926,16 +1004,20 @@ async function handleSyncAll(message: Message) {
 
 async function handleHelp(message: Message) {
   const embed = new EmbedBuilder()
-    .setColor(0x6B46C1) // Write Pretend purple
-    .setTitle('🎭 Write Pretend Bot Commands')
-    .setDescription('✨ **Getting Started:**\n1. Link your Discord to Write Pretend with `!connect`\n2. Your characters are automatically available!\n\n**Commands:**')
+    .setColor(0x9b59b6)
+    .setTitle('🎭 Cyar\'ika Bot Commands')
+    .setDescription('Your complete RP companion!')
     .addFields(
-      { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord to Write Pretend\n`!syncall` - Refresh character list\n\n💡 Create an account at http://writepretend.com', inline: false },
-      { name: '🎭 Using Characters', value: '`!CharName <stat/save/skill>` - Roll for any character\n`CharName: message` - Speak as a character\n`!setchar <name>` - Link character to channel\n`!roll <stat>` - Roll for linked character\n`!profile [name]` - View character bio/profile', inline: false },
-      { name: '📥 Creating Characters', value: '**Web Portal:** http://writepretend.com (recommended)\n• Create manually with name + stats\n• Import from PathCompanion (optional)\n\n✨ All characters instantly available in Discord!', inline: false },
-      { name: 'ℹ️ Other', value: '`!char` - Show linked character\n`!help` - Show this message', inline: false }
+      { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
+      { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
+      { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
+      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!learn <question> | <answer>` - Teach AI (admin)', inline: false },
+      { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
+      { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
+      { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
+      { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false }
     )
-    .setFooter({ text: 'PathCompanion is optional - create characters directly in Write Pretend!' });
+    .setFooter({ text: 'Visit cyarika.com to manage characters!' });
 
   await message.reply({ embeds: [embed] });
 }
@@ -1616,6 +1698,864 @@ async function handleLeaderboard(message: Message, args: string[]) {
   } catch (error) {
     console.error('Error in !leaderboard command:', error);
     await message.reply('❌ Failed to retrieve leaderboard.');
+  }
+}
+
+// ==================== RP PROMPTS ====================
+async function handlePrompt(message: Message, args: string[]) {
+  try {
+    const subcmd = args[0]?.toLowerCase();
+    
+    if (subcmd === 'random' && args.length > 1) {
+      // !prompt random <category>
+      const category = args.slice(1).join(' ').toLowerCase();
+      const validCategories = ['character', 'world', 'combat', 'social', 'plot'];
+      
+      if (!validCategories.includes(category)) {
+        await message.reply(`❌ Invalid category. Valid categories: ${validCategories.join(', ')}`);
+        return;
+      }
+
+      const categoryPrompts = await db
+        .select()
+        .from(prompts)
+        .where(eq(prompts.category, category));
+
+      if (categoryPrompts.length === 0) {
+        await message.reply(`❌ No prompts found for category "${category}".`);
+        return;
+      }
+
+      const randomPrompt = categoryPrompts[Math.floor(Math.random() * categoryPrompts.length)];
+      
+      // Update use count
+      await db.update(prompts)
+        .set({ 
+          useCount: (randomPrompt.useCount || 0) + 1,
+          lastUsed: new Date()
+        })
+        .where(eq(prompts.id, randomPrompt.id));
+
+      const embed = new EmbedBuilder()
+        .setColor('#9b59b6')
+        .setTitle(`💭 ${category.charAt(0).toUpperCase() + category.slice(1)} Prompt`)
+        .setDescription(randomPrompt.promptText)
+        .setFooter({ text: `Prompt #${randomPrompt.id}` });
+
+      await message.reply({ embeds: [embed] });
+    } else {
+      // !prompt - Random from any category
+      const allPrompts = await db.select().from(prompts);
+      
+      if (allPrompts.length === 0) {
+        await message.reply('❌ No prompts available. Add some prompts to the database!');
+        return;
+      }
+
+      const randomPrompt = allPrompts[Math.floor(Math.random() * allPrompts.length)];
+      
+      // Update use count
+      await db.update(prompts)
+        .set({ 
+          useCount: (randomPrompt.useCount || 0) + 1,
+          lastUsed: new Date()
+        })
+        .where(eq(prompts.id, randomPrompt.id));
+
+      const embed = new EmbedBuilder()
+        .setColor('#9b59b6')
+        .setTitle(`💭 ${randomPrompt.category.charAt(0).toUpperCase() + randomPrompt.category.slice(1)} Prompt`)
+        .setDescription(randomPrompt.promptText)
+        .setFooter({ text: `Prompt #${randomPrompt.id}` });
+
+      await message.reply({ embeds: [embed] });
+    }
+  } catch (error) {
+    console.error('Error in !prompt command:', error);
+    await message.reply('❌ Failed to retrieve prompt.');
+  }
+}
+
+async function handleTrope(message: Message, args: string[]) {
+  try {
+    const category = args.join(' ').toLowerCase();
+    let tropeList = [];
+
+    if (category && category !== '') {
+      const validCategories = ['archetype', 'dynamic', 'situation', 'plot'];
+      if (!validCategories.includes(category)) {
+        await message.reply(`❌ Invalid category. Valid categories: ${validCategories.join(', ')}`);
+        return;
+      }
+
+      tropeList = await db
+        .select()
+        .from(tropes)
+        .where(eq(tropes.category, category));
+    } else {
+      tropeList = await db.select().from(tropes);
+    }
+
+    if (tropeList.length === 0) {
+      await message.reply('❌ No tropes available.');
+      return;
+    }
+
+    const randomTrope = tropeList[Math.floor(Math.random() * tropeList.length)];
+    
+    // Update use count
+    await db.update(tropes)
+      .set({ useCount: (randomTrope.useCount || 0) + 1 })
+      .where(eq(tropes.id, randomTrope.id));
+
+    const embed = new EmbedBuilder()
+      .setColor('#e74c3c')
+      .setTitle(`🎭 ${randomTrope.name}`)
+      .setDescription(randomTrope.description)
+      .setFooter({ text: `${randomTrope.category.charAt(0).toUpperCase() + randomTrope.category.slice(1)} Trope` });
+
+    await message.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error in !trope command:', error);
+    await message.reply('❌ Failed to retrieve trope.');
+  }
+}
+
+// ==================== SESSION LOGGING ====================
+async function handleSession(message: Message, args: string[]) {
+  try {
+    const subcmd = args[0]?.toLowerCase();
+    const channelId = message.channel.id;
+    const guildId = message.guild?.id || '';
+
+    switch (subcmd) {
+      case 'start': {
+        const title = args.slice(1).join(' ');
+        if (!title) {
+          await message.reply('Usage: `!session start <title>`');
+          return;
+        }
+
+        // Check if session already running
+        const existing = await db.select()
+          .from(sessions)
+          .where(and(
+            eq(sessions.channelId, channelId),
+            sql`${sessions.endedAt} IS NULL`
+          ));
+
+        if (existing.length > 0) {
+          await message.reply('❌ A session is already running in this channel. Use `!session end` first.');
+          return;
+        }
+
+        const [session] = await db.insert(sessions).values({
+          title,
+          channelId,
+          guildId,
+          participants: JSON.stringify([message.author.id]),
+          startedAt: new Date()
+        }).returning();
+
+        await message.reply(`✅ Session **"${title}"** started! Messages will be logged.`);
+        break;
+      }
+
+      case 'end': {
+        const [session] = await db.select()
+          .from(sessions)
+          .where(and(
+            eq(sessions.channelId, channelId),
+            sql`${sessions.endedAt} IS NULL`
+          ));
+
+        if (!session) {
+          await message.reply('❌ No active session in this channel.');
+          return;
+        }
+
+        await db.update(sessions)
+          .set({ endedAt: new Date() })
+          .where(eq(sessions.id, session.id));
+
+        const messageCount = await db.select({ count: sql<number>`count(*)` })
+          .from(sessionMessages)
+          .where(eq(sessionMessages.sessionId, session.id));
+
+        await message.reply(`✅ Session **"${session.title}"** ended! Logged ${messageCount[0]?.count || 0} messages.`);
+        break;
+      }
+
+      case 'pause': {
+        const [session] = await db.select()
+          .from(sessions)
+          .where(and(
+            eq(sessions.channelId, channelId),
+            sql`${sessions.endedAt} IS NULL`
+          ));
+
+        if (!session) {
+          await message.reply('❌ No active session in this channel.');
+          return;
+        }
+
+        await db.update(sessions)
+          .set({ isPaused: true, pausedAt: new Date() })
+          .where(eq(sessions.id, session.id));
+
+        await message.reply('⏸️ Session paused. Use `!session resume` to continue.');
+        break;
+      }
+
+      case 'resume': {
+        const [session] = await db.select()
+          .from(sessions)
+          .where(and(
+            eq(sessions.channelId, channelId),
+            sql`${sessions.endedAt} IS NULL`
+          ));
+
+        if (!session) {
+          await message.reply('❌ No active session in this channel.');
+          return;
+        }
+
+        await db.update(sessions)
+          .set({ isPaused: false, pausedAt: null })
+          .where(eq(sessions.id, session.id));
+
+        await message.reply('▶️ Session resumed!');
+        break;
+      }
+
+      case 'list': {
+        const recentSessions = await db.select()
+          .from(sessions)
+          .where(eq(sessions.guildId, guildId))
+          .orderBy(desc(sessions.startedAt))
+          .limit(10);
+
+        if (recentSessions.length === 0) {
+          await message.reply('No sessions found for this server.');
+          return;
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor('#3498db')
+          .setTitle('📝 Recent Sessions')
+          .setDescription(recentSessions.map((s, i) => {
+            const status = s.endedAt ? '✅ Ended' : (s.isPaused ? '⏸️ Paused' : '▶️ Active');
+            return `${i + 1}. **${s.title}** - ${status}\nStarted: ${s.startedAt.toLocaleDateString()}`;
+          }).join('\n\n'));
+
+        await message.reply({ embeds: [embed] });
+        break;
+      }
+
+      default:
+        await message.reply('Usage: `!session <start|end|pause|resume|list> [args]`');
+    }
+  } catch (error) {
+    console.error('Error in !session command:', error);
+    await message.reply('❌ Failed to handle session command.');
+  }
+}
+
+// ==================== SCENE MANAGER ====================
+async function handleScene(message: Message, args: string[]) {
+  try {
+    const subcmd = args[0]?.toLowerCase();
+    const channelId = message.channel.id;
+    const guildId = message.guild?.id || '';
+
+    switch (subcmd) {
+      case 'start': {
+        const title = args.slice(1).join(' ');
+        if (!title) {
+          await message.reply('Usage: `!scene start <title>`');
+          return;
+        }
+
+        // Check if scene already running
+        const existing = await db.select()
+          .from(scenes)
+          .where(and(
+            eq(scenes.channelId, channelId),
+            sql`${scenes.endedAt} IS NULL`
+          ));
+
+        if (existing.length > 0) {
+          await message.reply('❌ A scene is already active in this channel. Use `!scene end` first.');
+          return;
+        }
+
+        const [scene] = await db.insert(scenes).values({
+          title,
+          channelId,
+          guildId,
+          participants: JSON.stringify([message.author.id]),
+          startedAt: new Date()
+        }).returning();
+
+        await message.reply(`🎬 Scene **"${title}"** started!`);
+        break;
+      }
+
+      case 'end': {
+        const [scene] = await db.select()
+          .from(scenes)
+          .where(and(
+            eq(scenes.channelId, channelId),
+            sql`${scenes.endedAt} IS NULL`
+          ));
+
+        if (!scene) {
+          await message.reply('❌ No active scene in this channel.');
+          return;
+        }
+
+        await db.update(scenes)
+          .set({ endedAt: new Date() })
+          .where(eq(scenes.id, scene.id));
+
+        await message.reply(`✅ Scene **"${scene.title}"** ended!`);
+        break;
+      }
+
+      case 'tag': {
+        const tags = args.slice(1).join(' ').split(',').map(t => t.trim());
+        if (tags.length === 0) {
+          await message.reply('Usage: `!scene tag <tag1, tag2, ...>`');
+          return;
+        }
+
+        const [scene] = await db.select()
+          .from(scenes)
+          .where(and(
+            eq(scenes.channelId, channelId),
+            sql`${scenes.endedAt} IS NULL`
+          ));
+
+        if (!scene) {
+          await message.reply('❌ No active scene in this channel.');
+          return;
+        }
+
+        await db.update(scenes)
+          .set({ tags: JSON.stringify(tags) })
+          .where(eq(scenes.id, scene.id));
+
+        await message.reply(`🏷️ Tags added: ${tags.join(', ')}`);
+        break;
+      }
+
+      case 'location': {
+        const location = args.slice(1).join(' ');
+        if (!location) {
+          await message.reply('Usage: `!scene location <location>`');
+          return;
+        }
+
+        const [scene] = await db.select()
+          .from(scenes)
+          .where(and(
+            eq(scenes.channelId, channelId),
+            sql`${scenes.endedAt} IS NULL`
+          ));
+
+        if (!scene) {
+          await message.reply('❌ No active scene in this channel.');
+          return;
+        }
+
+        await db.update(scenes)
+          .set({ location })
+          .where(eq(scenes.id, scene.id));
+
+        await message.reply(`📍 Location set: ${location}`);
+        break;
+      }
+
+      case 'list': {
+        const recentScenes = await db.select()
+          .from(scenes)
+          .where(eq(scenes.guildId, guildId))
+          .orderBy(desc(scenes.startedAt))
+          .limit(10);
+
+        if (recentScenes.length === 0) {
+          await message.reply('No scenes found for this server.');
+          return;
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor('#e67e22')
+          .setTitle('🎬 Recent Scenes')
+          .setDescription(recentScenes.map((s, i) => {
+            const status = s.endedAt ? '✅' : '▶️';
+            return `${status} ${i + 1}. **${s.title}**\n${s.location ? `📍 ${s.location}` : 'No location set'}`;
+          }).join('\n\n'));
+
+        await message.reply({ embeds: [embed] });
+        break;
+      }
+
+      default:
+        await message.reply('Usage: `!scene <start|end|tag|location|list> [args]`');
+    }
+  } catch (error) {
+    console.error('Error in !scene command:', error);
+    await message.reply('❌ Failed to handle scene command.');
+  }
+}
+
+// ==================== UTILITY COMMANDS ====================
+async function handleTime(message: Message, args: string[]) {
+  try {
+    const guildId = message.guild?.id || '';
+    
+    if (args.length === 0) {
+      // Show current time
+      const [time] = await db.select()
+        .from(gameTime)
+        .where(eq(gameTime.guildId, guildId));
+
+      if (!time) {
+        await message.reply('⏰ No game time set for this server. Use `!time set <date/time>` to set it.');
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#f39c12')
+        .setTitle('⏰ Current Game Time')
+        .addFields(
+          { name: 'Date', value: time.currentDate, inline: true },
+          { name: 'Time of Day', value: time.currentTime || 'Not set', inline: true },
+          { name: 'Calendar System', value: time.calendar || 'Standard', inline: true }
+        );
+      
+      if (time.notes) {
+        embed.addFields({ name: 'Notes', value: time.notes });
+      }
+
+      await message.reply({ embeds: [embed] });
+    } else if (args[0] === 'set') {
+      // Set game time
+      const timeString = args.slice(1).join(' ');
+      if (!timeString) {
+        await message.reply('Usage: `!time set <date and time>`\nExample: `!time set 15th of Mirtul, 1492 DR - Evening`');
+        return;
+      }
+
+      const [existing] = await db.select()
+        .from(gameTime)
+        .where(eq(gameTime.guildId, guildId));
+
+      if (existing) {
+        await db.update(gameTime)
+          .set({
+            currentDate: timeString,
+            updatedBy: message.author.id,
+            updatedAt: new Date()
+          })
+          .where(eq(gameTime.guildId, guildId));
+      } else {
+        await db.insert(gameTime).values({
+          guildId,
+          currentDate: timeString,
+          updatedBy: message.author.id
+        });
+      }
+
+      await message.reply(`⏰ Game time set to: **${timeString}**`);
+    }
+  } catch (error) {
+    console.error('Error in !time command:', error);
+    await message.reply('❌ Failed to handle time command.');
+  }
+}
+
+async function handleNote(message: Message, args: string[]) {
+  try {
+    const subcmd = args[0]?.toLowerCase();
+    
+    // Find user by Discord ID
+    const [user] = await db.select()
+      .from(users)
+      .where(eq(users.discordUserId, message.author.id));
+
+    if (!user) {
+      await message.reply('❌ You need to connect your account first. Use `!connect <username> <password>`');
+      return;
+    }
+
+    const guildId = message.guild?.id || '';
+
+    switch (subcmd) {
+      case 'add': {
+        const content = args.slice(1).join(' ');
+        if (!content) {
+          await message.reply('Usage: `!note add <your note>`');
+          return;
+        }
+
+        await db.insert(gmNotes).values({
+          userId: user.id,
+          guildId,
+          title: `Note - ${new Date().toLocaleDateString()}`,
+          content
+        });
+
+        await message.reply('📝 Note saved!');
+        break;
+      }
+
+      case 'list': {
+        const notes = await db.select()
+          .from(gmNotes)
+          .where(and(
+            eq(gmNotes.userId, user.id),
+            eq(gmNotes.guildId, guildId)
+          ))
+          .orderBy(desc(gmNotes.createdAt))
+          .limit(10);
+
+        if (notes.length === 0) {
+          await message.reply('You have no notes for this server.');
+          return;
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor('#95a5a6')
+          .setTitle('📝 Your Notes')
+          .setDescription(notes.map((n, i) => 
+            `**${i + 1}.** ${n.title}\n${n.content.substring(0, 100)}${n.content.length > 100 ? '...' : ''}`
+          ).join('\n\n'));
+
+        await message.reply({ embeds: [embed] });
+        break;
+      }
+
+      default:
+        await message.reply('Usage: `!note <add|list> [args]`');
+    }
+  } catch (error) {
+    console.error('Error in !note command:', error);
+    await message.reply('❌ Failed to handle note command.');
+  }
+}
+
+async function handleNPC(message: Message, args: string[]) {
+  const npcName = args.join(' ');
+  if (!npcName) {
+    await message.reply('Usage: `!npc <name>`\nExample: `!npc Mysterious Merchant`');
+    return;
+  }
+
+  // Generate quick NPC stat block
+  const stats = {
+    str: Math.floor(Math.random() * 11) + 8,  // 8-18
+    dex: Math.floor(Math.random() * 11) + 8,
+    con: Math.floor(Math.random() * 11) + 8,
+    int: Math.floor(Math.random() * 11) + 8,
+    wis: Math.floor(Math.random() * 11) + 8,
+    cha: Math.floor(Math.random() * 11) + 8
+  };
+
+  const hp = Math.floor(Math.random() * 30) + 10; // 10-40 HP
+  const ac = Math.floor(Math.random() * 6) + 10;  // 10-15 AC
+
+  const embed = new EmbedBuilder()
+    .setColor('#16a085')
+    .setTitle(`🎭 ${npcName}`)
+    .setDescription('Quick NPC Stat Block')
+    .addFields(
+      { name: 'HP', value: `${hp}`, inline: true },
+      { name: 'AC', value: `${ac}`, inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: 'STR', value: `${stats.str}`, inline: true },
+      { name: 'DEX', value: `${stats.dex}`, inline: true },
+      { name: 'CON', value: `${stats.con}`, inline: true },
+      { name: 'INT', value: `${stats.int}`, inline: true },
+      { name: 'WIS', value: `${stats.wis}`, inline: true },
+      { name: 'CHA', value: `${stats.cha}`, inline: true }
+    )
+    .setFooter({ text: 'Randomly generated NPC' });
+
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleMusic(message: Message) {
+  const moods = [
+    { mood: 'Epic Battle', suggestion: '🎵 Two Steps From Hell - Heart of Courage' },
+    { mood: 'Mysterious', suggestion: '🎵 Adrian von Ziegler - Prophecy' },
+    { mood: 'Tavern', suggestion: '🎵 Medieval Tavern Music' },
+    { mood: 'Sad/Emotional', suggestion: '🎵 Peter Gundry - The Lonely Shepherd' },
+    { mood: 'Exploration', suggestion: '🎵 Jeremy Soule - Skyrim Atmospheres' },
+    { mood: 'Tense/Suspense', suggestion: '🎵 Dark Ambient Music' },
+    { mood: 'Victory', suggestion: '🎵 E.S. Posthumus - Unstoppable' },
+    { mood: 'Romance', suggestion: '🎵 Celtic Love Songs' },
+    { mood: 'Horror', suggestion: '🎵 Atrium Carceri - Dark Ambient' },
+    { mood: 'Peaceful', suggestion: '🎵 BrunuhVille - Spirit of the Wild' }
+  ];
+
+  const random = moods[Math.floor(Math.random() * moods.length)];
+
+  const embed = new EmbedBuilder()
+    .setColor('#1abc9c')
+    .setTitle('🎵 Music Suggestion')
+    .setDescription(`**Mood:** ${random.mood}\n**Suggestion:** ${random.suggestion}`)
+    .setFooter({ text: 'Perfect for setting the scene!' });
+
+  await message.reply({ embeds: [embed] });
+}
+
+async function handleRecap(message: Message) {
+  try {
+    const channelId = message.channel.id;
+    
+    // Find active session
+    const [session] = await db.select()
+      .from(sessions)
+      .where(and(
+        eq(sessions.channelId, channelId),
+        sql`${sessions.endedAt} IS NULL`
+      ));
+
+    if (!session) {
+      await message.reply('❌ No active session to recap. Start one with `!session start <title>`');
+      return;
+    }
+
+    // Get message count
+    const msgCount = await db.select({ count: sql<number>`count(*)` })
+      .from(sessionMessages)
+      .where(eq(sessionMessages.sessionId, session.id));
+
+    // Get participants
+    const participants = JSON.parse(session.participants || '[]');
+
+    const embed = new EmbedBuilder()
+      .setColor('#3498db')
+      .setTitle(`📋 Session Recap: ${session.title}`)
+      .addFields(
+        { name: 'Started', value: session.startedAt.toLocaleString(), inline: true },
+        { name: 'Messages', value: `${msgCount[0]?.count || 0}`, inline: true },
+        { name: 'Participants', value: `${participants.length}`, inline: true }
+      )
+      .setDescription('Session is ongoing. Use `!session end` to finalize.');
+
+    await message.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error in !recap command:', error);
+    await message.reply('❌ Failed to generate recap.');
+  }
+}
+
+// ==================== HALL OF FAME (STARBOARD) ====================
+async function handleStarReaction(reaction: any) {
+  try {
+    const message = reaction.message;
+    const starCount = reaction.count || 0;
+    const STAR_THRESHOLD = 10; // Changed to 10 based on user preference
+    const guildId = message.guild?.id || '';
+    
+    // Check if message is already in hall of fame
+    const [existing] = await db.select()
+      .from(hallOfFame)
+      .where(eq(hallOfFame.messageId, message.id));
+
+    if (starCount >= STAR_THRESHOLD) {
+      // Add or update in Hall of Fame
+      const contextMessages: any[] = [];
+      
+      // Fetch context messages (2 before and 2 after)
+      try {
+        const messages = await message.channel.messages.fetch({ limit: 5, around: message.id });
+        messages.forEach(msg => {
+          if (msg.id !== message.id) {
+            contextMessages.push({
+              author: msg.author.username,
+              content: msg.content,
+              timestamp: msg.createdTimestamp
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching context messages:', error);
+      }
+
+      if (existing) {
+        // Update star count
+        await db.update(hallOfFame)
+          .set({ starCount })
+          .where(eq(hallOfFame.id, existing.id));
+      } else {
+        // Add to hall of fame
+        await db.insert(hallOfFame).values({
+          messageId: message.id,
+          channelId: message.channel.id,
+          guildId,
+          authorId: message.author.id,
+          characterName: null, // Could extract from webhook if needed
+          content: message.content,
+          starCount,
+          contextMessages: JSON.stringify(contextMessages)
+        });
+
+        // Try to post to #hall-of-fame channel if it exists
+        try {
+          const guild = message.guild;
+          if (guild) {
+            const hallChannel = guild.channels.cache.find(
+              ch => ch.name === 'hall-of-fame' && (ch.type === 0 || ch.type === 5)
+            ) as TextChannel;
+
+            if (hallChannel) {
+              const embed = new EmbedBuilder()
+                .setColor('#f1c40f')
+                .setAuthor({ name: message.author.username, iconURL: message.author.displayAvatarURL() })
+                .setDescription(message.content || '*[No text content]*')
+                .addFields({ name: 'Channel', value: `<#${message.channel.id}>`, inline: true })
+                .addFields({ name: 'Stars', value: `⭐ ${starCount}`, inline: true })
+                .setFooter({ text: `Message ID: ${message.id}` })
+                .setTimestamp(message.createdTimestamp);
+
+              const hallMessage = await hallChannel.send({ embeds: [embed] });
+              
+              // Store hall message ID
+              await db.update(hallOfFame)
+                .set({ hallMessageId: hallMessage.id })
+                .where(eq(hallOfFame.messageId, message.id));
+            }
+          }
+        } catch (error) {
+          console.error('Error posting to hall-of-fame channel:', error);
+        }
+      }
+    } else if (existing && starCount < STAR_THRESHOLD) {
+      // Remove from hall of fame if stars drop below threshold
+      await db.delete(hallOfFame)
+        .where(eq(hallOfFame.id, existing.id));
+      
+      // Try to delete from hall channel
+      if (existing.hallMessageId) {
+        try {
+          const guild = message.guild;
+          if (guild) {
+            const hallChannel = guild.channels.cache.find(
+              ch => ch.name === 'hall-of-fame'
+            ) as TextChannel;
+            
+            if (hallChannel) {
+              const hallMsg = await hallChannel.messages.fetch(existing.hallMessageId);
+              await hallMsg.delete();
+            }
+          }
+        } catch (error) {
+          console.error('Error deleting from hall-of-fame:', error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error handling star reaction:', error);
+  }
+}
+
+// ==================== HALL OF FAME COMMANDS ====================
+async function handleHall(message: Message, args: string[]) {
+  try {
+    const subcmd = args[0]?.toLowerCase();
+    const guildId = message.guild?.id || '';
+
+    if (subcmd === 'top') {
+      // Show top 20 starred messages
+      const topMessages = await db.select()
+        .from(hallOfFame)
+        .where(eq(hallOfFame.guildId, guildId))
+        .orderBy(desc(hallOfFame.starCount))
+        .limit(20);
+
+      if (topMessages.length === 0) {
+        await message.reply('⭐ No messages in the Hall of Fame yet! React with ⭐ to great moments.');
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#f1c40f')
+        .setTitle('⭐ Hall of Fame - Top 20')
+        .setDescription(topMessages.map((msg, i) => {
+          const preview = msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : '');
+          return `${i + 1}. **${msg.starCount}⭐** - ${preview}`;
+        }).join('\n'))
+        .setFooter({ text: `${topMessages.length} messages in Hall of Fame` });
+
+      await message.reply({ embeds: [embed] });
+    } else {
+      // Show recent additions
+      const recentMessages = await db.select()
+        .from(hallOfFame)
+        .where(eq(hallOfFame.guildId, guildId))
+        .orderBy(desc(hallOfFame.addedToHallAt))
+        .limit(10);
+
+      if (recentMessages.length === 0) {
+        await message.reply('⭐ No messages in the Hall of Fame yet! React with ⭐ to great moments.');
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#f1c40f')
+        .setTitle('⭐ Hall of Fame - Recent')
+        .setDescription(recentMessages.map((msg, i) => {
+          const preview = msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : '');
+          return `${i + 1}. **${msg.starCount}⭐** - ${preview}`;
+        }).join('\n'))
+        .setFooter({ text: 'Use !hall top for the top 20' });
+
+      await message.reply({ embeds: [embed] });
+    }
+  } catch (error) {
+    console.error('Error in !hall command:', error);
+    await message.reply('❌ Failed to retrieve Hall of Fame.');
+  }
+}
+
+// ==================== BOT SETTINGS ====================
+async function handleBotSet(message: Message, args: string[]) {
+  // Check admin permissions
+  if (!isAdmin(message)) {
+    await message.reply('❌ Only administrators can change bot settings.');
+    return;
+  }
+
+  const guildId = message.guild?.id || '';
+  const channelId = message.channel.id;
+
+  try {
+    // Check if settings exist
+    const [existing] = await db.select()
+      .from(botSettings)
+      .where(eq(botSettings.guildId, guildId));
+
+    if (existing) {
+      await db.update(botSettings)
+        .set({ 
+          announcementChannelId: channelId,
+          updatedAt: new Date()
+        })
+        .where(eq(botSettings.guildId, guildId));
+    } else {
+      await db.insert(botSettings).values({
+        guildId,
+        announcementChannelId: channelId
+      });
+    }
+
+    await message.reply(`✅ Bot announcement channel set to <#${channelId}>!\n\nThis channel will be used for:\n• Daily prompts (when scheduled)\n• Challenges\n• Bot announcements`);
+  } catch (error) {
+    console.error('Error in !botset command:', error);
+    await message.reply('❌ Failed to set bot channel.');
   }
 }
 

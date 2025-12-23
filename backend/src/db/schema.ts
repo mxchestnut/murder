@@ -326,3 +326,160 @@ export const systemSettings = pgTable('system_settings', {
   description: text('description'),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
+
+// RP Prompts
+export const prompts = pgTable('prompts', {
+  id: serial('id').primaryKey(),
+  category: text('category').notNull(), // 'character', 'world', 'combat', 'social', 'plot'
+  promptText: text('prompt_text').notNull(),
+  createdBy: integer('created_by').references(() => users.id),
+  useCount: integer('use_count').default(0),
+  lastUsed: timestamp('last_used'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// Tropes for RP inspiration
+export const tropes = pgTable('tropes', {
+  id: serial('id').primaryKey(),
+  category: text('category').notNull(), // 'archetype', 'dynamic', 'situation', 'plot'
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  useCount: integer('use_count').default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// Prompt Schedule (for automated posting)
+export const promptSchedule = pgTable('prompt_schedule', {
+  id: serial('id').primaryKey(),
+  channelId: text('channel_id').notNull().unique(),
+  guildId: text('guild_id').notNull(),
+  scheduleTime: text('schedule_time').notNull(), // Cron format or "09:00"
+  enabled: boolean('enabled').default(true),
+  category: text('category'), // Optional: specific category for scheduled prompts
+  lastSent: timestamp('last_sent'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// RP Sessions
+export const sessions = pgTable('sessions', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  channelId: text('channel_id').notNull(),
+  guildId: text('guild_id').notNull(),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  endedAt: timestamp('ended_at'),
+  pausedAt: timestamp('paused_at'),
+  isPaused: boolean('is_paused').default(false),
+  participants: text('participants'), // JSON array of user IDs
+  messageCount: integer('message_count').default(0),
+  summary: text('summary'), // AI-generated summary
+  tags: text('tags'), // JSON array
+  createdBy: integer('created_by').references(() => users.id)
+});
+
+export const sessionMessages = pgTable('session_messages', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').notNull().references(() => sessions.id),
+  messageId: text('message_id').notNull(),
+  authorId: text('author_id').notNull(),
+  characterName: text('character_name'),
+  content: text('content').notNull(),
+  isDiceRoll: boolean('is_dice_roll').default(false),
+  timestamp: timestamp('timestamp').notNull()
+});
+
+export const sessionMessagesRelations = relations(sessionMessages, ({ one }) => ({
+  session: one(sessions, {
+    fields: [sessionMessages.sessionId],
+    references: [sessions.id]
+  })
+}));
+
+// RP Scenes
+export const scenes = pgTable('scenes', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  channelId: text('channel_id').notNull(),
+  guildId: text('guild_id').notNull(),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  endedAt: timestamp('ended_at'),
+  participants: text('participants'), // JSON array
+  tags: text('tags'), // JSON array
+  location: text('location'),
+  isCombat: boolean('is_combat').default(false),
+  summary: text('summary'),
+  createdBy: integer('created_by').references(() => users.id)
+});
+
+export const sceneMessages = pgTable('scene_messages', {
+  id: serial('id').primaryKey(),
+  sceneId: integer('scene_id').notNull().references(() => scenes.id),
+  messageId: text('message_id').notNull(),
+  authorId: text('author_id').notNull(),
+  characterName: text('character_name'),
+  content: text('content').notNull(),
+  timestamp: timestamp('timestamp').notNull()
+});
+
+export const sceneMessagesRelations = relations(sceneMessages, ({ one }) => ({
+  scene: one(scenes, {
+    fields: [sceneMessages.sceneId],
+    references: [scenes.id]
+  })
+}));
+
+// Hall of Fame (Starboard)
+export const hallOfFame = pgTable('hall_of_fame', {
+  id: serial('id').primaryKey(),
+  messageId: text('message_id').notNull().unique(),
+  channelId: text('channel_id').notNull(),
+  guildId: text('guild_id').notNull(),
+  authorId: text('author_id').notNull(),
+  characterName: text('character_name'),
+  content: text('content').notNull(),
+  starCount: integer('star_count').default(0),
+  contextMessages: text('context_messages'), // JSON array of surrounding messages
+  hallMessageId: text('hall_message_id'), // Message ID in hall-of-fame channel
+  addedToHallAt: timestamp('added_to_hall_at').defaultNow().notNull()
+});
+
+// GM Notes (private notes for game masters)
+export const gmNotes = pgTable('gm_notes', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  guildId: text('guild_id').notNull(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  tags: text('tags'), // JSON array
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const gmNotesRelations = relations(gmNotes, ({ one }) => ({
+  user: one(users, {
+    fields: [gmNotes.userId],
+    references: [users.id]
+  })
+}));
+
+// In-game time tracking
+export const gameTime = pgTable('game_time', {
+  id: serial('id').primaryKey(),
+  guildId: text('guild_id').notNull().unique(),
+  currentDate: text('current_date').notNull(), // e.g., "15th of Mirtul, 1492 DR"
+  currentTime: text('current_time'), // e.g., "Evening" or "14:30"
+  calendar: text('calendar').default('Forgotten Realms'), // Calendar system
+  notes: text('notes'),
+  updatedBy: text('updated_by'), // Discord user ID
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Bot settings per guild
+export const botSettings = pgTable('bot_settings', {
+  id: serial('id').primaryKey(),
+  guildId: text('guild_id').notNull().unique(),
+  announcementChannelId: text('announcement_channel_id'), // For prompts, challenges, etc.
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
