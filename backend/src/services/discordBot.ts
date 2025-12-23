@@ -271,17 +271,27 @@ async function handleProfile(message: Message, args: string[]) {
     }
 
     switch (tab) {
-      case 'overview':
-        // Basic Info
-        const basicInfo = [];
-        if (character.characterClass) basicInfo.push(`**Class:** ${character.characterClass}`);
-        if (character.race) basicInfo.push(`**Race:** ${character.race}`);
-        if (character.level) basicInfo.push(`**Level:** ${character.level}`);
-        if (character.alignment) basicInfo.push(`**Alignment:** ${character.alignment}`);
-        if (basicInfo.length > 0) {
-          embed.addFields({ name: '⚔️ Basic Info', value: basicInfo.join('\n'), inline: false });
+      case 'identity':
+        const identityInfo = [];
+        if (character.fullName && character.fullName !== character.name) identityInfo.push(`**Full Name:** ${character.fullName}`);
+        if (character.titles) identityInfo.push(`**Titles:** ${character.titles}`);
+        if (character.species) identityInfo.push(`**Species:** ${character.species}`);
+        if (character.race) identityInfo.push(`**Race:** ${character.race}`);
+        if (character.ageDescription) identityInfo.push(`**Age:** ${character.ageDescription}`);
+        if (character.culturalBackground) identityInfo.push(`**Culture:** ${character.culturalBackground}`);
+        if (character.pronouns) identityInfo.push(`**Pronouns:** ${character.pronouns}`);
+        if (character.genderIdentity) identityInfo.push(`**Gender:** ${character.genderIdentity}`);
+        if (character.sexuality) identityInfo.push(`**Sexuality:** ${character.sexuality}`);
+        if (character.occupation) identityInfo.push(`**Occupation:** ${character.occupation}`);
+        if (character.currentLocation) identityInfo.push(`**Location:** ${character.currentLocation}`);
+        if (character.characterClass) identityInfo.push(`**Class:** ${character.characterClass}`);
+        if (character.level) identityInfo.push(`**Level:** ${character.level}`);
+        if (identityInfo.length > 0) {
+          embed.addFields({ name: '👤 Basic Identity', value: truncate(identityInfo.join('\n')), inline: false });
         }
+        break;
 
+      case 'combat':
         // Stats
         const statModifier = (stat: number) => {
           const mod = Math.floor((stat - 10) / 2);
@@ -304,37 +314,26 @@ async function handleProfile(message: Message, args: string[]) {
           `**Initiative:** ${(character.initiative || 0) >= 0 ? '+' : ''}${character.initiative || 0}`,
           `**Speed:** ${character.speed || 30}ft`
         ];
-        embed.addFields({ name: '⚔️ Combat', value: combatInfo.join(' • '), inline: false });
+        embed.addFields({ name: '⚔️ Combat Stats', value: combatInfo.join(' • '), inline: false });
 
-        // One-liner
-        if (character.personalityOneSentence) {
-          embed.addFields({ name: '💬 Personality', value: `*"${character.personalityOneSentence}"*`, inline: false });
-        }
+        // Saves
+        const savesInfo = [
+          `**Fortitude:** ${(character.fortitudeSave || 0) >= 0 ? '+' : ''}${character.fortitudeSave || 0}`,
+          `**Reflex:** ${(character.reflexSave || 0) >= 0 ? '+' : ''}${character.reflexSave || 0}`,
+          `**Will:** ${(character.willSave || 0) >= 0 ? '+' : ''}${character.willSave || 0}`
+        ];
+        embed.addFields({ name: '🛡️ Saving Throws', value: savesInfo.join(' • '), inline: false });
         break;
 
-      case 'identity':
-        const identityInfo = [];
-        if (character.fullName && character.fullName !== character.name) identityInfo.push(`**Full Name:** ${character.fullName}`);
-        if (character.titles) identityInfo.push(`**Titles:** ${character.titles}`);
-        if (character.species) identityInfo.push(`**Species:** ${character.species}`);
-        if (character.ageDescription) identityInfo.push(`**Age:** ${character.ageDescription}`);
-        if (character.culturalBackground) identityInfo.push(`**Culture:** ${character.culturalBackground}`);
-        if (character.pronouns) identityInfo.push(`**Pronouns:** ${character.pronouns}`);
-        if (character.genderIdentity) identityInfo.push(`**Gender:** ${character.genderIdentity}`);
-        if (character.sexuality) identityInfo.push(`**Sexuality:** ${character.sexuality}`);
-        if (character.occupation) identityInfo.push(`**Occupation:** ${character.occupation}`);
-        if (character.currentLocation) identityInfo.push(`**Location:** ${character.currentLocation}`);
-        if (identityInfo.length > 0) {
-          embed.addFields({ name: '👤 Identity', value: truncate(identityInfo.join('\n')), inline: false });
-        }
-
-        // Appearance
-        const appearanceInfo = [];
-        if (character.physicalPresence) appearanceInfo.push(`**Presence:** ${character.physicalPresence}`);
-        if (character.identifyingTraits) appearanceInfo.push(`**Traits:** ${character.identifyingTraits}`);
-        if (character.clothingAesthetic) appearanceInfo.push(`**Style:** ${character.clothingAesthetic}`);
-        if (appearanceInfo.length > 0) {
-          embed.addFields({ name: '🎨 Appearance', value: truncate(appearanceInfo.join('\n')), inline: false });
+      case 'goals':
+        const goalsInfo = [];
+        if (character.currentGoal) goalsInfo.push(`**Current Goal:** ${character.currentGoal}`);
+        if (character.longTermDesire) goalsInfo.push(`**Long-term Desire:** ${character.longTermDesire}`);
+        if (character.coreMotivation) goalsInfo.push(`**Core Motivation:** ${character.coreMotivation}`);
+        if (character.deepestFear) goalsInfo.push(`**Deepest Fear:** ${character.deepestFear}`);
+        if (character.alignmentTendency) goalsInfo.push(`**Alignment:** ${character.alignmentTendency}`);
+        if (goalsInfo.length > 0) {
+          embed.addFields({ name: '🎯 Goals & Motivations', value: truncate(goalsInfo.join('\n')), inline: false });
         }
         break;
 
@@ -350,91 +349,27 @@ async function handleProfile(message: Message, args: string[]) {
         if (character.habitsOrTells) personalityInfo.push(`**Habits:** ${character.habitsOrTells}`);
         if (character.speechStyle) personalityInfo.push(`**Speech:** ${character.speechStyle}`);
         if (personalityInfo.length > 0) {
-          embed.addFields({ name: '😊 Traits', value: truncate(personalityInfo.join('\n')), inline: false });
-        }
-
-        // Goals & Motivations
-        const goalsInfo = [];
-        if (character.currentGoal) goalsInfo.push(`**Current Goal:** ${character.currentGoal}`);
-        if (character.longTermDesire) goalsInfo.push(`**Long-term Desire:** ${character.longTermDesire}`);
-        if (character.coreMotivation) goalsInfo.push(`**Core Motivation:** ${character.coreMotivation}`);
-        if (character.deepestFear) goalsInfo.push(`**Deepest Fear:** ${character.deepestFear}`);
-        if (goalsInfo.length > 0) {
-          embed.addFields({ name: '🎯 Goals & Motivations', value: truncate(goalsInfo.join('\n')), inline: false });
+          embed.addFields({ name: '😊 Personality Traits', value: truncate(personalityInfo.join('\n')), inline: false });
         }
         break;
 
-      case 'backstory':
-        if (character.origin) {
-          embed.addFields({ name: '📖 Origin', value: truncate(character.origin, 1024), inline: false });
-        }
-        
-        const backstoryNotes = [];
-        if (character.greatestSuccess) backstoryNotes.push(`**Greatest Success:** ${character.greatestSuccess}`);
-        if (character.greatestFailure) backstoryNotes.push(`**Greatest Failure:** ${character.greatestFailure}`);
-        if (character.regret) backstoryNotes.push(`**Regret:** ${character.regret}`);
-        if (backstoryNotes.length > 0) {
-          embed.addFields({ name: '🏆 Defining Moments', value: truncate(backstoryNotes.join('\n\n')), inline: false });
-        }
-
-        // Character Arc
-        const arcInfo = [];
-        if (character.recentChange) arcInfo.push(`**Recent Change:** ${character.recentChange}`);
-        if (character.potentialChange) arcInfo.push(`**Potential Growth:** ${character.potentialChange}`);
-        if (arcInfo.length > 0) {
-          embed.addFields({ name: '📈 Character Arc', value: truncate(arcInfo.join('\n')), inline: false });
-        }
-        break;
-
-      case 'relationships':
-        if (character.importantRelationships) {
-          embed.addFields({ name: '👥 Important Relationships', value: truncate(character.importantRelationships, 1024), inline: false });
-        }
-
-        const relationshipNotes = [];
-        if (character.protectedRelationship) relationshipNotes.push(`**Would Die For:** ${character.protectedRelationship}`);
-        if (character.rival) relationshipNotes.push(`**Rival:** ${character.rival}`);
-        if (character.affiliatedGroups) relationshipNotes.push(`**Groups:** ${character.affiliatedGroups}`);
-        if (relationshipNotes.length > 0) {
-          embed.addFields({ name: '🤝 Key Connections', value: truncate(relationshipNotes.join('\n')), inline: false });
-        }
-        break;
-
-      case 'beliefs':
-        if (character.beliefsPhilosophy) {
-          embed.addFields({ name: '🧠 Beliefs & Philosophy', value: truncate(character.beliefsPhilosophy, 1024), inline: false });
-        }
-        if (character.coreBelief) {
-          embed.addFields({ name: '💭 Core Belief', value: truncate(character.coreBelief, 1024), inline: false });
-        }
-
-        // Secrets & Hidden Aspects
-        const secretsInfo = [];
-        if (character.publicFacade) secretsInfo.push(`**Public Face:** ${character.publicFacade}`);
-        if (character.hiddenAspect) secretsInfo.push(`**Hidden:** ${character.hiddenAspect}`);
-        if (character.secret) secretsInfo.push(`**Secret:** ${character.secret}`);
-        if (secretsInfo.length > 0) {
-          embed.addFields({ name: '👁️ Public vs Private', value: truncate(secretsInfo.join('\n')), inline: false });
-        }
-
-        // Legacy
-        const legacyInfo = [];
-        if (character.symbolOrMotif) legacyInfo.push(`**Symbol:** ${character.symbolOrMotif}`);
-        if (character.legacy) legacyInfo.push(`**Legacy:** ${character.legacy}`);
-        if (character.rememberedAs) legacyInfo.push(`**Remembered As:** ${character.rememberedAs}`);
-        if (legacyInfo.length > 0) {
-          embed.addFields({ name: '🌟 Legacy', value: truncate(legacyInfo.join('\n')), inline: false });
+      case 'appearance':
+        const appearanceInfo = [];
+        if (character.physicalPresence) appearanceInfo.push(`**Presence:** ${character.physicalPresence}`);
+        if (character.identifyingTraits) appearanceInfo.push(`**Identifying Traits:** ${character.identifyingTraits}`);
+        if (character.clothingAesthetic) appearanceInfo.push(`**Clothing Style:** ${character.clothingAesthetic}`);
+        if (appearanceInfo.length > 0) {
+          embed.addFields({ name: '🎨 Appearance', value: truncate(appearanceInfo.join('\n')), inline: false });
         }
         break;
 
       case 'skills':
-        // Skills & Abilities
         const skillsInfo = [];
         if (character.notableEquipment) skillsInfo.push(`**Equipment:** ${character.notableEquipment}`);
         if (character.skillsReliedOn) skillsInfo.push(`**Strengths:** ${character.skillsReliedOn}`);
         if (character.skillsAvoided) skillsInfo.push(`**Weaknesses:** ${character.skillsAvoided}`);
         if (skillsInfo.length > 0) {
-          embed.addFields({ name: '⚔️ Combat & Skills', value: truncate(skillsInfo.join('\n')), inline: false });
+          embed.addFields({ name: '⚔️ Skills & Abilities', value: truncate(skillsInfo.join('\n')), inline: false });
         }
 
         // Parse and display Pathfinder skills
@@ -450,8 +385,76 @@ async function handleProfile(message: Message, args: string[]) {
             .map(([name, data]: any) => `**${name}:** +${data.total}`)
             .join('\n');
           if (trainedSkills) {
-            embed.addFields({ name: '📚 Notable Skills', value: truncate(trainedSkills, 1024), inline: false });
+            embed.addFields({ name: '📚 Trained Skills', value: truncate(trainedSkills, 1024), inline: false });
           }
+        }
+        break;
+
+      case 'backstory':
+        if (character.origin) {
+          embed.addFields({ name: '📖 Origin', value: truncate(character.origin, 1024), inline: false });
+        }
+        
+        const backstoryNotes = [];
+        if (character.greatestSuccess) backstoryNotes.push(`**Greatest Success:** ${character.greatestSuccess}`);
+        if (character.greatestFailure) backstoryNotes.push(`**Greatest Failure:** ${character.greatestFailure}`);
+        if (character.regret) backstoryNotes.push(`**Regret:** ${character.regret}`);
+        if (backstoryNotes.length > 0) {
+          embed.addFields({ name: '🏆 Defining Moments', value: truncate(backstoryNotes.join('\n\n')), inline: false });
+        }
+        break;
+
+      case 'relationships':
+        if (character.importantRelationships) {
+          embed.addFields({ name: '👥 Important Relationships', value: truncate(character.importantRelationships, 1024), inline: false });
+        }
+
+        const relationshipNotes = [];
+        if (character.protectedRelationship) relationshipNotes.push(`**Would Die For:** ${character.protectedRelationship}`);
+        if (character.rival) relationshipNotes.push(`**Rival:** ${character.rival}`);
+        if (character.affiliatedGroups) relationshipNotes.push(`**Groups:** ${character.affiliatedGroups}`);
+        if (relationshipNotes.length > 0) {
+          embed.addFields({ name: '🤝 Key Connections', value: truncate(relationshipNotes.join('\n')), inline: false });
+        } else if (!character.importantRelationships) {
+          embed.addFields({ name: '👥 Relationships', value: '*Coming soon - relationship tracking in development*', inline: false });
+        }
+        break;
+
+      case 'beliefs':
+        if (character.beliefsPhilosophy) {
+          embed.addFields({ name: '🧠 Beliefs & Philosophy', value: truncate(character.beliefsPhilosophy, 1024), inline: false });
+        }
+        if (character.coreBelief) {
+          embed.addFields({ name: '💭 Core Belief', value: truncate(character.coreBelief, 1024), inline: false });
+        }
+        break;
+
+      case 'public_private':
+        const secretsInfo = [];
+        if (character.publicFacade) secretsInfo.push(`**Public Face:** ${character.publicFacade}`);
+        if (character.hiddenAspect) secretsInfo.push(`**Hidden Aspect:** ${character.hiddenAspect}`);
+        if (character.secret) secretsInfo.push(`**Secret:** ${character.secret}`);
+        if (secretsInfo.length > 0) {
+          embed.addFields({ name: '👁️ Public vs Private Self', value: truncate(secretsInfo.join('\n\n')), inline: false });
+        }
+        break;
+
+      case 'growth':
+        const arcInfo = [];
+        if (character.recentChange) arcInfo.push(`**Recent Change:** ${character.recentChange}`);
+        if (character.potentialChange) arcInfo.push(`**Potential Growth:** ${character.potentialChange}`);
+        if (arcInfo.length > 0) {
+          embed.addFields({ name: '📈 Growth & Change', value: truncate(arcInfo.join('\n\n')), inline: false });
+        }
+        break;
+
+      case 'legacy':
+        const legacyInfo = [];
+        if (character.symbolOrMotif) legacyInfo.push(`**Symbol:** ${character.symbolOrMotif}`);
+        if (character.legacy) legacyInfo.push(`**Legacy:** ${character.legacy}`);
+        if (character.rememberedAs) legacyInfo.push(`**Remembered As:** ${character.rememberedAs}`);
+        if (legacyInfo.length > 0) {
+          embed.addFields({ name: '🌟 Legacy & Symbol', value: truncate(legacyInfo.join('\n\n')), inline: false });
         }
         break;
     }
@@ -460,25 +463,46 @@ async function handleProfile(message: Message, args: string[]) {
     return embed;
   };
 
-  // Create button row for tabs
-  const createButtons = (currentTab: string) => {
+  // Create button rows for tabs (Discord allows 5 buttons per row)
+  const createButtons1 = (currentTab: string) => {
     return new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
-        new ButtonBuilder()
-          .setCustomId('tab_overview')
-          .setLabel('Overview')
-          .setStyle(currentTab === 'overview' ? ButtonStyle.Primary : ButtonStyle.Secondary)
-          .setEmoji('⚔️'),
         new ButtonBuilder()
           .setCustomId('tab_identity')
           .setLabel('Identity')
           .setStyle(currentTab === 'identity' ? ButtonStyle.Primary : ButtonStyle.Secondary)
           .setEmoji('👤'),
         new ButtonBuilder()
+          .setCustomId('tab_combat')
+          .setLabel('Combat')
+          .setStyle(currentTab === 'combat' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('⚔️'),
+        new ButtonBuilder()
+          .setCustomId('tab_goals')
+          .setLabel('Goals')
+          .setStyle(currentTab === 'goals' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('🎯'),
+        new ButtonBuilder()
           .setCustomId('tab_personality')
           .setLabel('Personality')
           .setStyle(currentTab === 'personality' ? ButtonStyle.Primary : ButtonStyle.Secondary)
           .setEmoji('😊'),
+        new ButtonBuilder()
+          .setCustomId('tab_appearance')
+          .setLabel('Appearance')
+          .setStyle(currentTab === 'appearance' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('🎨')
+      );
+  };
+
+  const createButtons2 = (currentTab: string) => {
+    return new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('tab_skills')
+          .setLabel('Skills')
+          .setStyle(currentTab === 'skills' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('📚'),
         new ButtonBuilder()
           .setCustomId('tab_backstory')
           .setLabel('Backstory')
@@ -488,31 +512,41 @@ async function handleProfile(message: Message, args: string[]) {
           .setCustomId('tab_relationships')
           .setLabel('Relationships')
           .setStyle(currentTab === 'relationships' ? ButtonStyle.Primary : ButtonStyle.Secondary)
-          .setEmoji('👥')
-      );
-  };
-
-  const createButtons2 = (currentTab: string) => {
-    return new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
+          .setEmoji('👥'),
         new ButtonBuilder()
           .setCustomId('tab_beliefs')
           .setLabel('Beliefs')
           .setStyle(currentTab === 'beliefs' ? ButtonStyle.Primary : ButtonStyle.Secondary)
           .setEmoji('🧠'),
         new ButtonBuilder()
-          .setCustomId('tab_skills')
-          .setLabel('Skills')
-          .setStyle(currentTab === 'skills' ? ButtonStyle.Primary : ButtonStyle.Secondary)
-          .setEmoji('📚')
+          .setCustomId('tab_public_private')
+          .setLabel('Public/Private')
+          .setStyle(currentTab === 'public_private' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('👁️')
+      );
+  };
+
+  const createButtons3 = (currentTab: string) => {
+    return new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('tab_growth')
+          .setLabel('Growth')
+          .setStyle(currentTab === 'growth' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('📈'),
+        new ButtonBuilder()
+          .setCustomId('tab_legacy')
+          .setLabel('Legacy')
+          .setStyle(currentTab === 'legacy' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('🌟')
       );
   };
 
   // Send initial message
-  let currentTab = 'overview';
+  let currentTab = 'identity';
   const reply = await message.reply({ 
     embeds: [buildEmbed(currentTab)], 
-    components: [createButtons(currentTab), createButtons2(currentTab)]
+    components: [createButtons1(currentTab), createButtons2(currentTab), createButtons3(currentTab)]
   });
 
   // Create collector for button interactions
@@ -532,7 +566,7 @@ async function handleProfile(message: Message, args: string[]) {
       currentTab = tabMatch[1];
       await interaction.update({
         embeds: [buildEmbed(currentTab)],
-        components: [createButtons(currentTab), createButtons2(currentTab)]
+        components: [createButtons1(currentTab), createButtons2(currentTab), createButtons3(currentTab)]
       });
     }
   });
