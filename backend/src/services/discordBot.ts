@@ -4,7 +4,6 @@ import { channelCharacterMappings, characterSheets, users, knowledgeBase, charac
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
-import * as WebSearch from './webSearch';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
@@ -1661,65 +1660,11 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
         return;
       }
     } catch (wikiError) {
-      // Wikipedia didn't find anything, try Google
-      console.log(`Wikipedia search failed for "${searchTerm}", trying Google...`);
+      // Wikipedia didn't find anything, use AI
+      console.log(`Wikipedia search failed for "${searchTerm}", using AI...`);
     }
 
-    // If not in Wikipedia, try Google search
-    try {
-      console.log(`Attempting Google search for "${searchTerm}"...`);
-      const googleResult = await WebSearch.searchGoogle(searchTerm);
-      
-      if (googleResult && googleResult.snippet && googleResult.snippet.length > 50) {
-        console.log(`Google search successful for "${searchTerm}"`);
-        const embed = new EmbedBuilder()
-          .setColor(0x4285f4)
-          .setTitle(`${emoji} ${googleResult.title}`)
-          .setDescription(googleResult.snippet)
-          .addFields(
-            { name: 'Category', value: categoryName, inline: true },
-            { name: 'Source', value: '🔍 Google Search', inline: true }
-          )
-          .setFooter({ text: `React ⭐ to save this to knowledge base • ${googleResult.url}` })
-          .setTimestamp();
-
-        const reply = await message.reply({ embeds: [embed] });
-
-        // Add star reaction for saving
-        await reply.react('⭐');
-
-        // Listen for star reaction to save to KB
-        const filter = (reaction: any, user: any) => {
-          return reaction.emoji.name === '⭐' && !user.bot;
-        };
-
-        const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
-        
-        collector.on('collect', async () => {
-          try {
-            await db.insert(knowledgeBase).values({
-              question: searchTerm,
-              answer: googleResult.snippet,
-              category,
-              sourceUrl: googleResult.url,
-              aiGenerated: false,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-            await message.reply('✅ Saved Google result to knowledge base!');
-          } catch (error) {
-            console.error('Error saving to knowledge base:', error);
-          }
-        });
-
-        return;
-      }
-    } catch (googleError) {
-      // Google search failed, continue to AI
-      console.log(`Google search failed for "${searchTerm}", trying AI...`);
-    }
-
-    // If not in Google, ask AI as final fallback
+    // If not in Wikipedia, ask AI as fallback
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
@@ -1730,7 +1675,11 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     // Adjust prompt based on category
     let aiQuestion = '';
     if (category === 'kink') {
-      aiQuestion = `You are a knowledgeable reference assistant. Provide an educational, factual, and respectful explanation of the term "${searchTerm}" in the context of human relationships and BDSM practices. Focus on definitions, common practices, safety considerations, and consent. Be informative and professional.`;
+      aiQuestion = `Provide a concise, educational definition of "${searchTerm}" in the context of BDSM and kink practices. Include: 1) Clear definition (2-3 sentences), 2) Common practices or variations, 3) Safety/consent considerations if relevant. Keep response under 300 words. Be factual, respectful, and informative. Do NOT talk about D&D, Pathfinder, or tabletop games.`;
+    } else if (category === 'spell') {
+      aiQuestion = `Provide detailed information about the spell "${searchTerm}" from Pathfinder or D&D. Include: spell level, school, casting time, components, duration, and description of effects. Be specific and comprehensive. Only use information from Pathfinder or D&D game systems.`;
+    } else if (category === 'feat') {
+      aiQuestion = `Provide detailed information about the feat "${searchTerm}" from Pathfinder. Include: prerequisites, benefits, and tactical uses. Only use information from Pathfinder. Do not include information from other game systems.`;
     } else {
       aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}"${systemContext}. Be specific and comprehensive.${gameSystem ? ` Only use information from ${gameSystem}. Do not include information from other game systems.` : ''}`;
     }
