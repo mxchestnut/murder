@@ -1,8 +1,9 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users } from '../db/schema';
-import { eq, and, or, sql } from 'drizzle-orm';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships } from '../db/schema';
+import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
+import * as GeminiService from './gemini';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
@@ -89,6 +90,18 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'syncall':
           await handleSyncAll(message);
+          break;
+        case 'ask':
+          await handleAsk(message, args);
+          break;
+        case 'learn':
+          await handleLearn(message, args);
+          break;
+        case 'stats':
+          await handleStats(message, args);
+          break;
+        case 'leaderboard':
+          await handleLeaderboard(message, args);
           break;
         case 'help':
           await handleHelp(message);
@@ -512,6 +525,16 @@ async function handleRoll(message: Message, args: string[]) {
   }
 
   await message.reply({ embeds: [embed] });
+
+  // Track stats
+  await trackCharacterActivity(character.id, 'roll', `Rolled ${rollDescription}: ${total}`, {
+    diceRoll,
+    modifier,
+    total,
+    stat: statName,
+    nat20: diceRoll === 20,
+    nat1: diceRoll === 1
+  });
 }
 
 // Encryption utilities for PathCompanion password
@@ -767,6 +790,13 @@ async function handleProxy(message: Message, characterName: string, messageText:
         username: character.name,
         avatarURL: avatarUrl
       });
+
+      // Track stats
+      await trackCharacterActivity(character.id, 'message', `Sent message in ${channel.name}`, {
+        messageLength: messageText.length,
+        channelId: channel.id
+      });
+
     } catch (webhookError: any) {
       // If webhook fails (e.g., Unknown Webhook error), clear cache and retry once
       if (webhookError.code === 10015) {
@@ -903,6 +933,24 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     }
 
     await message.reply({ embeds: [embed] });
+    
+    // Track the roll in character stats
+    await trackCharacterActivity(
+      character.id, 
+      'roll', 
+      `Rolled ${rollDescription} in #${message.channel && 'name' in message.channel ? message.channel.name : 'unknown'}`,
+      {
+        type: rollType,
+        stat: rollDescription,
+        roll: diceRoll,
+        modifier: modifier,
+        total: total,
+        nat20: diceRoll === 20,
+        nat1: diceRoll === 1,
+        channelId: message.channelId
+      }
+    );
+    
     return true;
 
   } catch (error) {
@@ -959,6 +1007,381 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
   }
 
   return sentCount > 0;
+}
+
+// AI FAQ System
+async function handleAsk(message: Message, args: string[]) {
+  if (args.length === 0) {
+    await message.reply('Usage: `!ask <question>`\nExample: `!ask How does sneak attack work?`');
+    return;
+  }
+
+  const question = args.join(' ');
+  
+  try {
+    // First, search knowledge base
+    const searchResults = await db.select()
+      .from(knowledgeBase)
+      .where(sql`LOWER(${knowledgeBase.question}) LIKE LOWER(${'%' + question + '%'})`)
+      .limit(1);
+
+    if (searchResults.length > 0) {
+      const kb = searchResults[0];
+      const embed = new EmbedBuilder()
+        .setColor(0x0099ff)
+        .setTitle('📚 Knowledge Base')
+        .setDescription(kb.answer)
+        .addFields(
+          { name: 'Question', value: kb.question, inline: false },
+          { name: 'Source', value: kb.aiGenerated ? '🤖 AI Generated' : (kb.sourceUrl || 'Manual Entry'), inline: true }
+        )
+        .setFooter({ text: `👍 ${kb.upvotes || 0} upvotes • React ⭐ to save AI answers` })
+        .setTimestamp();
+
+      await message.reply({ embeds: [embed] });
+      return;
+    }
+
+    // If not in KB, ask AI
+    if ('sendTyping' in message.channel) {
+      await message.channel.sendTyping();
+    }
+    const answer = await GeminiService.askGemini(question);
+
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle('🤖 AI Answer')
+      .setDescription(answer)
+      .addFields({ name: 'Question', value: question, inline: false })
+      .setFooter({ text: 'React ⭐ to save this to knowledge base' })
+      .setTimestamp();
+
+    const reply = await message.reply({ embeds: [embed] });
+
+    // Add star reaction for saving
+    await reply.react('⭐');
+
+    // Listen for star reaction to save to KB
+    const filter = (reaction: any, user: any) => {
+      return reaction.emoji.name === '⭐' && !user.bot;
+    };
+
+    const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
+    
+    collector.on('collect', async () => {
+      try {
+        await db.insert(knowledgeBase).values({
+          question,
+          answer,
+          aiGenerated: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        await message.reply('✅ Saved to knowledge base!');
+      } catch (error) {
+        console.error('Error saving to knowledge base:', error);
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in !ask command:', error);
+    await message.reply('❌ Sorry, I encountered an error answering that question.');
+  }
+}
+
+async function handleLearn(message: Message, args: string[]) {
+  // Check if user has admin permissions
+  if (!message.member?.permissions.has('Administrator')) {
+    await message.reply('❌ Only administrators can add knowledge base entries.');
+    return;
+  }
+
+  const fullText = args.join(' ');
+  const parts = fullText.split('|').map(p => p.trim());
+
+  if (parts.length !== 2) {
+    await message.reply('Usage: `!learn <question> | <answer>`\nExample: `!learn What is AC? | Armor Class is your defense rating`');
+    return;
+  }
+
+  const [question, answer] = parts;
+
+  try {
+    await db.insert(knowledgeBase).values({
+      question,
+      answer,
+      aiGenerated: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    await message.reply(`✅ Added to knowledge base!\n**Q:** ${question}\n**A:** ${answer}`);
+  } catch (error) {
+    console.error('Error in !learn command:', error);
+    await message.reply('❌ Failed to add to knowledge base.');
+  }
+}
+
+// Character Stats
+async function handleStats(message: Message, args: string[]) {
+  try {
+    let characterId: number | null = null;
+
+    if (args.length === 0) {
+      // Get character linked to this channel
+      const mapping = await db.select()
+        .from(channelCharacterMappings)
+        .where(and(
+          eq(channelCharacterMappings.channelId, message.channel.id),
+          eq(channelCharacterMappings.guildId, message.guild?.id || '')
+        ))
+        .limit(1);
+
+      if (mapping.length === 0) {
+        await message.reply('No character linked to this channel. Use `!setchar <character_name>` first.');
+        return;
+      }
+      characterId = mapping[0].characterId;
+    } else {
+      // Search by character name
+      const characterName = args.join(' ');
+      const characters = await db.select()
+        .from(characterSheets)
+        .where(sql`LOWER(${characterSheets.name}) LIKE LOWER(${'%' + characterName + '%'})`)
+        .limit(1);
+
+      if (characters.length === 0) {
+        await message.reply(`Character "${characterName}" not found.`);
+        return;
+      }
+      characterId = characters[0].id;
+    }
+
+    // Get or create stats
+    let stats = await db.select()
+      .from(characterStats)
+      .where(eq(characterStats.characterId, characterId))
+      .limit(1);
+
+    if (stats.length === 0) {
+      // Create initial stats
+      await db.insert(characterStats).values({
+        characterId,
+        totalMessages: 0,
+        totalDiceRolls: 0,
+        nat20Count: 0,
+        nat1Count: 0,
+        totalDamageDealt: 0,
+        createdAt: new Date()
+      });
+      stats = await db.select()
+        .from(characterStats)
+        .where(eq(characterStats.characterId, characterId))
+        .limit(1);
+    }
+
+    const stat = stats[0];
+    const character = await db.select()
+      .from(characterSheets)
+      .where(eq(characterSheets.id, characterId))
+      .limit(1);
+
+    const embed = new EmbedBuilder()
+      .setColor(0x00ff00)
+      .setTitle(`📊 ${character[0].name} - Stats`)
+      .addFields(
+        { name: '💬 Messages', value: (stat.totalMessages || 0).toString(), inline: true },
+        { name: '🎲 Dice Rolls', value: (stat.totalDiceRolls || 0).toString(), inline: true },
+        { name: '🎉 Natural 20s', value: (stat.nat20Count || 0).toString(), inline: true },
+        { name: '💀 Natural 1s', value: (stat.nat1Count || 0).toString(), inline: true },
+        { name: '⚔️ Damage Dealt', value: (stat.totalDamageDealt || 0).toString(), inline: true },
+        { name: '📅 Last Active', value: stat.lastActive ? stat.lastActive.toLocaleString() : 'Never', inline: true }
+      )
+      .setTimestamp();
+
+    if (character[0].avatarUrl) {
+      embed.setThumbnail(character[0].avatarUrl);
+    }
+
+    await message.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error in !stats command:', error);
+    await message.reply('❌ Failed to retrieve stats.');
+  }
+}
+
+async function handleLeaderboard(message: Message, args: string[]) {
+  const category = args[0]?.toLowerCase() || 'messages';
+
+  try {
+    let orderBy;
+    let title;
+    let emoji;
+
+    switch (category) {
+      case 'messages':
+      case 'msg':
+        orderBy = desc(characterStats.totalMessages);
+        title = '💬 Most Active Characters';
+        emoji = '💬';
+        break;
+      case 'rolls':
+      case 'dice':
+        orderBy = desc(characterStats.totalDiceRolls);
+        title = '🎲 Most Dice Rolls';
+        emoji = '🎲';
+        break;
+      case 'crits':
+      case 'nat20':
+        orderBy = desc(characterStats.nat20Count);
+        title = '🎉 Most Natural 20s';
+        emoji = '🎉';
+        break;
+      case 'fails':
+      case 'nat1':
+        orderBy = desc(characterStats.nat1Count);
+        title = '💀 Most Natural 1s';
+        emoji = '💀';
+        break;
+      case 'damage':
+        orderBy = desc(characterStats.totalDamageDealt);
+        title = '⚔️ Most Damage Dealt';
+        emoji = '⚔️';
+        break;
+      default:
+        await message.reply('Usage: `!leaderboard <messages|rolls|crits|fails|damage>`');
+        return;
+    }
+
+    const stats = await db.select({
+      stats: characterStats,
+      character: characterSheets
+    })
+      .from(characterStats)
+      .innerJoin(characterSheets, eq(characterStats.characterId, characterSheets.id))
+      .orderBy(orderBy)
+      .limit(10);
+
+    if (stats.length === 0) {
+      await message.reply('No stats available yet. Start playing to track stats!');
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(0xffd700)
+      .setTitle(title)
+      .setTimestamp();
+
+    let description = '';
+    stats.forEach((entry, index) => {
+      const rank = ['🥇', '🥈', '🥉'][index] || `${index + 1}.`;
+      let value;
+      
+      switch (category) {
+        case 'messages':
+        case 'msg':
+          value = entry.stats.totalMessages;
+          break;
+        case 'rolls':
+        case 'dice':
+          value = entry.stats.totalDiceRolls;
+          break;
+        case 'crits':
+        case 'nat20':
+          value = entry.stats.nat20Count;
+          break;
+        case 'fails':
+        case 'nat1':
+          value = entry.stats.nat1Count;
+          break;
+        case 'damage':
+          value = entry.stats.totalDamageDealt;
+          break;
+        default:
+          value = 0;
+      }
+
+      description += `${rank} **${entry.character.name}** - ${emoji} ${value}\n`;
+    });
+
+    embed.setDescription(description);
+    await message.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error in !leaderboard command:', error);
+    await message.reply('❌ Failed to retrieve leaderboard.');
+  }
+}
+
+// Helper function to track character activity and update stats
+async function trackCharacterActivity(
+  characterId: number, 
+  activityType: string, 
+  description: string,
+  metadata?: any
+) {
+  try {
+    // Get or create stats
+    let stats = await db.select()
+      .from(characterStats)
+      .where(eq(characterStats.characterId, characterId))
+      .limit(1);
+
+    if (stats.length === 0) {
+      await db.insert(characterStats).values({
+        characterId,
+        totalMessages: 0,
+        totalDiceRolls: 0,
+        nat20Count: 0,
+        nat1Count: 0,
+        totalDamageDealt: 0,
+        lastActive: new Date(),
+        createdAt: new Date()
+      });
+      stats = await db.select()
+        .from(characterStats)
+        .where(eq(characterStats.characterId, characterId))
+        .limit(1);
+    }
+
+    const stat = stats[0];
+
+    // Update stats based on activity type
+    const updates: any = { lastActive: new Date() };
+
+    switch (activityType) {
+      case 'message':
+        updates.totalMessages = (stat.totalMessages || 0) + 1;
+        break;
+      case 'roll':
+        updates.totalDiceRolls = (stat.totalDiceRolls || 0) + 1;
+        if (metadata?.nat20) {
+          updates.nat20Count = (stat.nat20Count || 0) + 1;
+        }
+        if (metadata?.nat1) {
+          updates.nat1Count = (stat.nat1Count || 0) + 1;
+        }
+        if (metadata?.damage) {
+          updates.totalDamageDealt = (stat.totalDamageDealt || 0) + metadata.damage;
+        }
+        break;
+    }
+
+    await db.update(characterStats)
+      .set(updates)
+      .where(eq(characterStats.characterId, characterId));
+
+    // Add to activity feed
+    await db.insert(activityFeed).values({
+      characterId,
+      activityType,
+      description,
+      metadata: metadata ? JSON.stringify(metadata) : null,
+      timestamp: new Date()
+    });
+
+  } catch (error) {
+    console.error('Error tracking character activity:', error);
+  }
 }
 
 export function getDiscordBot() {

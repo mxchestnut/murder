@@ -214,3 +214,78 @@ export const channelCharacterMappingsRelations = relations(channelCharacterMappi
     references: [users.id]
   })
 }));
+
+// Knowledge Base for AI FAQ System
+export const knowledgeBase = pgTable('knowledge_base', {
+  id: serial('id').primaryKey(),
+  question: text('question').notNull(),
+  answer: text('answer').notNull(),
+  sourceUrl: text('source_url'),
+  category: text('category'),
+  aiGenerated: boolean('ai_generated').default(false),
+  createdBy: integer('created_by').references(() => users.id),
+  upvotes: integer('upvotes').default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Character Stats Tracking
+export const characterStats = pgTable('character_stats', {
+  id: serial('id').primaryKey(),
+  characterId: integer('character_id').notNull().references(() => characterSheets.id).unique(),
+  totalMessages: integer('total_messages').default(0),
+  totalDiceRolls: integer('total_dice_rolls').default(0),
+  nat20Count: integer('nat20_count').default(0),
+  nat1Count: integer('nat1_count').default(0),
+  totalDamageDealt: integer('total_damage_dealt').default(0),
+  lastActive: timestamp('last_active'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const characterStatsRelations = relations(characterStats, ({ one }) => ({
+  character: one(characterSheets, {
+    fields: [characterStats.characterId],
+    references: [characterSheets.id]
+  })
+}));
+
+// Activity Feed
+export const activityFeed = pgTable('activity_feed', {
+  id: serial('id').primaryKey(),
+  characterId: integer('character_id').notNull().references(() => characterSheets.id),
+  activityType: text('activity_type').notNull(), // 'message', 'roll', 'crit', 'fail', etc.
+  description: text('description').notNull(),
+  metadata: text('metadata'), // JSON string
+  timestamp: timestamp('timestamp').defaultNow().notNull()
+});
+
+export const activityFeedRelations = relations(activityFeed, ({ one }) => ({
+  character: one(characterSheets, {
+    fields: [activityFeed.characterId],
+    references: [characterSheets.id]
+  })
+}));
+
+// Character Relationships
+export const relationships = pgTable('relationships', {
+  id: serial('id').primaryKey(),
+  character1Id: integer('character1_id').notNull().references(() => characterSheets.id),
+  character2Id: integer('character2_id').notNull().references(() => characterSheets.id),
+  relationshipType: text('relationship_type'), // 'ally', 'rival', 'romantic', 'family', etc.
+  intimacyLevel: integer('intimacy_level').default(0), // 0-10 scale
+  notes: text('notes'),
+  keyMoments: text('key_moments'), // JSON array
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const relationshipsRelations = relations(relationships, ({ one }) => ({
+  character1: one(characterSheets, {
+    fields: [relationships.character1Id],
+    references: [characterSheets.id]
+  }),
+  character2: one(characterSheets, {
+    fields: [relationships.character2Id],
+    references: [characterSheets.id]
+  })
+}));
