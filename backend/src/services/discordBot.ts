@@ -1428,10 +1428,16 @@ async function handleAsk(message: Message, args: string[]) {
 
     if (searchResults.length > 0) {
       const kb = searchResults[0];
+      
+      // Truncate if too long for Discord embed
+      const truncatedAnswer = kb.answer.length > 4000 
+        ? kb.answer.substring(0, 3997) + '...' 
+        : kb.answer;
+      
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
         .setTitle('📚 Knowledge Base')
-        .setDescription(kb.answer)
+        .setDescription(truncatedAnswer)
         .addFields(
           { name: 'Question', value: kb.question, inline: false },
           { name: 'Source', value: kb.aiGenerated ? '🤖 AI Generated' : (kb.sourceUrl || 'Manual Entry'), inline: true }
@@ -1449,10 +1455,15 @@ async function handleAsk(message: Message, args: string[]) {
     }
     const answer = await GeminiService.askGemini(question);
 
+    // Truncate if too long for Discord embed (max 4096 chars)
+    const truncatedAnswer = answer.length > 4000 
+      ? answer.substring(0, 3997) + '...' 
+      : answer;
+
     const embed = new EmbedBuilder()
       .setColor(0x9b59b6)
       .setTitle('🤖 AI Answer')
-      .setDescription(answer)
+      .setDescription(truncatedAnswer)
       .addFields({ name: 'Question', value: question, inline: false })
       .setFooter({ text: 'React ⭐ to save this to knowledge base' })
       .setTimestamp();
@@ -1551,10 +1562,16 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
 
     if (searchResults.length > 0) {
       const kb = searchResults[0];
+      
+      // Truncate if too long for Discord embed
+      const truncatedAnswer = kb.answer.length > 4000 
+        ? kb.answer.substring(0, 3997) + '...' 
+        : kb.answer;
+      
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
         .setTitle(`${emoji} ${kb.question}`)
-        .setDescription(kb.answer)
+        .setDescription(truncatedAnswer)
         .addFields(
           { name: 'Category', value: categoryName, inline: true },
           { name: 'Source', value: kb.aiGenerated ? '🤖 AI Generated' : (kb.sourceUrl || 'Manual Entry'), inline: true }
@@ -1573,10 +1590,15 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     const aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}". Be specific and comprehensive.`;
     const answer = await GeminiService.askGemini(aiQuestion);
 
+    // Truncate if too long for Discord embed (max 4096 chars)
+    const truncatedAnswer = answer.length > 4000 
+      ? answer.substring(0, 3997) + '...' 
+      : answer;
+
     const embed = new EmbedBuilder()
       .setColor(0x9b59b6)
       .setTitle(`${emoji} ${searchTerm}`)
-      .setDescription(answer)
+      .setDescription(truncatedAnswer)
       .addFields({ name: 'Category', value: `${categoryName} (AI Generated)`, inline: true })
       .setFooter({ text: `React ⭐ to save this to knowledge base • Use !learn to add custom entries` })
       .setTimestamp();
