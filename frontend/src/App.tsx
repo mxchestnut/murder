@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import { api } from './utils/api';
+import { api, fetchCsrfToken } from './utils/api';
 import { useTheme } from './utils/useTheme';
 
 function App() {
@@ -12,8 +12,15 @@ function App() {
   useTheme(); // Initialize theme on app load
 
   useEffect(() => {
-    checkAuth();
+    initializeApp();
   }, []);
+
+  const initializeApp = async () => {
+    // Fetch CSRF token first
+    await fetchCsrfToken();
+    // Then check authentication
+    await checkAuth();
+  };
 
   const checkAuth = async () => {
     try {

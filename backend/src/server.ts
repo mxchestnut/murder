@@ -10,6 +10,8 @@ import passport from 'passport';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import { doubleCsrf } from 'csrf-csrf';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 import authRoutes from './routes/auth';
@@ -18,6 +20,7 @@ import characterRoutes from './routes/characters';
 import pathcompanionRoutes from './routes/pathcompanion';
 import discordRoutes from './routes/discord';
 import systemRoutes from './routes/system';
+import filesRoutes from './routes/files';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -73,7 +76,8 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Body parsing middleware
+// Body parsing and cookie middleware
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -103,6 +107,39 @@ app.use(passport.initialize());
 app.use(passport.session());
 setupPassport();
 
+// CSRF Protection
+const {
+  doubleCsrfProtection, // Middleware to validate CSRF token
+} = doubleCsrf({
+  getSecret: () => secrets.SESSION_SECRET,
+  getSessionIdentifier: (req) => req.session.id || '',
+  cookieName: 'cyarika.x-csrf-token',
+  cookieOptions: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.cyarika.com' : undefined,
+    path: '/'
+  },
+  size: 64,
+  ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
+});
+
+// CSRF token endpoint (no protection needed for GET)
+app.get('/api/csrf-token', (req, res) => {
+  const token = req.csrfToken ? req.csrfToken() : '';
+  res.json({ csrfToken: token });
+});
+
+// Apply CSRF protection to all API routes except auth (login/register)
+// Auth routes handle their own CSRF for better UX
+app.use('/api/documents', doubleCsrfProtection);
+app.use('/api/characters', doubleCsrfProtection);
+app.use('/api/pathcompanion', doubleCsrfProtection);
+app.use('/api/discord', doubleCsrfProtection);
+app.use('/api/system', doubleCsrfProtection);
+app.use('/api/files', doubleCsrfProtection);
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
@@ -110,6 +147,7 @@ app.use('/api/characters', characterRoutes);
 app.use('/api/pathcompanion', pathcompanionRoutes);
 app.use('/api/discord', discordRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/files', filesRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

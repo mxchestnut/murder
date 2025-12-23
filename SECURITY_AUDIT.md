@@ -88,11 +88,13 @@
 - CORS configured for specific origin ✅
 - Input validation via Drizzle ORM ✅
 - No SQL injection risk (parameterized queries) ✅
+- **CSRF protection implemented** ✅ *(Dec 2024)*
+- **Content validation with ClamAV malware scanning** ✅ *(Dec 2024)*
 
 **Recommendations:**
 - ✅ Already well-configured
-- Consider: Add CSRF protection for state-changing operations
-- Consider: Implement content validation for document uploads
+- ✅ **COMPLETED**: CSRF protection with csrf-csrf package (session-based double-submit cookie)
+- ✅ **COMPLETED**: File upload virus scanning with ClamAV before S3 storage
 
 ### 5. Server Hardening ⚠️ NEEDS ATTENTION
 
@@ -208,10 +210,10 @@
 
 ### ⚪ Low Priority (Nice to Have)
 
-12. **Add CSRF protection**
+12. ~~**Add CSRF protection**~~ ✅ COMPLETED *(Dec 2024)*
 13. **Set up host-based firewall**
 14. **Implement audit logging**
-15. **Add content validation**
+15. ~~**Add content validation**~~ ✅ COMPLETED *(Dec 2024)*
 
 ## Risk Assessment
 
@@ -246,6 +248,8 @@
 - [x] Secrets management (AWS Secrets Manager)
 - [x] Session persistence (Redis)
 - [x] Password rotation tracking (90-day reminders)
+- [x] **CSRF protection** *(Dec 2024)*
+- [x] **File upload malware scanning** *(Dec 2024)*
 - [ ] Automated security updates
 - [ ] fail2ban installed
 - [ ] Logging and monitoring

@@ -289,3 +289,40 @@ export const relationshipsRelations = relations(relationships, ({ one }) => ({
     references: [characterSheets.id]
   })
 }));
+
+// File Uploads
+export const files = pgTable('files', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  fileName: text('file_name').notNull(),
+  originalFileName: text('original_file_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  fileSize: integer('file_size').notNull(), // Size in bytes
+  s3Key: text('s3_key').notNull().unique(),
+  s3Bucket: text('s3_bucket').notNull(),
+  documentId: integer('document_id').references(() => documents.id), // Optional link to a document
+  virusScanStatus: text('virus_scan_status').default('pending'), // 'pending', 'clean', 'infected', 'error'
+  virusScanDetails: text('virus_scan_details'), // JSON string with scan results
+  uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at') // Soft delete
+});
+
+export const filesRelations = relations(files, ({ one }) => ({
+  user: one(users, {
+    fields: [files.userId],
+    references: [users.id]
+  }),
+  document: one(documents, {
+    fields: [files.documentId],
+    references: [documents.id]
+  })
+}));
+
+// System Settings (for app-wide configuration)
+export const systemSettings = pgTable('system_settings', {
+  id: serial('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  value: text('value').notNull(),
+  description: text('description'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});

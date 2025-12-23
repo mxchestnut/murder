@@ -4,9 +4,10 @@ import Editor from './Editor';
 import Settings from './Settings';
 import DiscordCommands from './DiscordCommands';
 import CharacterBio from './CharacterBio';
+import FileManager from './FileManager';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
-import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle } from 'lucide-react';
+import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle, FolderOpen } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -19,6 +20,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentCharacter, setCurrentCharacter] = useState<any>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showDiscordCommands, setShowDiscordCommands] = useState(false);
+  const [showFileManager, setShowFileManager] = useState(false);
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -45,6 +47,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setCurrentDocument(doc);
     setShowSettings(false);
     setShowDiscordCommands(false);
+    setShowFileManager(false);
   };
 
   const handleSelectCharacter = (character: any) => {
@@ -52,6 +55,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setCurrentDocument(null);
     setShowSettings(false);
     setShowDiscordCommands(false);
+    setShowFileManager(false);
     setCharacterPanelCollapsed(false);
   };
 
@@ -147,6 +151,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               onClick={() => {
                 setShowDiscordCommands(!showDiscordCommands);
                 setShowSettings(false);
+                setShowFileManager(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -169,6 +174,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               onClick={() => {
                 setShowSettings(!showSettings);
                 setShowDiscordCommands(false);
+                setShowFileManager(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -185,6 +191,29 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             >
               <SettingsIcon size={18} />
               Settings
+            </button>
+
+            <button
+              onClick={() => {
+                setShowFileManager(!showFileManager);
+                setShowSettings(false);
+                setShowDiscordCommands(false);
+                setCurrentCharacter(null);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showFileManager ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showFileManager ? 'var(--accent-text)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <FolderOpen size={18} />
+              Files
             </button>
 
             <span style={{ color: 'var(--text-primary)' }}>{user.username}</span>
@@ -221,6 +250,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           ) : showDiscordCommands ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <DiscordCommands />
+            </div>
+          ) : showFileManager ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <FileManager />
             </div>
           ) : (
             <>
