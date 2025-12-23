@@ -267,7 +267,11 @@ async function handleProfile(message: Message, args: string[]) {
       .setColor('#6366f1');
 
     if (character.avatarUrl) {
-      embed.setThumbnail(character.avatarUrl);
+      // Convert relative URL to absolute URL for Discord
+      const avatarUrl = character.avatarUrl.startsWith('http') 
+        ? character.avatarUrl 
+        : `https://cyarika.com${character.avatarUrl}`;
+      embed.setThumbnail(avatarUrl);
     }
 
     switch (tab) {
