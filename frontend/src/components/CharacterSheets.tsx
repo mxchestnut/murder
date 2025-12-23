@@ -1243,11 +1243,7 @@ export default function CharacterSheets() {
         }
 
         .character-sheet-view {
-          flex: 0 0 auto;
-          width: 800px;
-          min-width: 400px;
-          max-width: 1400px;
-          resize: horizontal;
+          flex: 1;
           overflow-y: auto;
           overflow-x: hidden;
           padding: 2rem;
