@@ -141,27 +141,56 @@ tailscale status
 
 ## Current Setup
 
-- **Public URL**: https://cyarika.com (via nginx, port 80/443)
-- **Backend**: localhost:3000 (Node.js server)
+- **Access Mode**: 🔒 Tailscale-Only (Maximum Security)
 - **Tailscale IP**: 100.83.245.45
 - **Tailscale Hostname**: ip-172-31-76-84
-- **Status**: ✅ Connected
+- **Backend**: localhost:3000 (Node.js server)
+- **Status**: ✅ Connected and secured
 
-## Access Your Portal via Tailscale
+## Access Your Portal
 
-Now that Tailscale is set up, you can access your portal at:
+**Portal is now only accessible via Tailscale VPN!**
+
+When connected to your Tailscale network, visit:
+
+```
+https://cyarika.com
+```
+
+Or use the Tailscale IP directly:
 
 ```
 http://100.83.245.45
 ```
 
-Or if you enable MagicDNS:
+Or with MagicDNS enabled:
 
 ```
 http://ip-172-31-76-84
 ```
 
-Both will route to the nginx server on port 80, which proxies to your Node.js backend on port 3000.
+**⚠️ Important**: The portal will NOT work from the public internet. You must be connected to Tailscale to access it.
+
+## Adding Other Users
+
+To give someone else access to the portal:
+
+1. Go to https://login.tailscale.com/admin/settings/users
+2. Click **Invite users**
+3. Enter their email address
+4. They'll receive an invite to join your tailnet
+5. Once they accept and install Tailscale, they can access cyarika.com
+
+## Security Group Configuration
+
+**Current AWS Security Group Rules:**
+- ✅ Port 22 (SSH): Open for emergency access
+- ✅ Port 41641 (Tailscale UDP): Open for VPN connections
+- ❌ Port 80 (HTTP): REMOVED - not publicly accessible
+- ❌ Port 443 (HTTPS): REMOVED - not publicly accessible
+- ❌ Port 3000 (App): REMOVED - not publicly accessible
+
+The portal is now completely isolated from the public internet and only accessible through your secure Tailscale network.
 
 ## Recommended Configuration
 
