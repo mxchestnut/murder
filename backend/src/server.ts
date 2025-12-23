@@ -10,6 +10,8 @@ import passport from 'passport';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import RedisStore from 'connect-redis';
+import { createClient } from 'redis';
 import authRoutes from './routes/auth';
 import documentRoutes from './routes/documents';
 import characterRoutes from './routes/characters';
@@ -30,6 +32,26 @@ async function startServer() {
   if (process.env.NODE_ENV === 'production') {
     await reinitializeDatabase(secrets.DATABASE_URL);
   }
+
+  // Initialize Redis client
+  const redisClient = createClient({
+    socket: {
+      host: '127.0.0.1',
+      port: 6379
+    }
+  });
+
+  redisClient.on('error', (err) => console.error('Redis Client Error', err));
+  redisClient.on('connect', () => console.log('✓ Connected to Redis for session storage'));
+  
+  await redisClient.connect();
+
+  // Initialize Redis store
+  const redisStore = new (RedisStore as any)(session)({
+    client: redisClient,
+    prefix: 'cyarika:',
+    ttl: 86400 * 7 // 7 days in seconds
+  });
 
   const app = express();
   const PORT = process.env.PORT || 3000;
@@ -62,8 +84,9 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-  // Session configuration
+  // Session configuration with Redis
   app.use(session({
+    store: redisStore,
     secret: secrets.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
