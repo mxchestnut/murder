@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { 
   User, Target, Brain, Smile, Palette, Sword, BookOpen, 
-  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save, Edit3 
+  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save 
 } from 'lucide-react';
 import { api } from '../utils/api';
-import RichTextPanel from './RichTextPanel';
+import TiptapField from './TiptapField';
 
 interface CharacterBioProps {
   character: any;
@@ -93,18 +93,6 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
 
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
-  const [richTextModal, setRichTextModal] = useState<{
-    isOpen: boolean;
-    field: string;
-    label: string;
-    placeholder: string;
-  }>({
-    isOpen: false,
-    field: '',
-    label: '',
-    placeholder: ''
-  });
 
   useEffect(() => {
     // Update bio data when character changes
@@ -221,67 +209,16 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
   );
 
   const renderRichTextarea = (field: string, label: string, placeholder: string, rows: number = 4) => {
-    // Strip HTML tags for preview display
-    const stripHTML = (html: string) => {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      return tmp.textContent || tmp.innerText || '';
-    };
-    
-    const currentValue = (bioData as any)[field];
-    const previewText = stripHTML(currentValue);
-    const hasContent = previewText.trim().length > 0;
-    
     return (
       <div style={{ marginBottom: '1rem' }}>
-        <label style={{ 
-          display: 'block', 
-          color: 'var(--text-primary)', 
-          fontSize: '0.85rem', 
-          marginBottom: '0.5rem', 
-          fontWeight: 500 
-        }}>
-          {label}
-        </label>
-        <div
-          onClick={() => setRichTextModal({ isOpen: true, field, label, placeholder })}
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            borderRadius: '6px',
-            border: '2px dashed var(--border-color)',
-            background: hasContent ? 'var(--bg-secondary)' : 'var(--bg-primary)',
-            color: hasContent ? 'var(--text-primary)' : 'var(--text-tertiary)',
-            fontSize: '0.9rem',
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            minHeight: `${rows * 1.5}rem`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent-primary)';
-            e.currentTarget.style.background = 'var(--bg-secondary)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-color)';
-            e.currentTarget.style.background = hasContent ? 'var(--bg-secondary)' : 'var(--bg-primary)';
-          }}
-        >
-          <Edit3 size={16} style={{ flexShrink: 0, opacity: 0.5 }} />
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {hasContent ? previewText : placeholder}
-          </span>
-          <span style={{ 
-            fontSize: '0.75rem', 
-            opacity: 0.6,
-            flexShrink: 0 
-          }}>
-            Click to edit
-          </span>
-        </div>
+        <TiptapField
+          label={label}
+          value={(bioData as any)[field] || ''}
+          onChange={(value) => handleChange(field, value)}
+          placeholder={placeholder}
+          maxLength={1024}
+          rows={rows}
+        />
       </div>
     );
   };
@@ -571,16 +508,6 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           {renderRichTextarea('rememberedAs', 'If They Died Today, How Would They Be Remembered?', 'Their epitaph or legend', 3)}
         </>
       ))}
-
-      <RichTextPanel
-        isOpen={richTextModal.isOpen}
-        onClose={() => setRichTextModal({ ...richTextModal, isOpen: false })}
-        onSave={(value) => handleChange(richTextModal.field, value)}
-        initialValue={(bioData as any)[richTextModal.field] || ''}
-        label={richTextModal.label}
-        placeholder={richTextModal.placeholder}
-        maxLength={1024}
-      />
     </div>
   );
 }
