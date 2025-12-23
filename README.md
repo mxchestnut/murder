@@ -1,8 +1,8 @@
-# Write Pretend - AI-Powered Roleplay Platform
+# Cyar'ika - Discord-Integrated Roleplay Platform
 
-**Write Pretend** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, and AI-powered assistance for tabletop RPG communities.
+**Cyar'ika** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
 
-🌐 **Website:** [writepretend.com](http://writepretend.com)
+🌐 **Website:** [cyarika.com](https://cyarika.com)
 
 ## Features
 
