@@ -37,6 +37,7 @@
     "pg": "^8.11.3",
     "playfab-sdk": "^2.187.251205",
     "redis": "^5.10.0",
+    "wikipedia": "^2.1.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {

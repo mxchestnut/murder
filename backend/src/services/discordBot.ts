@@ -7,6 +7,7 @@ import * as GeminiService from './gemini';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
+import wiki from 'wikipedia';
 
 let botClient: Client | null = null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
@@ -1583,7 +1584,73 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
       return;
     }
 
-    // If not in KB, ask AI
+    // If not in KB, try Wikipedia
+    if ('sendTyping' in message.channel) {
+      await message.channel.sendTyping();
+    }
+    
+    try {
+      const wikiPage = await wiki.page(searchTerm);
+      const wikiSummary = await wikiPage.summary();
+      
+      if (wikiSummary && wikiSummary.extract) {
+        // Truncate if too long for Discord embed
+        const truncatedSummary = wikiSummary.extract.length > 4000 
+          ? wikiSummary.extract.substring(0, 3997) + '...' 
+          : wikiSummary.extract;
+        
+        const embed = new EmbedBuilder()
+          .setColor(0xf39c12)
+          .setTitle(`${emoji} ${wikiSummary.title}`)
+          .setDescription(truncatedSummary)
+          .addFields(
+            { name: 'Category', value: categoryName, inline: true },
+            { name: 'Source', value: '📚 Wikipedia', inline: true }
+          )
+          .setFooter({ text: `React ⭐ to save this to knowledge base • ${wikiPage.canonicalurl}` })
+          .setTimestamp();
+        
+        if (wikiSummary.thumbnail?.source) {
+          embed.setThumbnail(wikiSummary.thumbnail.source);
+        }
+
+        const reply = await message.reply({ embeds: [embed] });
+
+        // Add star reaction for saving
+        await reply.react('⭐');
+
+        // Listen for star reaction to save to KB
+        const filter = (reaction: any, user: any) => {
+          return reaction.emoji.name === '⭐' && !user.bot;
+        };
+
+        const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
+        
+        collector.on('collect', async () => {
+          try {
+            await db.insert(knowledgeBase).values({
+              question: searchTerm,
+              answer: wikiSummary.extract,
+              category,
+              sourceUrl: wikiPage.canonicalurl,
+              aiGenerated: false,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            await message.reply('✅ Saved Wikipedia article to knowledge base!');
+          } catch (error) {
+            console.error('Error saving to knowledge base:', error);
+          }
+        });
+
+        return;
+      }
+    } catch (wikiError) {
+      // Wikipedia didn't find anything, continue to AI
+      console.log(`Wikipedia search failed for "${searchTerm}", trying AI...`);
+    }
+
+    // If not in Wikipedia, ask AI as final fallback
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
