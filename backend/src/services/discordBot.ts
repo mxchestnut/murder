@@ -1542,7 +1542,7 @@ async function handleLearn(message: Message, args: string[]) {
 }
 
 // Generic knowledge lookup function with AI fallback
-async function handleKnowledgeLookup(message: Message, args: string[], category: string, emoji: string, categoryName: string) {
+async function handleKnowledgeLookup(message: Message, args: string[], category: string, emoji: string, categoryName: string, gameSystem?: string) {
   if (args.length === 0) {
     await message.reply(`Usage: \`!${category} <name>\`\nExample: \`!${category} ${category === 'kink' ? 'bondage' : category === 'feat' ? 'Power Attack' : 'Fireball'}\``);
     return;
@@ -1587,7 +1587,10 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
-    const aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}". Be specific and comprehensive.`;
+    
+    // Add game system context if specified
+    const systemContext = gameSystem ? ` from ${gameSystem}` : '';
+    const aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}"${systemContext}. Be specific and comprehensive.${gameSystem ? ` Only use information from ${gameSystem}. Do not include information from other game systems.` : ''}`;
     const answer = await GeminiService.askGemini(aiQuestion);
 
     // Truncate if too long for Discord embed (max 4096 chars)
@@ -1642,7 +1645,7 @@ async function handleKink(message: Message, args: string[]) {
 }
 
 async function handleFeat(message: Message, args: string[]) {
-  await handleKnowledgeLookup(message, args, 'feat', '⚔️', 'Feat');
+  await handleKnowledgeLookup(message, args, 'feat', '⚔️', 'Feat', 'Pathfinder');
 }
 
 async function handleSpell(message: Message, args: string[]) {
