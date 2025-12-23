@@ -81,14 +81,15 @@ app.use(express.urlencoded({ extended: true }));
   app.use(session({
     store: new RedisStore({ 
       client: redisClient,
-      prefix: 'cyarika:',
-      ttl: 86400 * 7 // 7 days in seconds
+      prefix: 'cyarika:sess:',
+      ttl: 86400 * 30 // 30 days absolute maximum in seconds
     }),
     secret: secrets.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Refresh session on each request (activity-based)
     cookie: {
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days, refreshed on activity
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',

@@ -138,6 +138,50 @@ router.post('/logout', (req, res) => {
   });
 });
 
+// Logout all devices - invalidates all sessions for the user
+router.post('/logout-all-devices', isAuthenticated, async (req, res) => {
+  try {
+    const user = req.user as any;
+    const redisClient = (req.sessionStore as any).client;
+    
+    if (!redisClient) {
+      return res.status(500).json({ error: 'Session store not available' });
+    }
+
+    // Get all session keys
+    const sessionKeys = await redisClient.keys('cyarika:sess:*');
+    
+    let deletedCount = 0;
+    
+    // Check each session to see if it belongs to this user
+    for (const key of sessionKeys) {
+      try {
+        const sessionData = await redisClient.get(key);
+        if (sessionData) {
+          const session = JSON.parse(sessionData);
+          // Check if this session belongs to the current user
+          if (session.passport && session.passport.user === user.id) {
+            await redisClient.del(key);
+            deletedCount++;
+          }
+        }
+      } catch (err) {
+        console.error('Error processing session key:', key, err);
+      }
+    }
+    
+    console.log(`Logged out ${deletedCount} devices for user ${user.username}`);
+    
+    res.json({ 
+      message: 'All devices logged out successfully',
+      devicesLoggedOut: deletedCount
+    });
+  } catch (error) {
+    console.error('Error logging out all devices:', error);
+    res.status(500).json({ error: 'Failed to logout all devices' });
+  }
+});
+
 // Get current user
 router.get('/me', (req, res) => {
   console.log('GET /me - Cookies received:', req.headers.cookie);

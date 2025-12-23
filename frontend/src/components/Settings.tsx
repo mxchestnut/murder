@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Link, Unlink, Loader, Sun, Moon, Palette } from 'lucide-react';
+import { Settings as SettingsIcon, Link, Unlink, Loader, Sun, Moon, Palette, Shield, LogOut } from 'lucide-react';
 import { api } from '../utils/api';
 import { useTheme } from '../utils/useTheme';
 
@@ -17,6 +17,7 @@ export default function Settings() {
   const [connectForm, setConnectForm] = useState({ username: '', password: '' });
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isLoggingOutAllDevices, setIsLoggingOutAllDevices] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -69,6 +70,34 @@ export default function Settings() {
       setMessage({ type: 'error', text: 'Failed to disconnect. Please try again.' });
     } finally {
       setIsDisconnecting(false);
+    }
+  };
+
+  const handleLogoutAllDevices = async () => {
+    if (!confirm('This will log you out on all devices. You will need to log in again. Continue?')) {
+      return;
+    }
+
+    setIsLoggingOutAllDevices(true);
+    setMessage(null);
+
+    try {
+      const response = await api.post('/auth/logout-all-devices');
+      setMessage({ 
+        type: 'success', 
+        text: `Successfully logged out ${response.data.devicesLoggedOut} device(s). Redirecting to login...` 
+      });
+      
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    } catch (error: any) {
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.error || 'Failed to logout all devices' 
+      });
+      setIsLoggingOutAllDevices(false);
     }
   };
 
@@ -258,6 +287,51 @@ export default function Settings() {
               </form>
             </div>
           )}
+        </section>
+
+        {/* Security Settings */}
+        <section className="settings-section">
+          <h2>
+            <Shield size={24} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            Security
+          </h2>
+          <p className="section-description">
+            Manage your account security and active sessions across devices.
+          </p>
+
+          {message && (
+            <div className={`message ${message.type}`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="security-action">
+            <div className="action-info">
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem' }}>
+                Logout All Devices
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                End all active sessions on all devices. You'll need to log in again on each device.
+              </p>
+            </div>
+            <button 
+              className="button danger"
+              onClick={handleLogoutAllDevices}
+              disabled={isLoggingOutAllDevices}
+            >
+              {isLoggingOutAllDevices ? (
+                <>
+                  <Loader size={18} className="spinner" />
+                  Logging out...
+                </>
+              ) : (
+                <>
+                  <LogOut size={18} />
+                  Logout All Devices
+                </>
+              )}
+            </button>
+          </div>
         </section>
       </div>
 
@@ -495,6 +569,22 @@ export default function Settings() {
           border-color: var(--accent-color);
           background: var(--accent-light);
           color: var(--accent-color);
+        }
+
+        /* Security Section */
+        .security-action {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 2rem;
+          padding: 1.5rem;
+          border-radius: 8px;
+          border: 1px solid var(--border-color);
+          background: var(--bg-primary);
+        }
+
+        .action-info {
+          flex: 1;
         }
       `}</style>
     </div>
