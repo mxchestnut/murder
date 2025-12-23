@@ -483,3 +483,19 @@ export const botSettings = pgTable('bot_settings', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
+
+// HC (House Call/Custom) list - user-specific quick notes
+export const hcList = pgTable('hc_list', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  guildId: text('guild_id').notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const hcListRelations = relations(hcList, ({ one }) => ({
+  user: one(users, {
+    fields: [hcList.userId],
+    references: [users.id]
+  })
+}));

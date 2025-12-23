@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, sceneMessages, hallOfFame, gmNotes, gameTime, botSettings } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, sceneMessages, hallOfFame, gmNotes, gameTime, botSettings, hcList } from '../db/schema';
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -159,6 +159,9 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'botset':
           await handleBotSet(message, args);
+          break;
+        case 'hc':
+          await handleHC(message, args);
           break;
         case 'help':
           await handleHelp(message);
@@ -1023,7 +1026,7 @@ async function handleHelp(message: Message) {
       { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)', inline: false },
       { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
-      { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
+      { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
       { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false }
     )
     .setFooter({ text: 'Visit cyarika.com to manage characters!' });
@@ -2355,6 +2358,121 @@ async function handleNote(message: Message, args: string[]) {
   } catch (error) {
     console.error('Error in !note command:', error);
     await message.reply('❌ Failed to handle note command.');
+  }
+}
+
+async function handleHC(message: Message, args: string[]) {
+  try {
+    // Find user by Discord ID
+    const [user] = await db.select()
+      .from(users)
+      .where(eq(users.discordUserId, message.author.id));
+
+    if (!user) {
+      await message.reply('❌ You need to connect your account first. Use `!connect <username> <password>`');
+      return;
+    }
+
+    const guildId = message.guild?.id || '';
+    const subcmd = args[0]?.toLowerCase();
+
+    // If first arg is "list", show all entries
+    if (subcmd === 'list') {
+      const entries = await db.select()
+        .from(hcList)
+        .where(and(
+          eq(hcList.userId, user.id),
+          eq(hcList.guildId, guildId)
+        ))
+        .orderBy(hcList.createdAt);
+
+      if (entries.length === 0) {
+        await message.reply('You have no HC entries for this server.');
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#3498db')
+        .setTitle('📋 Your HC List')
+        .setDescription(entries.map((e, i) => 
+          `**${i + 1}.** ${e.content}`
+        ).join('\n'));
+
+      await message.reply({ embeds: [embed] });
+      return;
+    }
+
+    // If first arg is "edit" or "delete"
+    if (subcmd === 'edit' || subcmd === 'delete') {
+      const entryNum = parseInt(args[1]);
+      if (isNaN(entryNum) || entryNum < 1) {
+        await message.reply(`Usage: \`!hc ${subcmd} <number>\`\nUse \`!hc list\` to see entry numbers.`);
+        return;
+      }
+
+      // Get all entries to find the one by index
+      const entries = await db.select()
+        .from(hcList)
+        .where(and(
+          eq(hcList.userId, user.id),
+          eq(hcList.guildId, guildId)
+        ))
+        .orderBy(hcList.createdAt);
+
+      if (entryNum > entries.length) {
+        await message.reply(`❌ Entry #${entryNum} doesn't exist. You have ${entries.length} entries.`);
+        return;
+      }
+
+      const targetEntry = entries[entryNum - 1];
+
+      if (subcmd === 'delete') {
+        await db.delete(hcList)
+          .where(eq(hcList.id, targetEntry.id));
+        await message.reply(`✅ Deleted entry #${entryNum}: "${targetEntry.content}"`);
+        return;
+      }
+
+      if (subcmd === 'edit') {
+        const newContent = args.slice(2).join(' ');
+        if (!newContent) {
+          await message.reply('Usage: `!hc edit <number> <new text>`');
+          return;
+        }
+
+        await db.update(hcList)
+          .set({ content: newContent })
+          .where(eq(hcList.id, targetEntry.id));
+
+        await message.reply(`✅ Updated entry #${entryNum} to: "${newContent}"`);
+        return;
+      }
+    }
+
+    // Default: Add new entry (everything is the content)
+    const content = args.join(' ');
+    if (!content) {
+      await message.reply(
+        'Usage:\n' +
+        '• `!hc <text>` - Add entry\n' +
+        '• `!hc list` - Show all entries\n' +
+        '• `!hc edit <#> <new text>` - Edit entry\n' +
+        '• `!hc delete <#>` - Delete entry'
+      );
+      return;
+    }
+
+    await db.insert(hcList).values({
+      userId: user.id,
+      guildId,
+      content
+    });
+
+    await message.reply('✅ HC entry added!');
+
+  } catch (error) {
+    console.error('Error in !hc command:', error);
+    await message.reply('❌ Failed to handle HC command.');
   }
 }
 
