@@ -1243,7 +1243,11 @@ export default function CharacterSheets() {
         }
 
         .character-sheet-view {
-          flex: 1;
+          flex: 1 !important;
+          width: auto !important;
+          min-width: 0 !important;
+          max-width: none !important;
+          resize: none !important;
           overflow-y: auto;
           overflow-x: hidden;
           padding: 2rem;
@@ -1301,12 +1305,6 @@ export default function CharacterSheets() {
           font-size: 0.875rem;
           opacity: 0.8;
           color: inherit;
-        }
-
-        .character-sheet-view {
-          flex: 1;
-          padding: 2rem;
-          overflow-y: auto;
         }
 
         .character-header {
