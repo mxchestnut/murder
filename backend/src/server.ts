@@ -180,8 +180,9 @@ app.get('*', (req, res) => {
     // Initialize password rotation tracking
     await initializePasswordRotationTracking();
     
-    // Ensure HC list table exists
+    // Ensure Discord bot tables exist
     try {
+      // HC list table
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS hc_list (
           id SERIAL PRIMARY KEY,
@@ -192,9 +193,98 @@ app.get('*', (req, res) => {
         );
         CREATE INDEX IF NOT EXISTS idx_hc_list_user_guild ON hc_list(discord_user_id, guild_id);
       `);
-      console.log('✓ HC list table verified');
+      
+      // Prompts table
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS prompts (
+          id SERIAL PRIMARY KEY,
+          category TEXT NOT NULL,
+          prompt_text TEXT NOT NULL,
+          created_by INTEGER,
+          use_count INTEGER DEFAULT 0,
+          last_used TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+      `);
+      
+      // Tropes table
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS tropes (
+          id SERIAL PRIMARY KEY,
+          category TEXT NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          use_count INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+      `);
+      
+      // Sessions table
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS sessions (
+          id SERIAL PRIMARY KEY,
+          title TEXT NOT NULL,
+          channel_id TEXT NOT NULL,
+          guild_id TEXT NOT NULL,
+          started_at TIMESTAMP DEFAULT NOW() NOT NULL,
+          ended_at TIMESTAMP,
+          paused_at TIMESTAMP,
+          is_paused BOOLEAN DEFAULT false,
+          participants TEXT,
+          message_count INTEGER DEFAULT 0,
+          summary TEXT,
+          tags TEXT,
+          created_by INTEGER
+        );
+      `);
+      
+      // Scenes table
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS scenes (
+          id SERIAL PRIMARY KEY,
+          session_id INTEGER,
+          title TEXT NOT NULL,
+          location TEXT,
+          channel_id TEXT NOT NULL,
+          guild_id TEXT NOT NULL,
+          started_at TIMESTAMP DEFAULT NOW() NOT NULL,
+          ended_at TIMESTAMP,
+          participants TEXT,
+          tags TEXT
+        );
+      `);
+      
+      // Hall of Fame table
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS hall_of_fame (
+          id SERIAL PRIMARY KEY,
+          message_id TEXT NOT NULL UNIQUE,
+          channel_id TEXT NOT NULL,
+          guild_id TEXT NOT NULL,
+          author_id TEXT NOT NULL,
+          character_name TEXT,
+          content TEXT NOT NULL,
+          star_count INTEGER DEFAULT 0,
+          context_messages TEXT,
+          hall_message_id TEXT,
+          added_to_hall_at TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+      `);
+      
+      // Bot Settings table
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS bot_settings (
+          id SERIAL PRIMARY KEY,
+          guild_id TEXT NOT NULL UNIQUE,
+          announcement_channel_id TEXT,
+          created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+          updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+      `);
+      
+      console.log('✓ Discord bot tables verified');
     } catch (error) {
-      console.error('Error creating HC list table:', error);
+      console.error('Error creating Discord bot tables:', error);
     }
   });
 }
