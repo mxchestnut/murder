@@ -1,4 +1,4 @@
-import { MessageCircle, Dices, Users, Link, HelpCircle, Sparkles, Star, BookOpen, Clock, StickyNote, Music } from 'lucide-react';
+import { MessageCircle, Dices, Users, Link, HelpCircle, Sparkles, Star, BookOpen, Clock, StickyNote } from 'lucide-react';
 
 export default function DiscordCommands() {
   return (
@@ -7,7 +7,7 @@ export default function DiscordCommands() {
         <MessageCircle size={32} />
         <div>
           <h1>Discord Bot Commands</h1>
-          <p>Use these commands with Cyar'ika bot in your Discord server</p>
+          <p>Use these commands with Cyar'ika bot in your Discord server - 32+ commands available!</p>
         </div>
       </div>
 
@@ -129,19 +129,6 @@ export default function DiscordCommands() {
               💡 Tip: Add an avatar URL to your character in the portal for custom avatars!
             </div>
           </div>
-
-          <div className="command-card">
-            <div className="command-syntax">
-              <code>!&lt;CharacterName&gt;: &lt;message&gt;</code>
-            </div>
-            <div className="command-description">
-              Alternative syntax with ! prefix
-            </div>
-            <div className="command-examples">
-              <div className="example-label">Example:</div>
-              <code>!Ogun: Let's fight!</code>
-            </div>
-          </div>
         </section>
 
         {/* RP Prompts & Tropes */}
@@ -159,31 +146,18 @@ export default function DiscordCommands() {
               <code>!prompt [category]</code>
             </div>
             <div className="command-description">
-              Get a random RP prompt. Optionally specify: character, world, combat, social, or plot
+              Get a random RP prompt. Categories: character, world, combat, social, plot
             </div>
             <div className="command-examples">
               <div className="example-label">Examples:</div>
               <code>!prompt</code>
               <code>!prompt character</code>
-              <code>!proCyar'ika bot is in your Discord server</li>
-          <li>Create a <code>#hall-of-fame</code> channel for starred messages</li>
-          <li>Create or import your characters in the Character Sheets tab</li>
-          <li>Optionally add avatar URLs to your characters for custom proxying</li>
-          <li>Use <code>!setchar &lt;name&gt;</code> in any channel to link it for auto-rolls</li>
-          <li>Use <code>!botset</code> (admin) to set announcement channel for daily prompts</li>
-          <li>Start rolling, tracking sessions, and roleplaying!</li>
-        </ol>
-        
-        <div className="feature-highlight">
-          <h3>🌟 New Features!</h3>
-          <ul>
-            <li><strong>Daily Prompts:</strong> Get creative inspiration with !prompt and !trope</li>
-            <li><strong>Hall of Fame:</strong> Star epic moments (⭐ × 10) to immortalize them</li>
-            <li><strong>Session Tracking:</strong> Automatic message logging for sessions and scenes</li>
-            <li><strong>Relationships:</strong> Track character connections in profiles</li>
-            <li><strong>AI Tools:</strong> NPC generator, music suggestions, and more!</li>
-          </ul>
-        </div<div className="command-syntax">
+              <code>!prompt combat</code>
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
               <code>!trope [category]</code>
             </div>
             <div className="command-description">
@@ -204,7 +178,7 @@ export default function DiscordCommands() {
             <h2>Session & Scene Tracking</h2>
           </div>
           <p className="section-description">
-            Track sessions and scenes, log important messages automatically
+            Track sessions and scenes with automatic message logging
           </p>
 
           <div className="command-card">
@@ -336,34 +310,6 @@ export default function DiscordCommands() {
 
           <div className="command-card">
             <div className="command-syntax">
-
-        .feature-highlight {
-          margin-top: 2rem;
-          padding: 1.5rem;
-          background: var(--accent-light);
-          border-left: 4px solid var(--accent-color);
-          border-radius: 4px;
-        }
-
-        .feature-highlight h3 {
-          margin-top: 0;
-          margin-bottom: 1rem;
-          color: var(--accent-color);
-        }
-
-        .feature-highlight ul {
-          margin: 0;
-          padding-left: 1.5rem;
-        }
-
-        .feature-highlight li {
-          margin-bottom: 0.75rem;
-          line-height: 1.6;
-        }
-
-        .feature-highlight strong {
-          color: var(--accent-color);
-        }
               <code>!note add &lt;text&gt;</code>
             </div>
             <div className="command-description">
@@ -440,12 +386,25 @@ export default function DiscordCommands() {
       <div className="setup-section">
         <h2>Setup Instructions</h2>
         <ol>
-          <li>Make sure PathKeeper bot is in your Discord server</li>
+          <li>Make sure Cyar'ika bot is in your Discord server</li>
+          <li>Create a <code>#hall-of-fame</code> channel for starred messages</li>
           <li>Create or import your characters in the Character Sheets tab</li>
           <li>Optionally add avatar URLs to your characters for custom proxying</li>
-          <li>Use <code>!setchar &lt;name&gt;</code> in any channel to link it</li>
-          <li>Start rolling and roleplaying!</li>
+          <li>Use <code>!setchar &lt;name&gt;</code> in any channel to link it for auto-rolls</li>
+          <li>Use <code>!botset</code> (admin) to set announcement channel for daily prompts</li>
+          <li>Start rolling, tracking sessions, and roleplaying!</li>
         </ol>
+        
+        <div className="feature-highlight">
+          <h3>🌟 New Features!</h3>
+          <ul>
+            <li><strong>Daily Prompts:</strong> Get creative inspiration with !prompt and !trope</li>
+            <li><strong>Hall of Fame:</strong> Star epic moments (⭐ × 10) to immortalize them</li>
+            <li><strong>Session Tracking:</strong> Automatic message logging for sessions and scenes</li>
+            <li><strong>Relationships:</strong> Track character connections in profiles</li>
+            <li><strong>AI Tools:</strong> NPC generator, music suggestions, and more!</li>
+          </ul>
+        </div>
       </div>
 
       <style>{`
@@ -610,6 +569,34 @@ export default function DiscordCommands() {
           font-family: 'Monaco', 'Courier New', monospace;
           font-size: 0.875rem;
           color: var(--text-primary);
+        }
+
+        .feature-highlight {
+          margin-top: 2rem;
+          padding: 1.5rem;
+          background: var(--accent-light);
+          border-left: 4px solid var(--accent-color);
+          border-radius: 4px;
+        }
+
+        .feature-highlight h3 {
+          margin-top: 0;
+          margin-bottom: 1rem;
+          color: var(--accent-color);
+        }
+
+        .feature-highlight ul {
+          margin: 0;
+          padding-left: 1.5rem;
+        }
+
+        .feature-highlight li {
+          margin-bottom: 0.75rem;
+          line-height: 1.6;
+        }
+
+        .feature-highlight strong {
+          color: var(--accent-color);
         }
       `}</style>
     </div>
