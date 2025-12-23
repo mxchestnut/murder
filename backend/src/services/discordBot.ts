@@ -112,6 +112,15 @@ export function initializeDiscordBot(token: string) {
         case 'learn':
           await handleLearn(message, args);
           break;
+        case 'kink':
+          await handleKink(message, args);
+          break;
+        case 'feat':
+          await handleFeat(message, args);
+          break;
+        case 'spell':
+          await handleSpell(message, args);
+          break;
         case 'stats':
           await handleStats(message, args);
           break;
@@ -1011,7 +1020,7 @@ async function handleHelp(message: Message) {
       { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
       { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
       { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
-      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!learn <question> | <answer>` - Teach AI (admin)', inline: false },
+      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)', inline: false },
       { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
       { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
@@ -1488,27 +1497,131 @@ async function handleLearn(message: Message, args: string[]) {
   const fullText = args.join(' ');
   const parts = fullText.split('|').map(p => p.trim());
 
-  if (parts.length !== 2) {
-    await message.reply('Usage: `!learn <question> | <answer>`\nExample: `!learn What is AC? | Armor Class is your defense rating`');
+  if (parts.length < 2 || parts.length > 3) {
+    await message.reply(
+      'Usage: `!learn <question> | <answer> [| <category>]`\n' +
+      'Example: `!learn What is AC? | Armor Class is your defense rating`\n' +
+      'With category: `!learn Fireball | 3rd-level evocation spell... | spell`\n' +
+      'Categories: `kink`, `feat`, `spell`, or leave blank for general'
+    );
     return;
   }
 
-  const [question, answer] = parts;
+  const [question, answer, category] = parts;
 
   try {
     await db.insert(knowledgeBase).values({
       question,
       answer,
+      category: category || null,
       aiGenerated: false,
       createdAt: new Date(),
       updatedAt: new Date()
     });
 
-    await message.reply(`✅ Added to knowledge base!\n**Q:** ${question}\n**A:** ${answer}`);
+    const categoryTag = category ? ` [${category.toUpperCase()}]` : '';
+    await message.reply(`✅ Added to knowledge base!${categoryTag}\n**Q:** ${question}\n**A:** ${answer.substring(0, 200)}${answer.length > 200 ? '...' : ''}`);
   } catch (error) {
     console.error('Error in !learn command:', error);
     await message.reply('❌ Failed to add to knowledge base.');
   }
+}
+
+// Generic knowledge lookup function with AI fallback
+async function handleKnowledgeLookup(message: Message, args: string[], category: string, emoji: string, categoryName: string) {
+  if (args.length === 0) {
+    await message.reply(`Usage: \`!${category} <name>\`\nExample: \`!${category} ${category === 'kink' ? 'bondage' : category === 'feat' ? 'Power Attack' : 'Fireball'}\``);
+    return;
+  }
+
+  const searchTerm = args.join(' ');
+  
+  try {
+    // First, search knowledge base for this category
+    const searchResults = await db.select()
+      .from(knowledgeBase)
+      .where(and(
+        eq(knowledgeBase.category, category),
+        sql`LOWER(${knowledgeBase.question}) LIKE LOWER(${'%' + searchTerm + '%'})`
+      ))
+      .limit(1);
+
+    if (searchResults.length > 0) {
+      const kb = searchResults[0];
+      const embed = new EmbedBuilder()
+        .setColor(0x0099ff)
+        .setTitle(`${emoji} ${kb.question}`)
+        .setDescription(kb.answer)
+        .addFields(
+          { name: 'Category', value: categoryName, inline: true },
+          { name: 'Source', value: kb.aiGenerated ? '🤖 AI Generated' : (kb.sourceUrl || 'Manual Entry'), inline: true }
+        )
+        .setFooter({ text: `👍 ${kb.upvotes || 0} upvotes` })
+        .setTimestamp();
+
+      await message.reply({ embeds: [embed] });
+      return;
+    }
+
+    // If not in KB, ask AI
+    if ('sendTyping' in message.channel) {
+      await message.channel.sendTyping();
+    }
+    const aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}". Be specific and comprehensive.`;
+    const answer = await GeminiService.askGemini(aiQuestion);
+
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle(`${emoji} ${searchTerm}`)
+      .setDescription(answer)
+      .addFields({ name: 'Category', value: `${categoryName} (AI Generated)`, inline: true })
+      .setFooter({ text: `React ⭐ to save this to knowledge base • Use !learn to add custom entries` })
+      .setTimestamp();
+
+    const reply = await message.reply({ embeds: [embed] });
+
+    // Add star reaction for saving
+    await reply.react('⭐');
+
+    // Listen for star reaction to save to KB
+    const filter = (reaction: any, user: any) => {
+      return reaction.emoji.name === '⭐' && !user.bot;
+    };
+
+    const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
+    
+    collector.on('collect', async () => {
+      try {
+        await db.insert(knowledgeBase).values({
+          question: searchTerm,
+          answer,
+          category,
+          aiGenerated: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        await message.reply('✅ Saved to knowledge base!');
+      } catch (error) {
+        console.error('Error saving to knowledge base:', error);
+      }
+    });
+
+  } catch (error) {
+    console.error(`Error in !${category} command:`, error);
+    await message.reply(`❌ Sorry, I encountered an error looking up that ${categoryName.toLowerCase()}.`);
+  }
+}
+
+async function handleKink(message: Message, args: string[]) {
+  await handleKnowledgeLookup(message, args, 'kink', '💋', 'Kink');
+}
+
+async function handleFeat(message: Message, args: string[]) {
+  await handleKnowledgeLookup(message, args, 'feat', '⚔️', 'Feat');
+}
+
+async function handleSpell(message: Message, args: string[]) {
+  await handleKnowledgeLookup(message, args, 'spell', '✨', 'Spell');
 }
 
 // Character Stats
@@ -2372,7 +2485,7 @@ async function handleStarReaction(reaction: any) {
       // Fetch context messages (2 before and 2 after)
       try {
         const messages = await message.channel.messages.fetch({ limit: 5, around: message.id });
-        messages.forEach(msg => {
+        messages.forEach((msg: any) => {
           if (msg.id !== message.id) {
             contextMessages.push({
               author: msg.author.username,
@@ -2408,7 +2521,7 @@ async function handleStarReaction(reaction: any) {
           const guild = message.guild;
           if (guild) {
             const hallChannel = guild.channels.cache.find(
-              ch => ch.name === 'hall-of-fame' && (ch.type === 0 || ch.type === 5)
+              (ch: any) => ch.name === 'hall-of-fame' && (ch.type === 0 || ch.type === 5)
             ) as TextChannel;
 
             if (hallChannel) {
@@ -2444,7 +2557,7 @@ async function handleStarReaction(reaction: any) {
           const guild = message.guild;
           if (guild) {
             const hallChannel = guild.channels.cache.find(
-              ch => ch.name === 'hall-of-fame'
+              (ch: any) => ch.name === 'hall-of-fame'
             ) as TextChannel;
             
             if (hallChannel) {

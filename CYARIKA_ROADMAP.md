@@ -1,7 +1,7 @@
 # Cyar'ika - Master Roadmap
 
 **Last Updated:** December 23, 2025  
-**Current Phase:** Priority 1 Complete - Moving to Priority 2
+**Current Phase:** Priority 2 Complete - Ready for Priority 3
 
 > 📝 **Note:** Completed features have been moved to `Completed tasks/COMPLETED_FEATURES.md`
 
@@ -9,43 +9,41 @@
 
 ## 📍 CURRENT STATUS
 
-### ✅ All Priority 1 & Most Priority 2 Complete!
-- AI FAQ System with Gemini integration
-- Character Stats & Leaderboards
-- File Upload with virus scanning
-- Discord bot core features operational
-- **Daily RP Prompts** ✅
-- **Session Logging** ✅
-- **Scene Manager** ✅
-- **Hall of Fame (Starboard)** ✅
-- **Utility Commands** ✅
+### ✅ ALL PRIORITY 1 & 2 COMPLETE! 🎉
+- ✅ AI FAQ System with Gemini integration
+- ✅ Character Stats & Leaderboards
+- ✅ File Upload with virus scanning
+- ✅ Discord bot core features operational (32+ commands)
+- ✅ **Daily RP Prompts & Tropes** - DEPLOYED
+- ✅ **Session Logging** - DEPLOYED
+- ✅ **Scene Manager** - DEPLOYED
+- ✅ **Hall of Fame (Starboard)** - DEPLOYED (10-star threshold)
+- ✅ **Utility Commands** - DEPLOYED (time, notes, NPC, music, recap)
+- ✅ **Relationship Tracking** - DEPLOYED
+- ✅ **Portal Discord Cheatsheet** - UPDATED
 
-### 🚧 In Progress:
-- **Relationship Tracking** - Code complete, pending deployment
+### 📊 Progress Metrics:
+- **Discord Commands:** 32+ commands implemented
+- **Database Tables:** 20+ tables (11 new for Priority 2)
+- **Features Deployed:** 8 major systems
+- **Total Development Time:** ~4.5 hours for all Priority 2 features
+- **Overall Completion:** ~80% of core platform
 
-### Next Deployment Steps:
-```bash
-# Push all new Discord features
-cd ~/cyarika-project/cyarika
-git add .
-git commit -m "Add all Priority 2 Discord features: prompts, sessions, scenes, hall of fame, utilities"
-git push
-
-# Deploy to server
-ssh -i ~/.ssh/cyarika-deploy-key.pem ec2-user@100.49.41.171 "cd cyarika && git pull && cd backend && npm run db:push && npm run build && pm2 restart cyarika-backend"
-
-# Run SQL migration for default prompts/tropes
-# (Copy and run add_default_prompts_and_tropes.sql on the database)
-```
+### 🎯 Next Testing Steps:
+1. Create #hall-of-fame channel in Discord
+2. Test all commands with `!help`
+3. Test Hall of Fame reactions (⭐ × 10)
+4. Verify session/scene logging
+5. Test relationship tracking
 
 ---
 
-## 🎯 PRIORITY 2: RP Tools & Social Features
+## 🎯 PRIORITY 2: RP Tools & Social Features ✅ **COMPLETED**
 
-### 2.1 Daily RP Prompts 💭 ✅ **COMPLETED**
+### 2.1 Daily RP Prompts 💭 ✅ **DEPLOYED**
 **Goal:** Inspire roleplay with automated prompts
 
-**Status:** FULLY IMPLEMENTED
+**Status:** FULLY IMPLEMENTED & DEPLOYED
 
 **Database Schema:**
 - ✅ `prompts` table (category, prompt_text, use_count)
@@ -54,41 +52,46 @@ ssh -i ~/.ssh/cyarika-deploy-key.pem ec2-user@100.49.41.171 "cd cyarika && git p
 
 **Discord Commands:**
 - ✅ `!prompt` - Random prompt from any category
-- ✅ `!prompt random <category>` - Specific category (character, world, combat, social, plot)
-- ✅ `!trope [category]` - Random trope (archetype, dynamic, situation, plot)
+- ✅ `!prompt [category]` - Specific category (character, world, combat, social, plot)
+- ✅ `!trope [category]` - Random trope (character, plot, relationship, world)
 
 **Default Content:**
 - ✅ 25 prompts across 5 categories
 - ✅ 40 tropes across 4 categories
-- ✅ SQL migration file created
+- ✅ SQL migration file created (ready for import)
 
 **Time Invested:** 1 hour
 
 ---
 
-### 2.2 Hall of Fame (Starboard) ⭐ ✅ **COMPLETED**
+### 2.2 Hall of Fame (Starboard) ⭐ ✅ **DEPLOYED**
 **Goal:** Preserve best RP moments
 
-**Status:** FULLY IMPLEMENTED
+**Status:** FULLY IMPLEMENTED & DEPLOYED
 
 **Database:**
 - ✅ `hall_of_fame` table with context messages
+- ✅ Star count tracking, auto-removal below threshold
 
 **Discord Features:**
-- ✅ React ⭐ to messages (5+ stars → Hall of Fame)
-- ✅ Auto-repost to #hall-of-fame channel
-- ✅ Include context messages
-- ✅ Remove from hall if stars drop below threshold
-- ✅ MessageReaction intent added
+- ✅ React ⭐ to messages (10+ stars → Hall of Fame) 
+- ✅ Auto-repost to #hall-of-fame channel with context
+- ✅ Include previous message for context
+- ✅ Remove from hall if stars drop below 10
+- ✅ MessageReaction intent enabled
+
+**Discord Commands:**
+- ✅ `!hall` - View recent Hall of Fame entries
+- ✅ `!hall top` - Top 20 most-starred messages
 
 **Time Invested:** 45 minutes
 
 ---
 
-### 2.3 Session Logging 📝 ✅ **COMPLETED**
+### 2.3 Session Logging 📝 ✅ **DEPLOYED**
 **Goal:** Auto-document gameplay sessions
 
-**Status:** FULLY IMPLEMENTED
+**Status:** FULLY IMPLEMENTED & DEPLOYED
 
 **Database:**
 - ✅ `sessions` table (title, timestamps, participants, summary)
@@ -98,6 +101,114 @@ ssh -i ~/.ssh/cyarika-deploy-key.pem ec2-user@100.49.41.171 "cd cyarika && git p
 - ✅ `!session start <title>` - Begin logging
 - ✅ `!session end` - Stop logging
 - ✅ `!session pause/resume` - Control logging
+- ✅ `!session list` - Recent sessions
+- ✅ `!recap` - Quick session summary
+
+**Features:**
+- ✅ Track active sessions per channel
+- ✅ Message count tracking
+- ✅ Participant tracking
+- ✅ Pause/resume functionality
+
+**Time Invested:** 40 minutes
+
+---
+
+### 2.4 Scene Manager 🎬 ✅ **DEPLOYED**
+**Goal:** Track individual scenes within sessions
+
+**Status:** FULLY IMPLEMENTED & DEPLOYED
+
+**Database:**
+- ✅ `scenes` table (title, tags, location, characters, timestamps)
+- ✅ `scene_messages` table (for message logging)
+
+**Discord Commands:**
+- ✅ `!scene start <title>` - Begin a new scene
+- ✅ `!scene end` - End current scene
+- ✅ `!scene tag <tags>` - Add tags to scene
+- ✅ `!scene location <location>` - Set scene location
+- ✅ `!scene list` - View recent scenes
+
+**Features:**
+- ✅ Track active scenes independently from sessions
+- ✅ Tag system for organization
+- ✅ Location tracking
+- ✅ Character participation tracking
+
+**Time Invested:** 35 minutes
+
+---
+
+### 2.5 Relationship Tracker ❤️ ✅ **DEPLOYED**
+**Goal:** Track character relationships and party dynamics
+
+**Status:** FULLY IMPLEMENTED & DEPLOYED (from previous session)
+
+**Database:**
+- ✅ `relationships` table with character IDs and descriptors
+
+**Discord Commands:**
+- ✅ `!<Char1> is <Char2>'s <descriptor> | <notes>` - Create/update relationship
+- ✅ View in `!profile <character>` → Relationships tab
+
+**Features:**
+- ✅ Bidirectional relationship tracking
+- ✅ Auto-update if relationship already exists
+- ✅ Display in character profiles
+- ✅ Track relationship notes and descriptors
+
+**Time Invested:** Previously completed
+
+---
+
+### 2.6 Utility Commands 🔧 ✅ **DEPLOYED**
+**Goal:** Useful tools for GMs and players
+
+**Status:** FULLY IMPLEMENTED & DEPLOYED
+
+**Database:**
+- ✅ `gm_notes` table (user-specific notes)
+- ✅ `game_time` table (in-game time tracking)
+- ✅ `bot_settings` table (bot configuration)
+
+**Discord Commands:**
+- ✅ `!time [set <date>]` - View/set in-game time
+- ✅ `!note add <text>` - Add GM note
+- ✅ `!note list` - List your notes
+- ✅ `!npc <name>` - Generate NPC stat block (AI-powered via Gemini)
+- ✅ `!music` - Get mood music suggestions
+- ✅ `!recap` - Quick session summary
+
+**Admin Commands:**
+- ✅ `!botset` - Set bot announcement channel (requires Discord Administrator)
+- ✅ `!learn` - Add knowledge base entry (requires Discord Administrator)
+
+**Features:**
+- ✅ Admin permission checks via Discord Administrator role
+- ✅ User-specific note storage
+- ✅ AI integration for NPC generation
+- ✅ Global in-game time tracking
+
+**Time Invested:** 1.5 hours
+
+---
+
+### 2.7 Portal Updates 🌐 ✅ **DEPLOYED**
+**Goal:** Update portal to reflect new Discord features
+
+**Status:** FULLY IMPLEMENTED & DEPLOYED
+
+**Updates:**
+- ✅ Discord Commands cheatsheet updated with all 32+ commands
+- ✅ New sections: RP Prompts, Session Tracking, Hall of Fame, Relationships, Utilities
+- ✅ Setup instructions updated with #hall-of-fame channel requirement
+- ✅ Feature highlights section added
+- ✅ Proper categorization and examples for all commands
+
+**Time Invested:** 30 minutes
+
+---
 - ✅ `!session list` - Recent sessions
 
 **Features:**
@@ -137,106 +248,118 @@ prompt_schedule
 - [ ] `!trope` - Random trope for inspiration
 - [ ] `!trope <category>` - Specific trope category
 
-**Portal:**
-- [ ] Prompt library with categories
-- [ ] Create/edit/delete prompts
-- [ ] Schedule management per channel
-- [ ] Usage analytics
-- [ ] Trope browser and management
+## 🚀 PRIORITY 3: Portal UI Enhancements (Next Phase)
 
-**Categories:**
-- Character Development
-- World Building
-- RP Scenarios
-- Combat
-- Social
-
-**Default Content:**
-- [ ] 15+ default prompts across 5 categories
-- [ ] 40+ default tropes (archetypes, dynamics, situations)
-
-**Time Estimate:** 1 day
-
----
-
-## 🌟 PRIORITY 2: RP Tools & Social Features (Weeks 4-6)
-
-### 2.2 Hall of Fame (Starboard) ⭐
-**Goal:** Preserve best RP moments
+### 3.1 Stats Dashboard 📊
+**Goal:** Visualize Discord activity and character statistics
 
 **Status:** NOT STARTED
 
-**Database:**
-```sql
-hall_of_fame
-- message_id, channel_id, author_id
-- content, star_count, added_to_hall_at
-- context_messages (jsonb)
-```
+**Portal Features:**
+- [ ] Charts/graphs for character statistics
+- [ ] Activity timeline visualization
+- [ ] Leaderboards with filtering (daily, weekly, all-time)
+- [ ] Character comparison tools
+- [ ] Damage/rolls distribution charts
 
-**Discord Features:**
-- [ ] React ⭐ to messages (5+ stars → Hall of Fame)
-- [ ] Auto-repost to #hall-of-fame channel
-- [ ] Include 2 context messages before/after
-- [ ] Emoji counter shows star count
-- [ ] Remove stars → remove from hall
+**Time Estimate:** 2-3 days
 
-**Discord Commands:**
-- [ ] `!hall top` - Most starred moments
-- [ ] `!hall recent` - Recent additions
-- [ ] `!hall character <name>` - Character's moments
-- [ ] `!hall random` - Random gem from the vault
+---
 
-**Portal:**
-- [ ] Hall of Fame gallery with search
-- [ ] Filter by character, date, star count
-- [ ] Export moments as images/quotes
-- [ ] Share to social media
+### 3.2 Knowledge Base Browser 📚
+**Goal:** Web interface for AI FAQ system
+
+**Status:** NOT STARTED
+
+**Portal Features:**
+- [ ] Browse all FAQ entries
+- [ ] Search and filter knowledge base
+- [ ] Add/edit/delete entries (admin only)
+- [ ] Category organization
+- [ ] Usage statistics
 
 **Time Estimate:** 1-2 days
 
 ---
 
-### 2.3 Session Logging 📝
-**Goal:** Auto-document gameplay sessions
+### 3.3 Sessions & Scenes Archive 📖
+**Goal:** View and manage logged sessions
 
 **Status:** NOT STARTED
 
-**Database:**
-```sql
-sessions
-- id, title, started_at, ended_at
-- channel_id, participants, message_count
-- summary (AI-generated), tags
+**Portal Features:**
+- [ ] Session list with search/filter
+- [ ] Session detail view with messages
+- [ ] Scene browser and timeline
+- [ ] Export sessions to markdown/PDF
+- [ ] AI-generated session summaries
 
-session_messages
-- session_id, message_id, author_id
-- character_name, content, timestamp
-- is_dice_roll
-```
-
-**Discord Commands:**
-- [ ] `!session start <title>` - Begin logging
-- [ ] `!session end` - Stop, generate summary
-- [ ] `!session pause/resume` - Control logging
-- [ ] `!session export <id>` - Export to markdown/PDF
-- [ ] `!sessions list` - Recent sessions
-
-**Portal:**
-- [ ] Session archive with search
-- [ ] Timeline view of events
-- [ ] AI-generated summaries
-- [ ] Export to various formats
-
-**Auto-Features:**
-- [ ] Detect sessions from activity patterns
-- [ ] Smart pause detection
-
-**Time Estimate:** 2 days
+**Time Estimate:** 2-3 days
 
 ---
 
-### 2.4 Relationship Tracker ❤️
+### 3.4 Hall of Fame Gallery ⭐
+**Goal:** Browse starred messages in portal
+
+**Status:** NOT STARTED
+
+**Portal Features:**
+- [ ] Gallery view of Hall of Fame messages
+- [ ] Filter by character, date, star count
+- [ ] Export as images/quotes
+- [ ] Social sharing features
+- [ ] Random "gem from the vault" feature
+
+**Time Estimate:** 1-2 days
+
+---
+
+### 3.5 Prompt & Trope Library 💭
+**Goal:** Manage RP prompts and tropes in portal
+
+**Status:** NOT STARTED
+
+**Portal Features:**
+- [ ] Browse all prompts by category
+- [ ] Add/edit/delete prompts (admin)
+- [ ] Trope browser with descriptions
+- [ ] Usage analytics (most popular prompts)
+- [ ] Schedule management for auto-posting
+
+**Time Estimate:** 1-2 days
+
+---
+
+## 🎨 PRIORITY 4: Advanced Features (Future)
+
+### 4.1 Automated Scheduling
+- [ ] Daily prompt auto-posting
+- [ ] Weekly recap generation
+- [ ] Birthday/anniversary notifications
+- [ ] Custom scheduled events
+
+### 4.2 Advanced AI Features
+- [ ] Session recap AI summaries
+- [ ] NPC dialogue generation
+- [ ] Plot suggestion engine
+- [ ] Character arc analysis
+
+### 4.3 Export & Archive
+- [ ] Export sessions to PDF/markdown
+- [ ] Generate session reports
+- [ ] Archive management
+- [ ] Backup/restore functionality
+
+### 4.4 Mobile Optimization
+- [ ] Responsive portal design
+- [ ] Mobile-friendly Discord commands
+- [ ] Push notifications for important events
+
+---
+
+## 📈 OVERALL PROGRESS
+
+### Phase Completion:
 **Goal:** Track character relationships and party dynamics
 
 **Status:** 🚧 IN PROGRESS - Code complete, pending deployment
@@ -323,18 +446,44 @@ relationships
 ---
 
 ## 🏗️ PRIORITY 3: Portal UI & Infrastructure
+**Status:** NOT STARTED  
+**Current Phase:** Planning - Discord features complete, ready for portal integration
 
 ### 3.1 Portal UI for Completed Features
 **Goal:** Build web interfaces for Discord-based features
 
 **Tasks:**
-- [ ] Knowledge Base browser (view/search/manage FAQ entries)
-- [ ] Character Stats dashboard with charts/graphs
-- [ ] Leaderboards page (daily, weekly, all-time)
-- [ ] Activity Feed on dashboard
-- [ ] Achievement badges UI
+- [ ] **Stats Dashboard** - Character statistics with charts/graphs (Time: 2-3 days)
+  - Activity metrics from Discord events
+  - Hall of Fame stats per character
+  - Session participation tracking
+  - Relationship network visualization
 
-**Time Estimate:** 3-4 days
+- [ ] **Knowledge Base Browser** - Web UI for FAQ management (Time: 1-2 days)
+  - Search interface for learned facts
+  - Category filtering
+  - Edit/delete entries
+  - Import/export
+
+- [ ] **Sessions & Scenes Archive** - Browse logged RP sessions (Time: 2-3 days)
+  - Timeline view of sessions
+  - Scene breakdown with tags/locations
+  - Message threading
+  - Search by character/date/tag
+
+- [ ] **Hall of Fame Gallery** - Showcase starred messages (Time: 1-2 days)
+  - Grid view with context
+  - Leaderboard integration
+  - Filter by character/date
+  - Share links
+
+- [ ] **Prompt & Trope Library** - Manage RP inspiration (Time: 1-2 days)
+  - Browse by category
+  - Add custom prompts
+  - Schedule daily prompts
+  - Archive used prompts
+
+**Total Time Estimate:** 8-13 days
 
 ---
 
