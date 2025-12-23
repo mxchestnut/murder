@@ -4,6 +4,7 @@ import Editor from './Editor';
 import Settings from './Settings';
 import DiscordCommands from './DiscordCommands';
 import CharacterBio from './CharacterBio';
+import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
 import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle } from 'lucide-react';
 
@@ -207,6 +208,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </button>
           </div>
         </header>
+
+        {/* Password Rotation Banner */}
+        <PasswordRotationBanner />
 
         {/* Content Area */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>

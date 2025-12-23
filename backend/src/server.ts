@@ -15,10 +15,12 @@ import documentRoutes from './routes/documents';
 import characterRoutes from './routes/characters';
 import pathcompanionRoutes from './routes/pathcompanion';
 import discordRoutes from './routes/discord';
+import systemRoutes from './routes/system';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
 import { reinitializeDatabase } from './db';
+import { initializePasswordRotationTracking } from './db/passwordRotation';
 
 async function startServer() {
   // Load secrets from AWS Secrets Manager (or .env in development)
@@ -86,6 +88,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/characters', characterRoutes);
 app.use('/api/pathcompanion', pathcompanionRoutes);
 app.use('/api/discord', discordRoutes);
+app.use('/api/system', systemRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -107,9 +110,12 @@ app.get('*', (req, res) => {
     res.status(500).json({ error: 'Something went wrong!' });
   });
 
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Secrets loaded from: ${process.env.NODE_ENV === 'production' ? 'AWS Secrets Manager' : '.env file'}`);
+    
+    // Initialize password rotation tracking
+    await initializePasswordRotationTracking();
   });
 }
 

@@ -219,29 +219,6 @@ export default function Editor({ document, onSave }: EditorProps) {
         <MenuButton onClick={() => editor.chain().focus().redo().run()}>
           <Redo size={18} />
         </MenuButton>
-
-        {onShare && (
-          <>
-            <div style={{ width: '1px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
-            <button
-              onClick={() => onShare(document)}
-              style={{
-                padding: '0.5rem 1rem',
-                border: 'none',
-                background: 'var(--accent-color)',
-                color: 'var(--accent-text)',
-                cursor: 'pointer',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: 'bold'
-              }}
-            >
-              Save
-            </button>
-          </>
-        )}
       </div>
 
       {/* Editor Content */}
