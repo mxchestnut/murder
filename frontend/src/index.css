@@ -5,44 +5,49 @@
 }
 
 :root {
-  /* Light theme (default) - Greyscale with customizable accent */
-  --bg-primary: #f5f5f5;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #e8e8e8;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-tertiary: #999999;
-  --border-color: #d0d0d0;
-  --hover-bg: #ececec;
+  /* Light theme - Lavender & Dark */
+  --bg-primary: #AE9ABB;
+  --bg-secondary: #c4b0ce;
+  --bg-tertiary: #9a86a7;
+  --text-primary: #060409;
+  --text-secondary: #1a0f1f;
+  --text-tertiary: #2e2333;
+  --border-color: #51375B;
+  --hover-bg: #baa6c7;
   
-  /* Default accent color (can be customized by user) */
-  --accent-color: #6366f1; /* Indigo */
-  --accent-hover: #4f46e5;
-  --accent-light: rgba(99, 102, 241, 0.1);
-  --accent-text: #ffffff;
+  /* Accent colors */
+  --accent-color: #768340;
+  --accent-hover: #606830;
+  --accent-light: rgba(118, 131, 64, 0.15);
+  --accent-text: #060409;
+  
+  /* Secondary accent */
+  --accent-secondary: #51375B;
+  --accent-secondary-hover: #3f2b48;
+  --accent-secondary-light: rgba(81, 55, 91, 0.15);
 }
 
 :root[data-theme="dark"] {
-  /* Dark theme - Custom Cyar'ika color scheme */
-  --bg-primary: #302030;
-  --bg-secondary: #3a2a3a;
-  --bg-tertiary: #443444;
-  --text-primary: #607657;
-  --text-secondary: #4f6048;
-  --text-tertiary: #3e4a39;
-  --border-color: #5E3D63;
-  --hover-bg: #3e2e3e;
+  /* Dark theme - Dark & Lavender */
+  --bg-primary: #060409;
+  --bg-secondary: #12101a;
+  --bg-tertiary: #1e1b28;
+  --text-primary: #AE9ABB;
+  --text-secondary: #9a86a7;
+  --text-tertiary: #86728f;
+  --border-color: #51375B;
+  --hover-bg: #1a1623;
   
   /* Accent colors */
-  --accent-color: #5E3D63;
-  --accent-hover: #6e4d73;
-  --accent-light: rgba(94, 61, 99, 0.15);
-  --accent-text: #607657;
+  --accent-color: #768340;
+  --accent-hover: #8a9b4a;
+  --accent-light: rgba(118, 131, 64, 0.2);
+  --accent-text: #AE9ABB;
   
   /* Secondary accent */
-  --accent-secondary: #8B5E3C;
-  --accent-secondary-hover: #9b6e4c;
-  --accent-secondary-light: rgba(139, 94, 60, 0.15);
+  --accent-secondary: #51375B;
+  --accent-secondary-hover: #634575;
+  --accent-secondary-light: rgba(81, 55, 91, 0.2);
 }
 
 body {
