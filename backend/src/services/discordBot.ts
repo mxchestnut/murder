@@ -4,6 +4,7 @@ import { channelCharacterMappings, characterSheets, users, knowledgeBase, charac
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
+import * as WebSearch from './webSearch';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
@@ -1584,16 +1585,30 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
       return;
     }
 
-    // If not in KB, try Wikipedia
+    // If not in KB, try Wikipedia (with search fallback)
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
     
     try {
-      const wikiPage = await wiki.page(searchTerm);
-      const wikiSummary = await wikiPage.summary();
+      let wikiPage: any = null;
+      let wikiSummary: any = null;
       
-      if (wikiSummary && wikiSummary.extract) {
+      try {
+        // Try exact match first
+        wikiPage = await wiki.page(searchTerm);
+        wikiSummary = await wikiPage.summary();
+      } catch (exactError) {
+        // If exact match fails, try search
+        const searchResults = await wiki.search(searchTerm);
+        if (searchResults.results.length > 0) {
+          // Use the first search result
+          wikiPage = await wiki.page(searchResults.results[0].title);
+          wikiSummary = await wikiPage.summary();
+        }
+      }
+      
+      if (wikiPage && wikiSummary && wikiSummary.extract && wikiSummary.extract.length > 50) {
         // Truncate if too long for Discord embed
         const truncatedSummary = wikiSummary.extract.length > 4000 
           ? wikiSummary.extract.substring(0, 3997) + '...' 
@@ -1646,18 +1661,78 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
         return;
       }
     } catch (wikiError) {
-      // Wikipedia didn't find anything, continue to AI
-      console.log(`Wikipedia search failed for "${searchTerm}", trying AI...`);
+      // Wikipedia didn't find anything, try Google
+      console.log(`Wikipedia search failed for "${searchTerm}", trying Google...`);
     }
 
-    // If not in Wikipedia, ask AI as final fallback
+    // If not in Wikipedia, try Google search
+    try {
+      const googleResult = await WebSearch.searchGoogle(searchTerm);
+      
+      if (googleResult && googleResult.snippet && googleResult.snippet.length > 50) {
+        const embed = new EmbedBuilder()
+          .setColor(0x4285f4)
+          .setTitle(`${emoji} ${googleResult.title}`)
+          .setDescription(googleResult.snippet)
+          .addFields(
+            { name: 'Category', value: categoryName, inline: true },
+            { name: 'Source', value: '🔍 Google Search', inline: true }
+          )
+          .setFooter({ text: `React ⭐ to save this to knowledge base • ${googleResult.url}` })
+          .setTimestamp();
+
+        const reply = await message.reply({ embeds: [embed] });
+
+        // Add star reaction for saving
+        await reply.react('⭐');
+
+        // Listen for star reaction to save to KB
+        const filter = (reaction: any, user: any) => {
+          return reaction.emoji.name === '⭐' && !user.bot;
+        };
+
+        const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
+        
+        collector.on('collect', async () => {
+          try {
+            await db.insert(knowledgeBase).values({
+              question: searchTerm,
+              answer: googleResult.snippet,
+              category,
+              sourceUrl: googleResult.url,
+              aiGenerated: false,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            await message.reply('✅ Saved Google result to knowledge base!');
+          } catch (error) {
+            console.error('Error saving to knowledge base:', error);
+          }
+        });
+
+        return;
+      }
+    } catch (googleError) {
+      // Google search failed, continue to AI
+      console.log(`Google search failed for "${searchTerm}", trying AI...`);
+    }
+
+    // If not in Google, ask AI as final fallback
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
     
     // Add game system context if specified
     const systemContext = gameSystem ? ` from ${gameSystem}` : '';
-    const aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}"${systemContext}. Be specific and comprehensive.${gameSystem ? ` Only use information from ${gameSystem}. Do not include information from other game systems.` : ''}`;
+    
+    // Adjust prompt based on category
+    let aiQuestion = '';
+    if (category === 'kink') {
+      aiQuestion = `You are a knowledgeable reference assistant. Provide an educational, factual, and respectful explanation of the term "${searchTerm}" in the context of human relationships and BDSM practices. Focus on definitions, common practices, safety considerations, and consent. Be informative and professional.`;
+    } else {
+      aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}"${systemContext}. Be specific and comprehensive.${gameSystem ? ` Only use information from ${gameSystem}. Do not include information from other game systems.` : ''}`;
+    }
+    
     const answer = await GeminiService.askGemini(aiQuestion);
 
     // Truncate if too long for Discord embed (max 4096 chars)
