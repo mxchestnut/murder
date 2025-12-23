@@ -16,8 +16,9 @@ import {
   Download,
   RefreshCw,
   ExternalLink,
-  Upload
+  User
 } from 'lucide-react';
+import CharacterBio from './CharacterBio';
 
 interface CharacterSheet {
   id: number;
@@ -81,6 +82,7 @@ const statIcons = {
 export default function CharacterSheets() {
   const [sheets, setSheets] = useState<CharacterSheet[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<CharacterSheet | null>(null);
+  const [activeTab, setActiveTab] = useState<'stats' | 'bio'>('stats');
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPathCompanionImport, setShowPathCompanionImport] = useState(false);
@@ -411,26 +413,6 @@ export default function CharacterSheets() {
     }
   };
 
-  const exportToPathCompanion = async (sheetId: number) => {
-    if (!confirm('This will export this character to your PathCompanion account. Continue?')) {
-      return;
-    }
-    
-    try {
-      const response = await api.post(`/pathcompanion/export/${sheetId}`);
-      const updatedSheets = sheets.map(s => s.id === sheetId ? { ...s, isPathCompanion: true, pathCompanionId: response.data.characterId } : s);
-      setSheets(updatedSheets);
-      if (selectedSheet?.id === sheetId) {
-        setSelectedSheet({ ...selectedSheet, isPathCompanion: true, pathCompanionId: response.data.characterId });
-      }
-      alert(response.data.message || 'Character exported successfully!');
-    } catch (error: any) {
-      console.error('Failed to export to PathCompanion:', error);
-      const errorMsg = error.response?.data?.error || 'Failed to export character to PathCompanion.';
-      alert(errorMsg);
-    }
-  };
-
   const importAllCharacters = async () => {
     if (pathCompanionCharacters.length === 0) {
       alert('No characters to import');
@@ -568,7 +550,7 @@ export default function CharacterSheets() {
                 </div>
               </div>
               <div className="character-item-actions">
-                {sheet.isPathCompanion ? (
+                {sheet.isPathCompanion && (
                   <button 
                     className="icon-button secondary"
                     onClick={(e) => {
@@ -578,17 +560,6 @@ export default function CharacterSheets() {
                     title="Sync from PathCompanion"
                   >
                     <RefreshCw size={16} />
-                  </button>
-                ) : (
-                  <button 
-                    className="icon-button secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      exportToPathCompanion(sheet.id);
-                    }}
-                    title="Export to PathCompanion"
-                  >
-                    <Upload size={16} />
                   </button>
                 )}
                 <button 
@@ -776,6 +747,55 @@ export default function CharacterSheets() {
               </div>
             )}
 
+            {/* Tabs */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '0.5rem', 
+              borderBottom: '2px solid var(--border-color)',
+              marginBottom: '1.5rem'
+            }}>
+              <button
+                onClick={() => setActiveTab('stats')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  background: activeTab === 'stats' ? 'var(--accent-color)' : 'transparent',
+                  color: activeTab === 'stats' ? 'var(--accent-text)' : 'var(--text-primary)',
+                  cursor: 'pointer',
+                  borderBottom: activeTab === 'stats' ? '3px solid var(--accent-color)' : '3px solid transparent',
+                  fontWeight: activeTab === 'stats' ? 600 : 400,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Sword size={18} />
+                Stats & Combat
+              </button>
+              <button
+                onClick={() => setActiveTab('bio')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  background: activeTab === 'bio' ? 'var(--accent-color)' : 'transparent',
+                  color: activeTab === 'bio' ? 'var(--accent-text)' : 'var(--text-primary)',
+                  cursor: 'pointer',
+                  borderBottom: activeTab === 'bio' ? '3px solid var(--accent-color)' : '3px solid transparent',
+                  fontWeight: activeTab === 'bio' ? 600 : 400,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <User size={18} />
+                Biography & Personality
+              </button>
+            </div>
+
+            {activeTab === 'stats' ? (
+              <>
             <div className="stats-grid">
               {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
                 <StatBlock 
@@ -1028,6 +1048,13 @@ export default function CharacterSheets() {
                   ))}
                 </div>
               </div>
+            )}
+              </>
+            ) : (
+              <CharacterBio 
+                character={selectedSheet} 
+                onUpdate={loadSheets}
+              />
             )}
           </div>
         ) : (

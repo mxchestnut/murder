@@ -23,7 +23,7 @@ export function useTheme() {
     const savedMode = localStorage.getItem('theme-mode') as 'light' | 'dark' | null;
     const savedAccent = localStorage.getItem('theme-accent') || '#6366f1';
     return {
-      mode: savedMode || 'light',
+      mode: savedMode || 'dark', // Default to dark theme for Cyar'ika colors
       accentColor: savedAccent,
     };
   });
