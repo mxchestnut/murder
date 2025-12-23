@@ -52,6 +52,9 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
+  // Set Gemini API key as environment variable for Gemini service
+  process.env.GEMINI_API_KEY = secrets.GEMINI_API_KEY;
+
   // Initialize Discord bot with secret from AWS
   initializeDiscordBot(secrets.DISCORD_BOT_TOKEN);
 

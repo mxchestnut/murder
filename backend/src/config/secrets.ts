@@ -6,6 +6,7 @@ interface Secrets {
   DATABASE_URL: string;
   SESSION_SECRET: string;
   DISCORD_BOT_TOKEN: string;
+  GEMINI_API_KEY: string;
 }
 
 let cachedSecrets: Secrets | null = null;
@@ -33,16 +34,18 @@ export async function loadSecrets(): Promise<Secrets> {
 
   console.log('Loading secrets from AWS Secrets Manager...');
 
-  const [databaseUrl, sessionSecret, discordBotToken] = await Promise.all([
+  const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey] = await Promise.all([
     getSecret('cyarika/database-url'),
     getSecret('cyarika/session-secret'),
-    getSecret('cyarika/discord-bot-token')
+    getSecret('cyarika/discord-bot-token'),
+    getSecret('cyarika/gemini-api-key')
   ]);
 
   cachedSecrets = {
     DATABASE_URL: databaseUrl,
     SESSION_SECRET: sessionSecret,
-    DISCORD_BOT_TOKEN: discordBotToken
+    DISCORD_BOT_TOKEN: discordBotToken,
+    GEMINI_API_KEY: geminiApiKey
   };
 
   console.log('✓ Secrets loaded successfully');
@@ -56,7 +59,8 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
     return {
       DATABASE_URL: process.env.DATABASE_URL || '',
       SESSION_SECRET: process.env.SESSION_SECRET || '',
-      DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || ''
+      DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
     };
   }
 
