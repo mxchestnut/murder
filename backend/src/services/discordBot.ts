@@ -489,7 +489,19 @@ async function handleRoll(message: Message, args: string[]) {
   // Check if it's a skill
   else {
     rollType = 'skill';
-    const skills = character.skills as any;
+    let skills = character.skills as any;
+    
+    // Parse skills if they're stored as a JSON string
+    if (typeof skills === 'string') {
+      try {
+        skills = JSON.parse(skills);
+      } catch (e) {
+        console.error(`[handleRoll] Failed to parse skills for ${character.name}:`, e);
+        await message.reply(`❌ ${character.name} has malformed skills data. Please re-sync from PathCompanion.`);
+        return;
+      }
+    }
+    
     if (skills && typeof skills === 'object') {
       const skillKey = Object.keys(skills).find(k => k.toLowerCase().includes(rollParam));
       if (skillKey && skills[skillKey]) {
@@ -883,7 +895,18 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     // Check if it's a skill
     else {
       rollType = 'skill';
-      const skills = character.skills as any;
+      let skills = character.skills as any;
+      
+      // Parse skills if they're stored as a JSON string
+      if (typeof skills === 'string') {
+        try {
+          skills = JSON.parse(skills);
+        } catch (e) {
+          console.error(`[handleNameRoll] Failed to parse skills for ${character.name}:`, e);
+          await message.reply(`❌ ${character.name} has malformed skills data. Please re-sync from PathCompanion.`);
+          return true;
+        }
+      }
       
       console.log(`[handleNameRoll] Character: ${character.name}, Skills type: ${typeof skills}, Skills:`, skills);
       
