@@ -577,7 +577,16 @@ export default function CharacterSheets() {
         </div>
       </div>
 
-      <div className="character-sheet-view">
+      <div 
+        className="character-sheet-view"
+        style={{
+          flex: '1',
+          width: 'auto',
+          minWidth: 0,
+          maxWidth: 'none',
+          resize: 'none'
+        }}
+      >
         {(isCreating || isEditing) ? (
           <div className="character-form">
             <h2>{isCreating ? 'Create Character' : 'Edit Character'}</h2>
