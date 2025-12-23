@@ -260,6 +260,26 @@ async function handleProfile(message: Message, args: string[]) {
     return text.substring(0, maxLength - 3) + '...';
   };
 
+  // Helper to strip HTML tags
+  const stripHtml = (text: string): string => {
+    if (!text) return text;
+    return text.replace(/<[^>]*>/g, '').trim();
+  };
+
+  // Helper to parse race field
+  const getRaceName = (race: any): string => {
+    if (!race) return '';
+    if (typeof race === 'string') {
+      try {
+        const parsed = JSON.parse(race);
+        return parsed.name || parsed.race || race;
+      } catch {
+        return race;
+      }
+    }
+    return race.name || race.race || '';
+  };
+
   // Function to build embed for each tab
   const buildEmbed = (tab: string): EmbedBuilder => {
     const embed = new EmbedBuilder()
@@ -277,17 +297,20 @@ async function handleProfile(message: Message, args: string[]) {
     switch (tab) {
       case 'identity':
         const identityInfo = [];
-        if (character.fullName && character.fullName !== character.name) identityInfo.push(`**Full Name:** ${character.fullName}`);
-        if (character.titles) identityInfo.push(`**Titles:** ${character.titles}`);
-        if (character.species) identityInfo.push(`**Species:** ${character.species}`);
-        if (character.race) identityInfo.push(`**Race:** ${character.race}`);
-        if (character.ageDescription) identityInfo.push(`**Age:** ${character.ageDescription}`);
-        if (character.culturalBackground) identityInfo.push(`**Culture:** ${character.culturalBackground}`);
-        if (character.pronouns) identityInfo.push(`**Pronouns:** ${character.pronouns}`);
-        if (character.genderIdentity) identityInfo.push(`**Gender:** ${character.genderIdentity}`);
-        if (character.sexuality) identityInfo.push(`**Sexuality:** ${character.sexuality}`);
-        if (character.occupation) identityInfo.push(`**Occupation:** ${character.occupation}`);
-        if (character.currentLocation) identityInfo.push(`**Location:** ${character.currentLocation}`);
+        if (character.fullName && character.fullName !== character.name) identityInfo.push(`**Full Name:** ${stripHtml(character.fullName)}`);
+        if (character.titles) identityInfo.push(`**Titles:** ${stripHtml(character.titles)}`);
+        if (character.species) identityInfo.push(`**Species:** ${stripHtml(character.species)}`);
+        if (character.race) {
+          const raceName = getRaceName(character.race);
+          if (raceName) identityInfo.push(`**Race:** ${raceName}`);
+        }
+        if (character.ageDescription) identityInfo.push(`**Age:** ${stripHtml(character.ageDescription)}`);
+        if (character.culturalBackground) identityInfo.push(`**Culture:** ${stripHtml(character.culturalBackground)}`);
+        if (character.pronouns) identityInfo.push(`**Pronouns:** ${stripHtml(character.pronouns)}`);
+        if (character.genderIdentity) identityInfo.push(`**Gender:** ${stripHtml(character.genderIdentity)}`);
+        if (character.sexuality) identityInfo.push(`**Sexuality:** ${stripHtml(character.sexuality)}`);
+        if (character.occupation) identityInfo.push(`**Occupation:** ${stripHtml(character.occupation)}`);
+        if (character.currentLocation) identityInfo.push(`**Location:** ${stripHtml(character.currentLocation)}`);
         if (character.characterClass) identityInfo.push(`**Class:** ${character.characterClass}`);
         if (character.level) identityInfo.push(`**Level:** ${character.level}`);
         if (identityInfo.length > 0) {
@@ -331,11 +354,11 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'goals':
         const goalsInfo = [];
-        if (character.currentGoal) goalsInfo.push(`**Current Goal:** ${character.currentGoal}`);
-        if (character.longTermDesire) goalsInfo.push(`**Long-term Desire:** ${character.longTermDesire}`);
-        if (character.coreMotivation) goalsInfo.push(`**Core Motivation:** ${character.coreMotivation}`);
-        if (character.deepestFear) goalsInfo.push(`**Deepest Fear:** ${character.deepestFear}`);
-        if (character.alignmentTendency) goalsInfo.push(`**Alignment:** ${character.alignmentTendency}`);
+        if (character.currentGoal) goalsInfo.push(`**Current Goal:** ${stripHtml(character.currentGoal)}`);
+        if (character.longTermDesire) goalsInfo.push(`**Long-term Desire:** ${stripHtml(character.longTermDesire)}`);
+        if (character.coreMotivation) goalsInfo.push(`**Core Motivation:** ${stripHtml(character.coreMotivation)}`);
+        if (character.deepestFear) goalsInfo.push(`**Deepest Fear:** ${stripHtml(character.deepestFear)}`);
+        if (character.alignmentTendency) goalsInfo.push(`**Alignment:** ${stripHtml(character.alignmentTendency)}`);
         if (goalsInfo.length > 0) {
           embed.addFields({ name: '🎯 Goals & Motivations', value: truncate(goalsInfo.join('\n')), inline: false });
         }
@@ -343,15 +366,15 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'personality':
         if (character.personalityOneSentence) {
-          embed.addFields({ name: '💬 In a Nutshell', value: `*"${character.personalityOneSentence}"*`, inline: false });
+          embed.addFields({ name: '💬 In a Nutshell', value: `*"${stripHtml(character.personalityOneSentence)}"*`, inline: false });
         }
         
         const personalityInfo = [];
-        if (character.keyVirtues) personalityInfo.push(`**Virtues:** ${character.keyVirtues}`);
-        if (character.keyFlaws) personalityInfo.push(`**Flaws:** ${character.keyFlaws}`);
-        if (character.stressBehavior) personalityInfo.push(`**Under Stress:** ${character.stressBehavior}`);
-        if (character.habitsOrTells) personalityInfo.push(`**Habits:** ${character.habitsOrTells}`);
-        if (character.speechStyle) personalityInfo.push(`**Speech:** ${character.speechStyle}`);
+        if (character.keyVirtues) personalityInfo.push(`**Virtues:** ${stripHtml(character.keyVirtues)}`);
+        if (character.keyFlaws) personalityInfo.push(`**Flaws:** ${stripHtml(character.keyFlaws)}`);
+        if (character.stressBehavior) personalityInfo.push(`**Under Stress:** ${stripHtml(character.stressBehavior)}`);
+        if (character.habitsOrTells) personalityInfo.push(`**Habits:** ${stripHtml(character.habitsOrTells)}`);
+        if (character.speechStyle) personalityInfo.push(`**Speech:** ${stripHtml(character.speechStyle)}`);
         if (personalityInfo.length > 0) {
           embed.addFields({ name: '😊 Personality Traits', value: truncate(personalityInfo.join('\n')), inline: false });
         }
@@ -359,9 +382,9 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'appearance':
         const appearanceInfo = [];
-        if (character.physicalPresence) appearanceInfo.push(`**Presence:** ${character.physicalPresence}`);
-        if (character.identifyingTraits) appearanceInfo.push(`**Identifying Traits:** ${character.identifyingTraits}`);
-        if (character.clothingAesthetic) appearanceInfo.push(`**Clothing Style:** ${character.clothingAesthetic}`);
+        if (character.physicalPresence) appearanceInfo.push(`**Presence:** ${stripHtml(character.physicalPresence)}`);
+        if (character.identifyingTraits) appearanceInfo.push(`**Identifying Traits:** ${stripHtml(character.identifyingTraits)}`);
+        if (character.clothingAesthetic) appearanceInfo.push(`**Clothing Style:** ${stripHtml(character.clothingAesthetic)}`);
         if (appearanceInfo.length > 0) {
           embed.addFields({ name: '🎨 Appearance', value: truncate(appearanceInfo.join('\n')), inline: false });
         }
@@ -369,9 +392,9 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'skills':
         const skillsInfo = [];
-        if (character.notableEquipment) skillsInfo.push(`**Equipment:** ${character.notableEquipment}`);
-        if (character.skillsReliedOn) skillsInfo.push(`**Strengths:** ${character.skillsReliedOn}`);
-        if (character.skillsAvoided) skillsInfo.push(`**Weaknesses:** ${character.skillsAvoided}`);
+        if (character.notableEquipment) skillsInfo.push(`**Equipment:** ${stripHtml(character.notableEquipment)}`);
+        if (character.skillsReliedOn) skillsInfo.push(`**Strengths:** ${stripHtml(character.skillsReliedOn)}`);
+        if (character.skillsAvoided) skillsInfo.push(`**Weaknesses:** ${stripHtml(character.skillsAvoided)}`);
         if (skillsInfo.length > 0) {
           embed.addFields({ name: '⚔️ Skills & Abilities', value: truncate(skillsInfo.join('\n')), inline: false });
         }
@@ -396,13 +419,13 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'backstory':
         if (character.origin) {
-          embed.addFields({ name: '📖 Origin', value: truncate(character.origin, 1024), inline: false });
+          embed.addFields({ name: '📖 Origin', value: truncate(stripHtml(character.origin), 1024), inline: false });
         }
         
         const backstoryNotes = [];
-        if (character.greatestSuccess) backstoryNotes.push(`**Greatest Success:** ${character.greatestSuccess}`);
-        if (character.greatestFailure) backstoryNotes.push(`**Greatest Failure:** ${character.greatestFailure}`);
-        if (character.regret) backstoryNotes.push(`**Regret:** ${character.regret}`);
+        if (character.greatestSuccess) backstoryNotes.push(`**Greatest Success:** ${stripHtml(character.greatestSuccess)}`);
+        if (character.greatestFailure) backstoryNotes.push(`**Greatest Failure:** ${stripHtml(character.greatestFailure)}`);
+        if (character.regret) backstoryNotes.push(`**Regret:** ${stripHtml(character.regret)}`);
         if (backstoryNotes.length > 0) {
           embed.addFields({ name: '🏆 Defining Moments', value: truncate(backstoryNotes.join('\n\n')), inline: false });
         }
@@ -410,13 +433,13 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'relationships':
         if (character.importantRelationships) {
-          embed.addFields({ name: '👥 Important Relationships', value: truncate(character.importantRelationships, 1024), inline: false });
+          embed.addFields({ name: '👥 Important Relationships', value: truncate(stripHtml(character.importantRelationships), 1024), inline: false });
         }
 
         const relationshipNotes = [];
-        if (character.protectedRelationship) relationshipNotes.push(`**Would Die For:** ${character.protectedRelationship}`);
-        if (character.rival) relationshipNotes.push(`**Rival:** ${character.rival}`);
-        if (character.affiliatedGroups) relationshipNotes.push(`**Groups:** ${character.affiliatedGroups}`);
+        if (character.protectedRelationship) relationshipNotes.push(`**Would Die For:** ${stripHtml(character.protectedRelationship)}`);
+        if (character.rival) relationshipNotes.push(`**Rival:** ${stripHtml(character.rival)}`);
+        if (character.affiliatedGroups) relationshipNotes.push(`**Groups:** ${stripHtml(character.affiliatedGroups)}`);
         if (relationshipNotes.length > 0) {
           embed.addFields({ name: '🤝 Key Connections', value: truncate(relationshipNotes.join('\n')), inline: false });
         } else if (!character.importantRelationships) {
@@ -426,18 +449,18 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'beliefs':
         if (character.beliefsPhilosophy) {
-          embed.addFields({ name: '🧠 Beliefs & Philosophy', value: truncate(character.beliefsPhilosophy, 1024), inline: false });
+          embed.addFields({ name: '🧠 Beliefs & Philosophy', value: truncate(stripHtml(character.beliefsPhilosophy), 1024), inline: false });
         }
         if (character.coreBelief) {
-          embed.addFields({ name: '💭 Core Belief', value: truncate(character.coreBelief, 1024), inline: false });
+          embed.addFields({ name: '💭 Core Belief', value: truncate(stripHtml(character.coreBelief), 1024), inline: false });
         }
         break;
 
       case 'public_private':
         const secretsInfo = [];
-        if (character.publicFacade) secretsInfo.push(`**Public Face:** ${character.publicFacade}`);
-        if (character.hiddenAspect) secretsInfo.push(`**Hidden Aspect:** ${character.hiddenAspect}`);
-        if (character.secret) secretsInfo.push(`**Secret:** ${character.secret}`);
+        if (character.publicFacade) secretsInfo.push(`**Public Face:** ${stripHtml(character.publicFacade)}`);
+        if (character.hiddenAspect) secretsInfo.push(`**Hidden Aspect:** ${stripHtml(character.hiddenAspect)}`);
+        if (character.secret) secretsInfo.push(`**Secret:** ${stripHtml(character.secret)}`);
         if (secretsInfo.length > 0) {
           embed.addFields({ name: '👁️ Public vs Private Self', value: truncate(secretsInfo.join('\n\n')), inline: false });
         }
@@ -445,8 +468,8 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'growth':
         const arcInfo = [];
-        if (character.recentChange) arcInfo.push(`**Recent Change:** ${character.recentChange}`);
-        if (character.potentialChange) arcInfo.push(`**Potential Growth:** ${character.potentialChange}`);
+        if (character.recentChange) arcInfo.push(`**Recent Change:** ${stripHtml(character.recentChange)}`);
+        if (character.potentialChange) arcInfo.push(`**Potential Growth:** ${stripHtml(character.potentialChange)}`);
         if (arcInfo.length > 0) {
           embed.addFields({ name: '📈 Growth & Change', value: truncate(arcInfo.join('\n\n')), inline: false });
         }
@@ -454,9 +477,9 @@ async function handleProfile(message: Message, args: string[]) {
 
       case 'legacy':
         const legacyInfo = [];
-        if (character.symbolOrMotif) legacyInfo.push(`**Symbol:** ${character.symbolOrMotif}`);
-        if (character.legacy) legacyInfo.push(`**Legacy:** ${character.legacy}`);
-        if (character.rememberedAs) legacyInfo.push(`**Remembered As:** ${character.rememberedAs}`);
+        if (character.symbolOrMotif) legacyInfo.push(`**Symbol:** ${stripHtml(character.symbolOrMotif)}`);
+        if (character.legacy) legacyInfo.push(`**Legacy:** ${stripHtml(character.legacy)}`);
+        if (character.rememberedAs) legacyInfo.push(`**Remembered As:** ${stripHtml(character.rememberedAs)}`);
         if (legacyInfo.length > 0) {
           embed.addFields({ name: '🌟 Legacy & Symbol', value: truncate(legacyInfo.join('\n\n')), inline: false });
         }
