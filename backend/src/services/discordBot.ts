@@ -57,7 +57,7 @@ export function initializeDiscordBot(token: string) {
       const potentialStat = nameRollMatch[2].trim();
       
       // Check if this is a known command first
-      const knownCommands = ['setchar', 'char', 'roll', 'help'];
+      const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'stats', 'leaderboard'];
       if (!knownCommands.includes(potentialName.toLowerCase())) {
         // Try to handle as name-based roll
         const handled = await handleNameRoll(message, potentialName, potentialStat);
