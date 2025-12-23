@@ -24,7 +24,8 @@ import filesRoutes from './routes/files';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
-import { reinitializeDatabase } from './db';
+import { reinitializeDatabase, db } from './db';
+import { sql } from 'drizzle-orm';
 import { initializePasswordRotationTracking } from './db/passwordRotation';
 
 async function startServer() {
@@ -178,6 +179,23 @@ app.get('*', (req, res) => {
     
     // Initialize password rotation tracking
     await initializePasswordRotationTracking();
+    
+    // Ensure HC list table exists
+    try {
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS hc_list (
+          id SERIAL PRIMARY KEY,
+          discord_user_id TEXT NOT NULL,
+          guild_id TEXT NOT NULL,
+          content TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_hc_list_user_guild ON hc_list(discord_user_id, guild_id);
+      `);
+      console.log('✓ HC list table verified');
+    } catch (error) {
+      console.error('Error creating HC list table:', error);
+    }
   });
 }
 
