@@ -17,15 +17,26 @@ import pathcompanionRoutes from './routes/pathcompanion';
 import discordRoutes from './routes/discord';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
+import { getSecretsWithFallback } from './config/secrets';
+import { reinitializeDatabase } from './db';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+async function startServer() {
+  // Load secrets from AWS Secrets Manager (or .env in development)
+  const secrets = await getSecretsWithFallback();
+  
+  // Reinitialize database connection with secret from AWS (in production)
+  if (process.env.NODE_ENV === 'production') {
+    await reinitializeDatabase(secrets.DATABASE_URL);
+  }
 
-// Initialize Discord bot
-initializeDiscordBot(process.env.DISCORD_BOT_TOKEN || '');
+  const app = express();
+  const PORT = process.env.PORT || 3000;
 
-// Trust proxy (nginx)
-app.set('trust proxy', 1);
+  // Initialize Discord bot with secret from AWS
+  initializeDiscordBot(secrets.DISCORD_BOT_TOKEN);
+
+  // Trust proxy (nginx)
+  app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet({
@@ -49,20 +60,20 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NODE_ENV === 'production' ? '.cyarika.com' : undefined, // Share cookie across www and apex domain
-    path: '/'
-  }
-}));
+  // Session configuration
+  app.use(session({
+    secret: secrets.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain: process.env.NODE_ENV === 'production' ? '.cyarika.com' : undefined, // Share cookie across www and apex domain
+      path: '/'
+    }
+  }));
 
 // Passport middleware
 app.use(passport.initialize());
@@ -90,12 +101,20 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+  // Error handling middleware
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+  });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Secrets loaded from: ${process.env.NODE_ENV === 'production' ? 'AWS Secrets Manager' : '.env file'}`);
+  });
+}
+
+// Start the server
+startServer().catch(error => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
 });
