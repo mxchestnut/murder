@@ -277,7 +277,9 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       background: 'var(--bg-primary)',
       borderRadius: '8px',
       border: '1px solid var(--border-color)',
-      marginBottom: '1.5rem'
+      marginBottom: '1.5rem',
+      width: '100%',
+      maxWidth: '100%'
     }}>
       {/* Avatar Section */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem', gap: '0.75rem' }}>
