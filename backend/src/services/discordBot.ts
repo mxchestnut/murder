@@ -1667,9 +1667,11 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
 
     // If not in Wikipedia, try Google search
     try {
+      console.log(`Attempting Google search for "${searchTerm}"...`);
       const googleResult = await WebSearch.searchGoogle(searchTerm);
       
       if (googleResult && googleResult.snippet && googleResult.snippet.length > 50) {
+        console.log(`Google search successful for "${searchTerm}"`);
         const embed = new EmbedBuilder()
           .setColor(0x4285f4)
           .setTitle(`${emoji} ${googleResult.title}`)
