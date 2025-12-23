@@ -487,7 +487,7 @@ export const botSettings = pgTable('bot_settings', {
 // HC (House Call/Custom) list - user-specific quick notes
 export const hcList = pgTable('hc_list', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id),
+  discordUserId: text('discord_user_id').notNull(), // Store Discord ID directly
   guildId: text('guild_id').notNull(),
   content: text('content').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull()
@@ -495,7 +495,7 @@ export const hcList = pgTable('hc_list', {
 
 export const hcListRelations = relations(hcList, ({ one }) => ({
   user: one(users, {
-    fields: [hcList.userId],
-    references: [users.id]
+    fields: [hcList.discordUserId],
+    references: [users.discordUserId]
   })
 }));

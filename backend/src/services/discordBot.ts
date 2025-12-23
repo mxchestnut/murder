@@ -2385,16 +2385,7 @@ async function handleNote(message: Message, args: string[]) {
 
 async function handleHC(message: Message, args: string[]) {
   try {
-    // Find user by Discord ID
-    const [user] = await db.select()
-      .from(users)
-      .where(eq(users.discordUserId, message.author.id));
-
-    if (!user) {
-      await message.reply('❌ You need to connect your account first. Use `!connect <username> <password>`');
-      return;
-    }
-
+    const discordUserId = message.author.id;
     const guildId = message.guild?.id || '';
     const subcmd = args[0]?.toLowerCase();
 
@@ -2403,7 +2394,7 @@ async function handleHC(message: Message, args: string[]) {
       const entries = await db.select()
         .from(hcList)
         .where(and(
-          eq(hcList.userId, user.id),
+          eq(hcList.discordUserId, discordUserId),
           eq(hcList.guildId, guildId)
         ))
         .orderBy(hcList.createdAt);
@@ -2436,7 +2427,7 @@ async function handleHC(message: Message, args: string[]) {
       const entries = await db.select()
         .from(hcList)
         .where(and(
-          eq(hcList.userId, user.id),
+          eq(hcList.discordUserId, discordUserId),
           eq(hcList.guildId, guildId)
         ))
         .orderBy(hcList.createdAt);
@@ -2485,7 +2476,7 @@ async function handleHC(message: Message, args: string[]) {
     }
 
     await db.insert(hcList).values({
-      userId: user.id,
+      discordUserId,
       guildId,
       content
     });
