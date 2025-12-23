@@ -1,7 +1,40 @@
 # Cyar'ika - Master Roadmap
 
 **Last Updated:** December 23, 2025  
-**Current Phase:** Initial Setup - Moving to Priority 1
+**Current Phase:** Discord Bot Enhancement Complete - Ready for Priority 1
+
+---
+
+## 📍 CURRENT CHECKPOINT (Dec 23, 2025 - 11:45 PM)
+
+### What We Just Completed:
+1. ✅ **HTML Stripping** - All profile fields now strip HTML tags from TipTap editor
+2. ✅ **Race Parsing** - Race field parses JSON to show readable name
+3. ✅ **Relationship Tracking System** - BUILT BUT NOT DEPLOYED
+   - Command: `!<character> is <character>'s <descriptor> | <notes>`
+   - Example: `!Ogun is Rig's best friend. | They admire each other.`
+   - Database: Uses existing `relationships` table
+   - Profile: Displays tracked relationships in Relationships tab
+   - Status: Code complete, builds successfully, ready to commit and deploy
+
+### Next Steps When Resuming:
+1. **IMMEDIATE**: Commit and deploy relationship tracking
+   ```bash
+   cd ~/cyarika-project/cyarika
+   git add backend/src/services/discordBot.ts
+   git commit -m "Add relationship tracking command and profile display"
+   git push
+   ssh -i ~/.ssh/cyarika-deploy-key.pem ec2-user@100.49.41.171 "cd cyarika && git pull && cd backend && npm run build && pm2 restart cyarika-backend"
+   ```
+2. **TEST**: `!Ogun is Rig's best friend. | They admire each other.`
+3. **VERIFY**: `!profile ogun` should show relationship in Relationships tab
+
+### Technical Notes:
+- Modified `discordBot.ts` with async buildEmbed function
+- Relationship parsing happens BEFORE name-based rolling check
+- Uses fuzzy matching for character names (normalizeString)
+- Stores character1Id, character2Id, relationshipType, notes
+- Profile queries both directions (where character is char1 OR char2)
 
 ---
 
@@ -21,11 +54,25 @@
 - ✅ Full-width layout for character panels
 - ✅ Login rebranded to Cyar'ika
 
+### Discord Bot Enhancements (Dec 23, 2025)
+- ✅ Database password rotation handled (Neon credentials updated)
+- ✅ Skills JSON parsing (roll commands now work with PathCompanion data)
+- ✅ Name-based rolling (`!CharName perception` works in ANY channel)
+- ✅ Tabbed profile UI (12 tabs matching portal structure)
+- ✅ Interactive button navigation (5-minute timeout, user-locked)
+- ✅ Avatar URL conversion to absolute paths
+- ✅ HTML tag stripping from all profile fields
+- ✅ Race JSON parsing (shows clean race name)
+- ✅ AI FAQ system (`!ask`, `!learn` with knowledge base + Gemini fallback)
+- ✅ Character stats tracking (`!stats`, `!leaderboard` with activity logging)
+- ✅ Gemini safety filters lowered to BLOCK_NONE (adult content server)
+- ⏸️ **Relationship tracking** - Code complete, needs deployment (see checkpoint above)
+
 ---
 
 ## 🎯 PRIORITY 1: AI-Powered Features & Core Engagement (Next 2-3 Weeks)
 
-### 1.1 AI-Powered FAQ System ⭐ **START HERE**
+### 1.1 AI-Powered FAQ System ✅ **COMPLETED**
 **Goal:** Build intelligent knowledge base that learns from URLs and interactions
 
 **Database:**
@@ -38,8 +85,8 @@ knowledge_base
 ```
 
 **Discord Commands:**
-- [ ] `!ask <question>` - Search DB, fallback to AI
-- [ ] `!learn <question> | <answer>` - Manual entry (admin)
+- ✅ `!ask <question>` - Search DB, fallback to AI
+- ✅ `!learn <question> | <answer>` - Manual entry (admin)
 - [ ] `!teach <url>` - AI scrapes and learns from URL
 - [ ] `!kb search <keyword>` - Search knowledge base
 - [ ] React ⭐ to save AI answer to DB
@@ -52,11 +99,11 @@ knowledge_base
 
 **Tech:** Google Gemini 2.5 Flash API, Cheerio for web scraping
 
-**Time Estimate:** 2-3 days
+**Status:** Core commands done, portal UI pending
 
 ---
 
-### 1.2 Character Stats & Leaderboards 📊
+### 1.2 Character Stats & Leaderboards ✅ **COMPLETED**
 **Goal:** Track character activity and create engaging leaderboards
 
 **Database:**
@@ -72,12 +119,12 @@ activity_feed
 ```
 
 **Discord Commands:**
-- [ ] `!stats` - Stats for character linked to channel
-- [ ] `!stats <character_name>` - Stats for any character
-- [ ] `!leaderboard messages` - Most active characters
-- [ ] `!leaderboard rolls` - Most dice rolls
-- [ ] `!leaderboard crits` - Most nat20s
-- [ ] `!leaderboard fails` - Most nat1s (fun shame!)
+- ✅ `!stats` - Stats for character linked to channel
+- ✅ `!stats <character_name>` - Stats for any character
+- ✅ `!leaderboard messages` - Most active characters
+- ✅ `!leaderboard rolls` - Most dice rolls
+- ✅ `!leaderboard crits` - Most nat20s
+- ✅ `!leaderboard fails` - Most nat1s (fun shame!)
 
 **Portal:**
 - [ ] Real-time activity feed on dashboard
@@ -86,12 +133,12 @@ activity_feed
 - [ ] Character achievement badges
 
 **Tracked Events:**
-- [ ] Every proxy message sent as character
-- [ ] Every dice roll made by character
-- [ ] Nat20s and Nat1s (with timestamps)
-- [ ] Session participation
+- ✅ Every proxy message sent as character
+- ✅ Every dice roll made by character
+- ✅ Nat20s and Nat1s (with timestamps)
+- ✅ Session participation
 
-**Time Estimate:** 1-2 days
+**Status:** Discord commands done, portal UI pending
 
 ---
 
