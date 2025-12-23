@@ -2481,7 +2481,7 @@ async function handleHC(message: Message, args: string[]) {
       content
     });
 
-    await message.reply('✅ HC entry added!');
+    await message.reply(`💡HC: ${content}`);
 
   } catch (error) {
     console.error('Error in !hc command:', error);
