@@ -253,11 +253,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <>
               {currentCharacter && (
                 <div style={{ 
-                  flex: characterPanelCollapsed ? '0 0 auto' : '0 0 400px',
-                  width: characterPanelCollapsed ? 'auto' : '400px',
-                  minWidth: characterPanelCollapsed ? 'auto' : '300px',
-                  maxWidth: characterPanelCollapsed ? 'none' : '800px',
-                  resize: characterPanelCollapsed ? 'none' : 'horizontal',
+                  flex: characterPanelCollapsed ? '0 0 auto' : '1',
+                  width: characterPanelCollapsed ? 'auto' : 'auto',
+                  minWidth: characterPanelCollapsed ? 'auto' : 0,
+                  maxWidth: characterPanelCollapsed ? 'none' : 'none',
+                  resize: characterPanelCollapsed ? 'none' : 'none',
                   overflow: 'auto',
                   padding: characterPanelCollapsed ? '0.5rem 1rem' : '2rem',
                   borderRight: currentDocument ? '1px solid var(--border-color)' : 'none',
