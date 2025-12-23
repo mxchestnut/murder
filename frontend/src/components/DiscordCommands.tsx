@@ -1,4 +1,4 @@
-import { MessageCircle, Dices, Users, Link, HelpCircle } from 'lucide-react';
+import { MessageCircle, Dices, Users, Link, HelpCircle, Sparkles, Star, BookOpen, Clock, StickyNote, Music } from 'lucide-react';
 
 export default function DiscordCommands() {
   return (
@@ -7,7 +7,7 @@ export default function DiscordCommands() {
         <MessageCircle size={32} />
         <div>
           <h1>Discord Bot Commands</h1>
-          <p>Use these commands with PathKeeper bot in your Discord server</p>
+          <p>Use these commands with Cyar'ika bot in your Discord server</p>
         </div>
       </div>
 
@@ -144,6 +144,281 @@ export default function DiscordCommands() {
           </div>
         </section>
 
+        {/* RP Prompts & Tropes */}
+        <section className="command-section">
+          <div className="section-header">
+            <Sparkles size={24} />
+            <h2>RP Prompts & Inspiration</h2>
+          </div>
+          <p className="section-description">
+            Get creative prompts and trope inspiration for your roleplay
+          </p>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!prompt [category]</code>
+            </div>
+            <div className="command-description">
+              Get a random RP prompt. Optionally specify: character, world, combat, social, or plot
+            </div>
+            <div className="command-examples">
+              <div className="example-label">Examples:</div>
+              <code>!prompt</code>
+              <code>!prompt character</code>
+              <code>!proCyar'ika bot is in your Discord server</li>
+          <li>Create a <code>#hall-of-fame</code> channel for starred messages</li>
+          <li>Create or import your characters in the Character Sheets tab</li>
+          <li>Optionally add avatar URLs to your characters for custom proxying</li>
+          <li>Use <code>!setchar &lt;name&gt;</code> in any channel to link it for auto-rolls</li>
+          <li>Use <code>!botset</code> (admin) to set announcement channel for daily prompts</li>
+          <li>Start rolling, tracking sessions, and roleplaying!</li>
+        </ol>
+        
+        <div className="feature-highlight">
+          <h3>🌟 New Features!</h3>
+          <ul>
+            <li><strong>Daily Prompts:</strong> Get creative inspiration with !prompt and !trope</li>
+            <li><strong>Hall of Fame:</strong> Star epic moments (⭐ × 10) to immortalize them</li>
+            <li><strong>Session Tracking:</strong> Automatic message logging for sessions and scenes</li>
+            <li><strong>Relationships:</strong> Track character connections in profiles</li>
+            <li><strong>AI Tools:</strong> NPC generator, music suggestions, and more!</li>
+          </ul>
+        </div<div className="command-syntax">
+              <code>!trope [category]</code>
+            </div>
+            <div className="command-description">
+              Get random trope inspiration. Categories: character, plot, relationship, world
+            </div>
+            <div className="command-examples">
+              <div className="example-label">Examples:</div>
+              <code>!trope</code>
+              <code>!trope character</code>
+            </div>
+          </div>
+        </section>
+
+        {/* Session & Scene Tracking */}
+        <section className="command-section">
+          <div className="section-header">
+            <BookOpen size={24} />
+            <h2>Session & Scene Tracking</h2>
+          </div>
+          <p className="section-description">
+            Track sessions and scenes, log important messages automatically
+          </p>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!session start &lt;title&gt;</code>
+            </div>
+            <div className="command-description">
+              Start tracking a session. All messages will be logged until you end it.
+            </div>
+            <div className="command-examples">
+              <div className="example-label">More Session Commands:</div>
+              <code>!session end</code>
+              <code>!session pause</code>
+              <code>!session resume</code>
+              <code>!session list</code>
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!scene start &lt;title&gt;</code>
+            </div>
+            <div className="command-description">
+              Start a new scene with automatic message logging
+            </div>
+            <div className="command-examples">
+              <div className="example-label">More Scene Commands:</div>
+              <code>!scene end</code>
+              <code>!scene tag &lt;tags&gt;</code>
+              <code>!scene location &lt;place&gt;</code>
+              <code>!scene list</code>
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!recap</code>
+            </div>
+            <div className="command-description">
+              Get a quick summary of the current session
+            </div>
+          </div>
+        </section>
+
+        {/* Hall of Fame */}
+        <section className="command-section">
+          <div className="section-header">
+            <Star size={24} />
+            <h2>Hall of Fame (Starboard)</h2>
+          </div>
+          <p className="section-description">
+            React with ⭐ to epic messages! Messages with 10+ stars get immortalized
+          </p>
+
+          <div className="command-card highlight">
+            <div className="command-syntax">
+              <code>React with ⭐</code>
+            </div>
+            <div className="command-description">
+              React to any message with a star emoji. When a message gets 10+ stars, it's automatically posted to #hall-of-fame!
+            </div>
+            <div className="command-note">
+              💡 Hall of Fame messages include context (previous message) and are removed if stars drop below 10
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!hall</code>
+            </div>
+            <div className="command-description">
+              View recent Hall of Fame entries
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!hall top</code>
+            </div>
+            <div className="command-description">
+              View top 20 most-starred messages of all time
+            </div>
+          </div>
+        </section>
+
+        {/* Relationship Tracking */}
+        <section className="command-section">
+          <div className="section-header">
+            <Users size={24} />
+            <h2>Relationship Tracking</h2>
+          </div>
+          <p className="section-description">
+            Track character relationships that display in profiles
+          </p>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!&lt;Char1&gt; is &lt;Char2&gt;'s &lt;descriptor&gt; | &lt;notes&gt;</code>
+            </div>
+            <div className="command-description">
+              Create or update a character relationship
+            </div>
+            <div className="command-examples">
+              <div className="example-label">Examples:</div>
+              <code>!Aria is Kael's best friend | They met during the war</code>
+              <code>!Marcus is Elena's mentor | Teaching her ancient magic</code>
+            </div>
+            <div className="command-note">
+              💡 View relationships in !profile &lt;character&gt; → Relationships tab
+            </div>
+          </div>
+        </section>
+
+        {/* Utility Commands */}
+        <section className="command-section">
+          <div className="section-header">
+            <Clock size={24} />
+            <h2>Utility Commands</h2>
+          </div>
+          
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!time [set &lt;date&gt;]</code>
+            </div>
+            <div className="command-description">
+              View or set in-game time/date
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+
+        .feature-highlight {
+          margin-top: 2rem;
+          padding: 1.5rem;
+          background: var(--accent-light);
+          border-left: 4px solid var(--accent-color);
+          border-radius: 4px;
+        }
+
+        .feature-highlight h3 {
+          margin-top: 0;
+          margin-bottom: 1rem;
+          color: var(--accent-color);
+        }
+
+        .feature-highlight ul {
+          margin: 0;
+          padding-left: 1.5rem;
+        }
+
+        .feature-highlight li {
+          margin-bottom: 0.75rem;
+          line-height: 1.6;
+        }
+
+        .feature-highlight strong {
+          color: var(--accent-color);
+        }
+              <code>!note add &lt;text&gt;</code>
+            </div>
+            <div className="command-description">
+              Add a GM note. Use !note list to view your notes
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!npc &lt;name&gt;</code>
+            </div>
+            <div className="command-description">
+              Generate quick NPC stat block (AI-powered)
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!music</code>
+            </div>
+            <div className="command-description">
+              Get mood music suggestions for the current scene
+            </div>
+          </div>
+        </section>
+
+        {/* Admin Commands */}
+        <section className="command-section">
+          <div className="section-header">
+            <StickyNote size={24} />
+            <h2>Admin Commands</h2>
+          </div>
+          <p className="section-description">
+            Requires Discord Administrator permission
+          </p>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!learn &lt;question&gt; | &lt;answer&gt;</code>
+            </div>
+            <div className="command-description">
+              Add knowledge base entry for !ask command
+            </div>
+          </div>
+
+          <div className="command-card">
+            <div className="command-syntax">
+              <code>!botset</code>
+            </div>
+            <div className="command-description">
+              Set the bot announcement channel for scheduled prompts and events
+            </div>
+          </div>
+        </section>
+
         {/* Help */}
         <section className="command-section">
           <div className="section-header">
@@ -156,7 +431,7 @@ export default function DiscordCommands() {
               <code>!help</code>
             </div>
             <div className="command-description">
-              Display a quick command reference in Discord
+              Display a complete command reference in Discord
             </div>
           </div>
         </section>
