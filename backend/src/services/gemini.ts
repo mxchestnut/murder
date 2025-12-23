@@ -1,12 +1,17 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 
-const apiKey = process.env.GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(apiKey);
-
-export async function askGemini(question: string, context?: string): Promise<string> {
+// Lazy load API key to allow it to be set by server.ts first
+function getApiKey(): string {
+  const apiKey = process.env.GEMINI_API_KEY || '';
   if (!apiKey) {
     throw new Error('Gemini API key not configured');
   }
+  return apiKey;
+}
+
+export async function askGemini(question: string, context?: string): Promise<string> {
+  const apiKey = getApiKey();
+  const genAI = new GoogleGenerativeAI(apiKey);
 
   try {
     const model = genAI.getGenerativeModel({ 
@@ -33,9 +38,8 @@ export async function askGemini(question: string, context?: string): Promise<str
 }
 
 export async function summarizeSession(messages: string[]): Promise<string> {
-  if (!apiKey) {
-    throw new Error('Gemini API key not configured');
-  }
+  const apiKey = getApiKey();
+  const genAI = new GoogleGenerativeAI(apiKey);
 
   try {
     const model = genAI.getGenerativeModel({ 
