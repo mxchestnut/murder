@@ -18,9 +18,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentCharacter, setCurrentCharacter] = useState<any>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showDiscordCommands, setShowDiscordCommands] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareDocument, setShareDocument] = useState<any>(null);
-  const [shareUsername, setShareUsername] = useState('');
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -95,34 +92,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       onLogout();
     } catch (error) {
       console.error('Logout error:', error);
-    }
-  };
-
-  const handleShare = (doc: any) => {
-    setShareDocument(doc);
-    setShowShareModal(true);
-  };
-
-  const sendShare = async () => {
-    if (!shareDocument || !shareUsername) return;
-
-    try {
-      // Create a direct message room and send document link
-      const roomResponse = await api.post('/messages/dm', { 
-        username: shareUsername 
-      });
-      
-      await api.post('/messages/send', {
-        roomId: roomResponse.data.roomId,
-        message: `${user.username} shared a document with you: "${shareDocument.name}"\n\nDocument ID: ${shareDocument.id}`
-      });
-
-      alert(`Document shared with ${shareUsername}!`);
-      setShowShareModal(false);
-      setShareUsername('');
-    } catch (error) {
-      console.error('Error sharing document:', error);
-      alert('Failed to share document. Make sure the username exists and Matrix is configured.');
     }
   };
 
@@ -736,7 +705,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         content
                       });
                     }}
-                    onShare={handleShare}
                   />
                 </div>
               ) : !currentCharacter ? (
@@ -757,111 +725,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           )}
         </div>
       </div>
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'var(--bg-secondary)',
-            padding: '2rem',
-            borderRadius: '8px',
-            width: '100%',
-            maxWidth: '400px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Share Document</h2>
-              <button
-                onClick={() => {
-                  setShowShareModal(false);
-                  setShareUsername('');
-                }}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer',
-                  padding: '0.25rem'
-                }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <p style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>
-              Share "{shareDocument?.name}" with another user via Matrix message
-            </p>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                Username
-              </label>
-              <input
-                type="text"
-                value={shareUsername}
-                onChange={(e) => setShareUsername(e.target.value)}
-                placeholder="Enter username"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '4px',
-                  border: `1px solid var(--border-color)`,
-                  background: 'var(--bg-primary)',
-                  color: 'var(--text-primary)'
-                }}
-                autoFocus
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                onClick={sendShare}
-                disabled={!shareUsername}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  borderRadius: '4px',
-                  border: 'none',
-                  background: shareUsername ? 'var(--accent-2)' : 'var(--accent-1)',
-                  color: 'var(--text-primary)',
-                  cursor: shareUsername ? 'pointer' : 'not-allowed',
-                  fontWeight: 'bold'
-                }}
-              >
-                Share
-              </button>
-              <button
-                onClick={() => {
-                  setShowShareModal(false);
-                  setShareUsername('');
-                }}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  borderRadius: '4px',
-                  border: 'none',
-                  background: 'var(--accent-1)',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

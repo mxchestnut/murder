@@ -178,7 +178,6 @@ ssh -i cyarika-key.pem ubuntu@54.242.214.56 'sudo nginx -t'
 
 ## Known Issues
 
-⚠️ **Matrix Connection**: Some timeout errors (pre-existing, not related to PathCompanion)  
 ℹ️ **MemoryStore Warning**: Consider using Redis for production sessions  
 
 ## Next Steps

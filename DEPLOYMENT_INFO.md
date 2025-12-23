@@ -141,9 +141,6 @@ AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_S3_BUCKET=cyarika-documents
-
-MATRIX_HOMESERVER_URL=https://matrix.org
-MATRIX_ACCESS_TOKEN=your-matrix-token-if-needed
 ```
 
 ## AWS S3 Bucket Setup

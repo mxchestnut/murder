@@ -16,17 +16,16 @@ import Superscript from '@tiptap/extension-superscript';
 import { 
   Bold, Italic, Strikethrough, Code, List, ListOrdered, 
   Quote, Undo, Redo, Heading1, Heading2, Heading3,
-  CheckSquare, Highlighter, AlignLeft, AlignCenter, AlignRight, Share2
+  CheckSquare, Highlighter, AlignLeft, AlignCenter, AlignRight
 } from 'lucide-react';
 import { useEffect } from 'react';
 
 interface EditorProps {
   document: any;
   onSave: (content: string) => void;
-  onShare?: (document: any) => void;
 }
 
-export default function Editor({ document, onSave, onShare }: EditorProps) {
+export default function Editor({ document, onSave }: EditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -239,8 +238,7 @@ export default function Editor({ document, onSave, onShare }: EditorProps) {
                 fontWeight: 'bold'
               }}
             >
-              <Share2 size={18} />
-              Share
+              Save
             </button>
           </>
         )}
