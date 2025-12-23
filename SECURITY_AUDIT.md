@@ -15,7 +15,6 @@
 
 ⚠️ **Areas Requiring Attention:**
 - Database credentials in plain text .env file
-- MemoryStore sessions (should use Redis)
 - No automated backups configured
 - SSH key-only access (good, but no fail2ban)
 - No application-level logging/monitoring
@@ -62,21 +61,20 @@
 **Current Setup:**
 - Passport.js with bcrypt password hashing ✅
 - Session cookies: httpOnly, secure, sameSite ✅
-- Session storage: MemoryStore (in-memory) ⚠️
-- SESSION_SECRET: `6dslb+Q3/HzUdtdduNTb5qt9UKcGyRXPA1FhJ0pXgeo=`
+- Session storage: Redis (persistent, production-ready) ✅
+- SESSION_SECRET: Stored in AWS Secrets Manager ✅
 - Cookie max age: 7 days ✅
+- Redis TTL: 7 days (matches cookie expiry) ✅
 
 **Issues:**
-1. MemoryStore doesn't persist across restarts
-2. Sessions lost if PM2 restarts
-3. No session management (can't invalidate all sessions)
-4. SESSION_SECRET in plain text .env
+1. SESSION_SECRET stored in AWS (addressed)
+2. Sessions now persist across restarts (addressed)
 
 **Recommendations:**
-- 🔴 **HIGH PRIORITY**: Migrate to Redis for session storage
+- ✅ **COMPLETED**: Migrated to Redis for session storage
 - ⚠️ **RECOMMENDED**: Implement session timeout/refresh
 - ⚠️ **RECOMMENDED**: Add "logout all devices" feature
-- ✅ **ACCEPTABLE**: Only 2 users, low risk
+- ✅ **EXCELLENT**: Production-ready session management
 
 ### 4. Application Security ✅ GOOD
 
@@ -192,8 +190,8 @@
 
 ### 🟡 High Priority (Do This Week)
 
-4. **Migrate to Redis for session storage**
-5. **Set up AWS Secrets Manager for credentials**
+4. ~~**Migrate to Redis for session storage**~~ ✅ COMPLETED
+5. ~~**Set up AWS Secrets Manager for credentials**~~ ✅ COMPLETED
 6. **Configure fail2ban for SSH protection**
 7. **Enable HSTS headers in nginx**
 
@@ -222,8 +220,8 @@
 - Good application security practices already in place
 
 **Primary Risks:**
-1. Secrets in plain text (mitigated by Tailscale)
-2. Session loss on restart (low impact, 2 users)
+1. ~~Secrets in plain text~~ ✅ RESOLVED (AWS Secrets Manager)
+2. ~~Session loss on restart~~ ✅ RESOLVED (Redis persistence)
 3. No monitoring/alerting (can't detect breaches)
 
 **Acceptable for Current Use**: ✅ YES
@@ -241,8 +239,9 @@
 - [x] Rate limiting enabled
 - [x] Security headers (Helmet.js)
 - [x] Managed database with backups
-- [ ] Secrets management (plain text .env)
-- [ ] Session persistence (MemoryStore)
+- [x] Secrets management (AWS Secrets Manager)
+- [x] Session persistence (Redis)
+- [x] Password rotation tracking (90-day reminders)
 - [ ] Automated security updates
 - [ ] fail2ban installed
 - [ ] Logging and monitoring
