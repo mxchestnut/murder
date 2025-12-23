@@ -10,7 +10,7 @@ import passport from 'passport';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'connect-redis';
+import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 import authRoutes from './routes/auth';
 import documentRoutes from './routes/documents';
@@ -46,13 +46,6 @@ async function startServer() {
   
   await redisClient.connect();
 
-  // Initialize Redis store
-  const redisStore = new (RedisStore as any)(session)({
-    client: redisClient,
-    prefix: 'cyarika:',
-    ttl: 86400 * 7 // 7 days in seconds
-  });
-
   const app = express();
   const PORT = process.env.PORT || 3000;
 
@@ -86,7 +79,11 @@ app.use(express.urlencoded({ extended: true }));
 
   // Session configuration with Redis
   app.use(session({
-    store: redisStore,
+    store: new RedisStore({ 
+      client: redisClient,
+      prefix: 'cyarika:',
+      ttl: 86400 * 7 // 7 days in seconds
+    }),
     secret: secrets.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
