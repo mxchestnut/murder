@@ -22,7 +22,7 @@
 ---
 
 ## 🎯 Priority 3: Portal UI Enhancements
-**Status:** IN PROGRESS (3 of 4 complete)
+**Status:** IN PROGRESS (3 of 4 complete, Sessions replaced with Character Memories)
 
 ### Stats Dashboard 📊
 - [x] Build charts/graphs for character statistics
@@ -32,13 +32,13 @@
 - [x] Build damage/rolls distribution charts
 - **Estimate:** ~~2-3 days~~ **COMPLETE**
 
-### Sessions & Scenes Archive 📖
-- [ ] Build session list with search/filter
-- [ ] Create session detail view with messages
-- [ ] Implement scene browser and timeline
-- [ ] Add export sessions to markdown/PDF
-- [ ] Build AI-generated session summaries
-- **Estimate:** 2-3 days
+### Character Memories 💭 ✅
+- [x] Database table for character memories
+- [x] Discord command: `!Memory <Character> | <memory>`
+- [x] Discord command: `!<Character> Memories` to view all
+- [x] Portal UI with add/edit/delete functionality
+- [x] Memory timeline with timestamps
+- **Estimate:** ~~2-3 days~~ **COMPLETE** (Replaced Sessions & Scenes Archive)
 
 ### Hall of Fame Gallery ⭐ ✅
 - [x] Create gallery view of Hall of Fame messages
