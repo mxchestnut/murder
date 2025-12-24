@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../utils/api';
+import { api, fetchCsrfToken } from '../utils/api';
 
 interface LoginProps {
   onLogin: () => void;
@@ -23,6 +23,9 @@ export default function Login({ onLogin }: LoginProps) {
         // After registration, log in
         await api.post('/auth/login', { username, password });
       }
+      
+      // Fetch new CSRF token after login (session ID changed)
+      await fetchCsrfToken();
       
       onLogin();
     } catch (err: any) {
