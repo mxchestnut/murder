@@ -4,6 +4,7 @@ import Editor from './Editor';
 import Settings from './Settings';
 import DiscordCommands from './DiscordCommands';
 import CharacterBio from './CharacterBio';
+import CharacterMemories from './CharacterMemories';
 import FileManager from './FileManager';
 import KnowledgeBase from './KnowledgeBase';
 import PromptsTropes from './PromptsTropes';
@@ -31,6 +32,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [showStats, setShowStats] = useState(false);
   const [showHallOfFame, setShowHallOfFame] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [characterTab, setCharacterTab] = useState<'bio' | 'memories'>('bio');
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -486,8 +488,50 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         </button>
                       </div>
 
-                      {/* Character Bio */}
-                      <CharacterBio character={currentCharacter} onUpdate={reloadCurrentCharacter} />
+                      {/* Character Tabs */}
+                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '2px solid var(--border-color)' }}>
+                        <button
+                          onClick={() => setCharacterTab('bio')}
+                          style={{
+                            padding: '0.75rem 1.25rem',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: characterTab === 'bio' ? '2px solid var(--primary-color)' : '2px solid transparent',
+                            color: characterTab === 'bio' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            fontWeight: characterTab === 'bio' ? '600' : '400',
+                            marginBottom: '-2px'
+                          }}
+                        >
+                          📝 Bio
+                        </button>
+                        <button
+                          onClick={() => setCharacterTab('memories')}
+                          style={{
+                            padding: '0.75rem 1.25rem',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: characterTab === 'memories' ? '2px solid var(--primary-color)' : '2px solid transparent',
+                            color: characterTab === 'memories' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            fontWeight: characterTab === 'memories' ? '600' : '400',
+                            marginBottom: '-2px'
+                          }}
+                        >
+                          💭 Memories
+                        </button>
+                      </div>
+
+                      {/* Character Content Based on Tab */}
+                      {characterTab === 'bio' ? (
+                        <CharacterBio character={currentCharacter} onUpdate={reloadCurrentCharacter} />
+                      ) : (
+                        <CharacterMemories 
+                          characterId={currentCharacter.id} 
+                          characterName={currentCharacter.name}
+                          guildId={currentCharacter.guildId}
+                        />
+                      )}
 
                       {/* Roll Result */}
                       {rollResult && (

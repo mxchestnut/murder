@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, sceneMessages, hallOfFame, gmNotes, gameTime, botSettings, hcList } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, sceneMessages, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -74,9 +74,14 @@ export function initializeDiscordBot(token: string) {
       const potentialStat = nameRollMatch[2].trim();
       
       // Check if this is a known command first
-      const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'learnurl', 'kink', 'feat', 'spell', 'stats', 'leaderboard', 'prompt', 'trope', 'session', 'scene', 'time', 'note', 'npc', 'music', 'recap', 'hall', 'botset', 'hc'];
+      const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'learnurl', 'kink', 'feat', 'spell', 'stats', 'leaderboard', 'prompt', 'trope', 'session', 'scene', 'time', 'note', 'npc', 'music', 'recap', 'hall', 'botset', 'hc', 'memory'];
       const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
       if (!isKnownCommand) {
+        // Check if this is "!CharName Memories" pattern
+        if (potentialStat.toLowerCase() === 'memories') {
+          await handleCharacterMemoriesView(message, potentialName);
+          return;
+        }
         // Try to handle as name-based roll
         const handled = await handleNameRoll(message, potentialName, potentialStat);
         if (handled) return;
@@ -168,6 +173,9 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'hc':
           await handleHC(message, args);
+          break;
+        case 'memory':
+          await handleMemory(message, args);
           break;
         case 'help':
           await handleHelp(message);
@@ -1032,7 +1040,8 @@ async function handleHelp(message: Message) {
       { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
       { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
-      { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
+      { name: '� Character Memories', value: '`!Memory <Character> | <memory>` - Add memory\n`!<Character> Memories` - View all memories\nExample: `!Memory Ogun | Had a dream`', inline: false },
+      { name: '�🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
       { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false }
     )
     .setFooter({ text: 'Visit cyarika.com to manage characters!' });
@@ -2656,6 +2665,119 @@ async function handleHC(message: Message, args: string[]) {
   } catch (error) {
     console.error('Error in !hc command:', error);
     await message.reply('❌ Failed to handle HC command.');
+  }
+}
+
+// ==================== CHARACTER MEMORIES ====================
+async function handleMemory(message: Message, args: string[]) {
+  try {
+    const guildId = message.guild?.id || '';
+    const userId = message.author.id;
+    
+    // Parse: !Memory <Character> | <Memory>
+    const fullText = args.join(' ');
+    const parts = fullText.split('|').map(p => p.trim());
+    
+    if (parts.length < 2) {
+      await message.reply(
+        'Usage: `!Memory <Character> | <Memory>`\n\n' +
+        'Examples:\n' +
+        '• `!Memory Ogun | Had a dream about meeting their soulmate`\n' +
+        '• `!Memory Elystrix | Discovered a secret about their past`\n\n' +
+        'View memories: `!<Character> Memories`'
+      );
+      return;
+    }
+
+    const characterName = parts[0];
+    const memory = parts.slice(1).join('|').trim();
+
+    if (!characterName || !memory) {
+      await message.reply('❌ Please provide both character name and memory.');
+      return;
+    }
+
+    // Find character
+    const [character] = await db.select()
+      .from(characterSheets)
+      .where(
+        sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`
+      )
+      .limit(1);
+
+    if (!character) {
+      await message.reply(`❌ Character "${characterName}" not found.`);
+      return;
+    }
+
+    // Add memory
+    await db.insert(characterMemories).values({
+      characterId: character.id,
+      guildId,
+      memory,
+      addedBy: userId
+    });
+
+    await message.reply(`✅ Memory added for **${character.name}**:\n"${memory}"`);
+
+  } catch (error) {
+    console.error('Error in !Memory command:', error);
+    await message.reply('❌ Failed to add memory.');
+  }
+}
+
+async function handleCharacterMemoriesView(message: Message, characterName: string) {
+  try {
+    const guildId = message.guild?.id || '';
+
+    // Find character
+    const [character] = await db.select()
+      .from(characterSheets)
+      .where(
+        sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`
+      )
+      .limit(1);
+
+    if (!character) {
+      // Don't reply if character not found (might be trying a dice roll)
+      return;
+    }
+
+    // Get all memories for this character
+    const memories = await db.select()
+      .from(characterMemories)
+      .where(eq(characterMemories.characterId, character.id))
+      .orderBy(characterMemories.createdAt);
+
+    if (memories.length === 0) {
+      await message.reply(`📝 **${character.name}** has no memories yet.\n\nAdd one with: \`!Memory ${character.name} | <memory>\``);
+      return;
+    }
+
+    // Build embed
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle(`📝 ${character.name}'s Memories`)
+      .setDescription(memories.length === 1 ? '1 memory' : `${memories.length} memories`)
+      .setTimestamp();
+
+    // Add memories as numbered list
+    const memoryList = memories.map((mem, idx) => {
+      const date = new Date(mem.createdAt).toLocaleDateString();
+      return `**${idx + 1}.** ${mem.memory}\n*Added ${date}*`;
+    }).join('\n\n');
+
+    embed.addFields({ name: 'Memories', value: memoryList.substring(0, 1024) }); // Discord limit
+
+    if (memoryList.length > 1024) {
+      embed.setFooter({ text: 'Some memories truncated due to length' });
+    }
+
+    await message.reply({ embeds: [embed] });
+
+  } catch (error) {
+    console.error('Error viewing character memories:', error);
+    await message.reply('❌ Failed to retrieve memories.');
   }
 }
 

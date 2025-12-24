@@ -27,6 +27,7 @@ import promptsRoutes from './routes/prompts';
 import importDefaultsRoutes from './routes/import-defaults';
 import statsRoutes from './routes/stats';
 import hallOfFameRoutes from './routes/hall-of-fame';
+import memoriesRoutes from './routes/memories';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -157,6 +158,7 @@ app.use('/api/prompts', doubleCsrfProtection);
 app.use('/api/import-defaults', doubleCsrfProtection);
 app.use('/api/stats', doubleCsrfProtection);
 app.use('/api/hall-of-fame', doubleCsrfProtection);
+app.use('/api/memories', doubleCsrfProtection);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -172,6 +174,7 @@ app.use('/api/prompts', promptsRoutes);
 app.use('/api/import-defaults', importDefaultsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/hall-of-fame', hallOfFameRoutes);
+app.use('/api/memories', memoriesRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -212,6 +215,20 @@ app.get('*', (req, res) => {
           created_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_hc_list_user_guild ON hc_list(discord_user_id, guild_id);
+      `);
+
+      // Character Memories table
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS character_memories (
+          id SERIAL PRIMARY KEY,
+          character_id INTEGER NOT NULL REFERENCES character_sheets(id) ON DELETE CASCADE,
+          guild_id TEXT NOT NULL,
+          memory TEXT NOT NULL,
+          added_by TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_character_memories_char ON character_memories(character_id);
+        CREATE INDEX IF NOT EXISTS idx_character_memories_guild ON character_memories(guild_id);
       `);
       
       // Prompts table

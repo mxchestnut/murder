@@ -501,3 +501,20 @@ export const hcListRelations = relations(hcList, ({ one }) => ({
     references: [users.discordUserId]
   })
 }));
+
+// Character Memories - track important character moments and development
+export const characterMemories = pgTable('character_memories', {
+  id: serial('id').primaryKey(),
+  characterId: integer('character_id').notNull().references(() => characterSheets.id),
+  guildId: text('guild_id').notNull(),
+  memory: text('memory').notNull(),
+  addedBy: text('added_by').notNull(), // Discord user ID who added the memory
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const characterMemoriesRelations = relations(characterMemories, ({ one }) => ({
+  character: one(characterSheets, {
+    fields: [characterMemories.characterId],
+    references: [characterSheets.id]
+  })
+}));
