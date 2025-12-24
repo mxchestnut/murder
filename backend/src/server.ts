@@ -135,7 +135,7 @@ const doubleCsrfProtection = csrfProtection.doubleCsrfProtection;
 
 // CSRF token endpoint (no protection needed for GET)
 app.get('/api/csrf-token', (req, res) => {
-  const token = csrfProtection.generateToken(req, res);
+  const token = csrfProtection.generateCsrfToken(req, res);
   res.json({ csrfToken: token });
 });
 
