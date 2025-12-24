@@ -16,7 +16,10 @@ export const users = pgTable('users', {
   // Discord integration
   discordUserId: text('discord_user_id').unique(), // Discord user ID for bot authentication
   discordBotToken: text('discord_bot_token'),
-  createdAt: timestamp('created_at').defaultNow().notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  // Storage quotas
+  storageQuotaBytes: integer('storage_quota_bytes').default(1073741824), // 1GB default
+  storageUsedBytes: integer('storage_used_bytes').default(0)
 });
 
 export const documents = pgTable('documents', {
@@ -306,7 +309,13 @@ export const files = pgTable('files', {
   virusScanStatus: text('virus_scan_status').default('pending'), // 'pending', 'clean', 'infected', 'error'
   virusScanDetails: text('virus_scan_details'), // JSON string with scan results
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
-  deletedAt: timestamp('deleted_at') // Soft delete
+  deletedAt: timestamp('deleted_at'), // Soft delete
+  
+  // File categories and optimization
+  category: text('category').default('document'), // 'avatar', 'image', 'document', 'other'
+  thumbnailS3Key: text('thumbnail_s3_key'),
+  thumbnailUrl: text('thumbnail_url'),
+  isOptimized: boolean('is_optimized').default(false)
 });
 
 export const filesRelations = relations(files, ({ one }) => ({
