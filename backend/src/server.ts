@@ -118,6 +118,7 @@ setupPassport();
 // CSRF Protection
 const {
   doubleCsrfProtection, // Middleware to validate CSRF token
+  generateToken // Function to generate CSRF tokens
 } = doubleCsrf({
   getSecret: () => secrets.SESSION_SECRET,
   getSessionIdentifier: (req) => req.session.id || '',
@@ -135,7 +136,7 @@ const {
 
 // CSRF token endpoint (no protection needed for GET)
 app.get('/api/csrf-token', (req, res) => {
-  const token = req.csrfToken ? req.csrfToken() : '';
+  const token = generateToken(req, res);
   res.json({ csrfToken: token });
 });
 
