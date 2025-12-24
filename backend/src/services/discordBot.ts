@@ -88,6 +88,8 @@ export function initializeDiscordBot(token: string) {
     const args = content.slice(1).trim().split(/ +/);
     const command = args.shift()?.toLowerCase();
 
+    console.log(`Discord command received: ${command}, args:`, args);
+
     try {
       switch (command) {
         case 'setchar':
@@ -1547,12 +1549,17 @@ async function handleLearn(message: Message, args: string[]) {
 }
 
 async function handleLearnUrl(message: Message, args: string[]) {
+  console.log('!learnurl command received from', message.author.tag);
+  
   // Check if user has admin permissions
   if (!message.member?.permissions.has('Administrator')) {
+    console.log('User does not have admin permissions');
     await message.reply('❌ Only administrators can use this command.');
     return;
   }
 
+  console.log('Admin check passed, args:', args);
+  
   if (args.length === 0) {
     await message.reply(
       'Usage: `!learnurl <url> [category]`\n' +
