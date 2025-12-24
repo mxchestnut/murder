@@ -16,10 +16,9 @@ export const fetchCsrfToken = async () => {
   try {
     const response = await axios.get('/api/csrf-token', { withCredentials: true });
     csrfToken = response.data.csrfToken;
-    console.log('[CSRF] Token fetched successfully:', csrfToken?.substring(0, 20) + '...');
     return csrfToken;
   } catch (error) {
-    console.error('[CSRF] Failed to fetch CSRF token:', error);
+    console.error('Failed to fetch CSRF token:', error);
     return null;
   }
 };
@@ -30,9 +29,6 @@ api.interceptors.request.use((config) => {
   if (config.method && ['post', 'put', 'delete', 'patch'].includes(config.method.toLowerCase())) {
     if (csrfToken) {
       config.headers['x-csrf-token'] = csrfToken;
-      console.log('[CSRF] Adding token to', config.method?.toUpperCase(), config.url);
-    } else {
-      console.warn('[CSRF] No token available for', config.method?.toUpperCase(), config.url);
     }
   }
   return config;

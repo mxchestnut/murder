@@ -37,7 +37,8 @@
 - ✅ Implement add/edit/delete entries (admin only)
 - ✅ Build category organization system
 - ✅ Add usage statistics display
-- **Time Invested:** ~30 minutes
+- ✅ Tiptap rich text editor with HTML→markdown conversion
+- **Time Invested:** ~3 hours (30 min feature + 2.5 hrs CSRF debugging)
 
 ### Sessions & Scenes Archive 📖
 - [ ] Build session list with search/filter
