@@ -513,13 +513,40 @@ characterMemories
 
 ---
 
+## ✅ Database Migrations (Dec 24, 2025)
+
+### Relationship Tracking
+- ✅ `relationships` table created in Neon database
+- ✅ Character relationship tracking fully functional
+- ✅ Discord command: `!Character1 is Character2's descriptor | notes`
+- ✅ Relationships display in `!profile` command
+- ✅ Migration script: `create_relationships_table.sql`
+
+### Missing Discord Bot Tables
+- ✅ `session_messages` table created
+- ✅ `scene_messages` table created
+- ✅ `gm_notes` table created
+- ✅ `game_time` table created
+- ✅ All 22 required database tables now exist
+- ✅ Full Discord bot feature support enabled
+- ✅ Migration script: `create_discord_bot_tables.sql`
+
+### Migration Tools Created
+- ✅ `migrate-relationships.ts` - Relationship table migration runner
+- ✅ `migrate-discord-tables.ts` - Discord bot tables migration runner
+- ✅ `check-discord-tables.ts` - Validation script for required tables
+- ✅ `check-tables.ts` - General table listing utility
+- ✅ All migrations run successfully on Neon PostgreSQL
+
+---
+
 ## 🎉 Next Phase Ready
 
 All Priority 1 features are complete. Ready to proceed with Priority 2 features:
 - Daily RP Prompts
 - Hall of Fame (Starboard)
 - Session Logging
-- Relationship Tracker (code complete, pending deployment)
+- ✅ Relationship Tracker (COMPLETE)
 - Scene Manager
 
 ---

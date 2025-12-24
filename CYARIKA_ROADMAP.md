@@ -9,9 +9,9 @@
 
 ## 📍 Current Status
 
-**Overall Completion:** ~85% of core platform  
+**Overall Completion:** ~87% of core platform  
 **Discord Commands:** 32+ implemented  
-**Database Tables:** 20+ tables  
+**Database Tables:** 22 tables (all Discord bot tables migrated)  
 
 ### ✅ Completed Phases
 - ✅ Phase 0: Infrastructure & Setup
@@ -31,7 +31,10 @@
 - [ ] Build batch upload/download functionality
 - **Estimate:** 1 day
 
-### Database Backups
+### Database Management
+- [x] All Discord bot database tables created and migrated
+- [x] Relationship tracking table created
+- [x] Session messages, scene messages, GM notes, game time tables created
 - [ ] **CHECK NEON CONSOLE:** Verify PITR enabled and retention period (see NEON_BACKUP_GUIDE.md)
 - [ ] Test point-in-time recovery
 - [ ] Set up optional weekly manual SQL exports (if desired)
