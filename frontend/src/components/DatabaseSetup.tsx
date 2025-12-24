@@ -19,12 +19,13 @@ export default function DatabaseSetup() {
     setResult(null);
     
     try {
-      const response = await api.post('/api/import-defaults/import');
+      const response = await api.post('/import-defaults/import');
       setResult(response.data);
     } catch (error: any) {
+      console.error('Import error:', error);
       setResult({
         success: false,
-        error: error.response?.data?.error || 'Failed to import defaults'
+        error: error.response?.data?.error || error.message || 'Failed to import defaults'
       });
     } finally {
       setLoading(false);
