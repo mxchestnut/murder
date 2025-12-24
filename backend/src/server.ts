@@ -118,7 +118,11 @@ setupPassport();
 // CSRF Protection
 const csrfProtection = doubleCsrf({
   getSecret: () => secrets.SESSION_SECRET,
-  getSessionIdentifier: (req) => req.session.id || '',
+  getSessionIdentifier: (req) => {
+    const sessionId = req.session?.id || '';
+    console.log('[CSRF] getSessionIdentifier called, session ID:', sessionId);
+    return sessionId;
+  },
   cookieName: 'cyarika.x-csrf-token',
   cookieOptions: {
     httpOnly: true,
@@ -135,7 +139,9 @@ const doubleCsrfProtection = csrfProtection.doubleCsrfProtection;
 
 // CSRF token endpoint (no protection needed for GET)
 app.get('/api/csrf-token', (req, res) => {
+  console.log('[CSRF] Generating token for session:', req.session?.id);
   const token = csrfProtection.generateCsrfToken(req, res);
+  console.log('[CSRF] Token generated:', token.substring(0, 20) + '...');
   res.json({ csrfToken: token });
 });
 
