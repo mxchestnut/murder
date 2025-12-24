@@ -113,10 +113,13 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
         }
       }
       
-      // Also try to extract tables (for spell/feat stats)
+      // Extract tables only if they contain useful stats (for spells, items, etc.)
+      // Skip navigation tables and generic page structure
       $('table').each((_: number, table: any) => {
         const tableText = $(table).text().replace(/\s+/g, ' ').trim();
-        if (tableText.length > 50 && tableText.length < 1500) {
+        // Only include tables with stat-like keywords and reasonable length
+        const hasStatKeywords = /\b(level|school|casting time|range|duration|saving throw|spell resistance|components|cost|weight|damage|AC|speed|HD)\b/i.test(tableText);
+        if (hasStatKeywords && tableText.length > 100 && tableText.length < 1500) {
           entries.push({
             question: `${pageTitle} (stats)`,
             answer: tableText
