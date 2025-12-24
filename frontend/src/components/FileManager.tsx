@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, FileText, Download, Trash2, Loader, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, FileText, Download, Trash2, Loader, AlertCircle, CheckCircle, BookOpen } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface FileRecord {
@@ -17,6 +17,7 @@ export default function FileManager() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [learning, setLearning] = useState<number | null>(null);
 
   useEffect(() => {
     loadFiles();
@@ -99,6 +100,35 @@ export default function FileManager() {
     }
   };
 
+  const handleLearnFromPDF = async (file: FileRecord) => {
+    if (!file.originalFileName.toLowerCase().endsWith('.pdf')) {
+      setMessage({ type: 'error', text: 'Only PDF files can be learned from' });
+      return;
+    }
+
+    if (!confirm(`Add content from "${file.originalFileName}" to the knowledge base?`)) return;
+
+    setLearning(file.id);
+    setMessage(null);
+
+    try {
+      const response = await api.post(`/files/${file.id}/learn`);
+      const { entriesAdded } = response.data;
+      
+      setMessage({ 
+        type: 'success', 
+        text: `✅ Added ${entriesAdded} entries from "${file.originalFileName}" to knowledge base!` 
+      });
+    } catch (error: any) {
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.error || 'Failed to learn from PDF' 
+      });
+    } finally {
+      setLearning(null);
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -178,6 +208,20 @@ export default function FileManager() {
                     </span>
                   </td>
                   <td className="actions">
+                    {file.originalFileName.toLowerCase().endsWith('.pdf') && (
+                      <button 
+                        onClick={() => handleLearnFromPDF(file)}
+                        className="action-button learn"
+                        title="Learn from PDF"
+                        disabled={learning === file.id}
+                      >
+                        {learning === file.id ? (
+                          <Loader size={18} className="spinner" />
+                        ) : (
+                          <BookOpen size={18} />
+                        )}
+                      </button>
+                    )}
                     <button 
                       onClick={() => handleDownload(file)}
                       className="action-button download"
@@ -378,6 +422,16 @@ export default function FileManager() {
         .action-button.download:hover {
           background: var(--accent-color);
           color: var(--accent-text);
+        }
+
+        .action-button.learn:hover:not(:disabled) {
+          background: #10b981;
+          color: white;
+        }
+
+        .action-button.learn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .action-button.delete:hover {
