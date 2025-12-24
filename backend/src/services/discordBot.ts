@@ -72,12 +72,10 @@ export function initializeDiscordBot(token: string) {
     if (nameRollMatch) {
       const potentialName = nameRollMatch[1].trim();
       const potentialStat = nameRollMatch[2].trim();
-      console.log(`nameRollMatch: potentialName='${potentialName}', potentialStat='${potentialStat}'`);
       
       // Check if this is a known command first
       const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'learnurl', 'kink', 'feat', 'spell', 'stats', 'leaderboard', 'prompt', 'trope', 'session', 'scene', 'time', 'note', 'npc', 'music', 'recap', 'hall', 'botset', 'hc'];
       const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
-      console.log(`Is '${potentialName}' a known command? ${isKnownCommand}`);
       if (!isKnownCommand) {
         // Try to handle as name-based roll
         const handled = await handleNameRoll(message, potentialName, potentialStat);
@@ -90,8 +88,6 @@ export function initializeDiscordBot(token: string) {
 
     const args = content.slice(1).trim().split(/ +/);
     const command = args.shift()?.toLowerCase();
-
-    console.log(`Discord command received: ${command}, args:`, args);
 
     try {
       switch (command) {
@@ -1033,7 +1029,7 @@ async function handleHelp(message: Message) {
       { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
       { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
       { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
-      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Learn from webpage (admin)', inline: false },
+      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
       { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
       { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
@@ -1552,16 +1548,11 @@ async function handleLearn(message: Message, args: string[]) {
 }
 
 async function handleLearnUrl(message: Message, args: string[]) {
-  console.log('!learnurl command received from', message.author.tag);
-  
   // Check if user has admin permissions
   if (!message.member?.permissions.has('Administrator')) {
-    console.log('User does not have admin permissions');
     await message.reply('❌ Only administrators can use this command.');
     return;
   }
-
-  console.log('Admin check passed, args:', args);
   
   if (args.length === 0) {
     await message.reply(

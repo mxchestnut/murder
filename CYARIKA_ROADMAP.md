@@ -38,7 +38,9 @@
 - ✅ Build category organization system
 - ✅ Add usage statistics display
 - ✅ Tiptap rich text editor with HTML→markdown conversion
-- **Time Invested:** ~3 hours (30 min feature + 2.5 hrs CSRF debugging)
+- ✅ Web scraping with `!learnurl` (d20pfsrd.com and general sites)
+- ✅ PDF learning from File Manager (BookOpen button)
+- **Time Invested:** ~5 hours (3 hrs browser + 2 hrs web scraping/PDF + Discord URL debugging)
 
 ### Sessions & Scenes Archive 📖
 - [ ] Build session list with search/filter

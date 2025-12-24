@@ -158,6 +158,39 @@ Look up D&D/Pathfinder feat information. Searches your knowledge base first, the
 ```
 
 ### !spell <name>
+Look up spell information. Searches knowledge base first, then asks AI.
+
+**Examples:**
+```
+!spell Fireball
+!spell Cure Light Wounds
+```
+
+### !learn <question> | <answer> [| category]
+**Admin only.** Manually add an entry to the knowledge base.
+
+**Examples:**
+```
+!learn What is flanking? | Flanking gives +2 to attack rolls | rule
+!learn rope bondage | A form of BDSM involving restraint with rope | kink
+```
+
+**Categories:** `kink`, `feat`, `spell`, `rule` (or leave blank for general)
+
+### !learnurl <url> [category]
+**Admin only.** Scrape a webpage and add its content to the knowledge base. **Wrap URLs in angle brackets** to prevent Discord auto-linking.
+
+**Examples:**
+```
+!learnurl <https://www.d20pfsrd.com/feats/general-feats/alertness/> feat
+!learnurl <https://www.d20pfsrd.com/magic/all-spells/f/fireball/> spell
+!learnurl <https://www.example.com/house-rules>
+```
+
+**Supported sites:** d20pfsrd.com and most standard web pages  
+**Categories:** `kink`, `feat`, `spell`, `rule` (or leave blank for general)
+
+### !spell <name>
 Look up spell information. Searches your knowledge base first, then asks AI.
 
 **Examples:**
@@ -358,7 +391,7 @@ This data powers `!stats`, `!leaderboard`, `!recap`, and relationship tracking.
 **Account & Setup:** `!connect`, `!syncall`, `!botset`  
 **Characters:** `!setchar`, `!char`, `!profile`, `CharName: message`  
 **Dice & Stats:** `!roll`, `!stats`, `!leaderboard`  
-**AI & Knowledge:** `!ask`, `!kink`, `!feat`, `!spell`, `!learn`  
+**AI & Knowledge:** `!ask`, `!kink`, `!feat`, `!spell`, `!learn`, `!learnurl`  
 **RP Tools:** `!prompt`, `!trope`  
 **Sessions:** `!session start/end/pause/resume/list`, `!recap`  
 **Scenes:** `!scene start/end/tag/location/list`  
