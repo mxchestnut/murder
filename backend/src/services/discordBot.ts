@@ -1566,14 +1566,19 @@ async function handleLearnUrl(message: Message, args: string[]) {
   if (args.length === 0) {
     await message.reply(
       'Usage: `!learnurl <url> [category]`\n' +
-      'Example: `!learnurl https://www.d20pfsrd.com/feats/combat-feats/power-attack-combat/ feat`\n' +
+      'Example: `!learnurl <https://www.d20pfsrd.com/feats/combat-feats/power-attack-combat/> feat`\n' +
       'Supported sites: d20pfsrd.com and most standard web pages\n' +
       'Categories: `kink`, `feat`, `spell`, or leave blank for general'
     );
     return;
   }
 
-  const url = args[0];
+  // Discord suppresses auto-linking with <URL>, so strip the angle brackets
+  let url = args[0];
+  if (url && url.startsWith('<') && url.endsWith('>')) {
+    url = url.slice(1, -1);
+  }
+  
   const category = args[1] || null;
 
   // Validate URL
