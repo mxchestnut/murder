@@ -2,22 +2,24 @@ import { Router } from 'express';
 import { db } from '../db/index.js';
 import { prompts, tropes, promptSchedule } from '../db/schema.js';
 import { eq, desc, sql } from 'drizzle-orm';
-import { ensureAuthenticated } from '../middleware/auth.js';
+import { isAuthenticated } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get all prompts with optional category filter
-router.get('/prompts', ensureAuthenticated, async (req, res) => {
+router.get('/prompts', isAuthenticated, async (req, res) => {
   try {
     const { category } = req.query;
     
-    let query = db.select().from(prompts);
+    let query;
     
     if (category && category !== 'all') {
-      query = query.where(eq(prompts.category, category as string));
+      query = db.select().from(prompts).where(eq(prompts.category, category as string)).orderBy(desc(prompts.createdAt));
+    } else {
+      query = db.select().from(prompts).orderBy(desc(prompts.createdAt));
     }
     
-    const allPrompts = await query.orderBy(desc(prompts.createdAt));
+    const allPrompts = await query;
     
     res.json(allPrompts);
   } catch (error) {
@@ -27,7 +29,7 @@ router.get('/prompts', ensureAuthenticated, async (req, res) => {
 });
 
 // Get prompt categories with counts
-router.get('/prompts/categories', ensureAuthenticated, async (req, res) => {
+router.get('/prompts/categories', isAuthenticated, async (req, res) => {
   try {
     const categories = await db
       .select({
@@ -46,7 +48,7 @@ router.get('/prompts/categories', ensureAuthenticated, async (req, res) => {
 });
 
 // Get most popular prompts
-router.get('/prompts/popular', ensureAuthenticated, async (req, res) => {
+router.get('/prompts/popular', isAuthenticated, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     
@@ -64,7 +66,7 @@ router.get('/prompts/popular', ensureAuthenticated, async (req, res) => {
 });
 
 // Create new prompt (admin only)
-router.post('/prompts', ensureAuthenticated, async (req, res) => {
+router.post('/prompts', isAuthenticated, async (req, res) => {
   try {
     const { category, promptText } = req.body;
     
@@ -80,7 +82,7 @@ router.post('/prompts', ensureAuthenticated, async (req, res) => {
     const [newPrompt] = await db.insert(prompts).values({
       category,
       promptText,
-      createdBy: req.user!.id
+      createdBy: (req.user as any)?.id || null
     }).returning();
     
     res.json(newPrompt);
@@ -91,7 +93,7 @@ router.post('/prompts', ensureAuthenticated, async (req, res) => {
 });
 
 // Update prompt (admin only)
-router.put('/prompts/:id', ensureAuthenticated, async (req, res) => {
+router.put('/prompts/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const { category, promptText } = req.body;
@@ -122,7 +124,7 @@ router.put('/prompts/:id', ensureAuthenticated, async (req, res) => {
 });
 
 // Delete prompt (admin only)
-router.delete('/prompts/:id', ensureAuthenticated, async (req, res) => {
+router.delete('/prompts/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -139,17 +141,19 @@ router.delete('/prompts/:id', ensureAuthenticated, async (req, res) => {
 // ===== TROPES ROUTES =====
 
 // Get all tropes with optional category filter
-router.get('/tropes', ensureAuthenticated, async (req, res) => {
+router.get('/tropes', isAuthenticated, async (req, res) => {
   try {
     const { category } = req.query;
     
-    let query = db.select().from(tropes);
+    let query;
     
     if (category && category !== 'all') {
-      query = query.where(eq(tropes.category, category as string));
+      query = db.select().from(tropes).where(eq(tropes.category, category as string)).orderBy(desc(tropes.createdAt));
+    } else {
+      query = db.select().from(tropes).orderBy(desc(tropes.createdAt));
     }
     
-    const allTropes = await query.orderBy(desc(tropes.createdAt));
+    const allTropes = await query;
     
     res.json(allTropes);
   } catch (error) {
@@ -159,7 +163,7 @@ router.get('/tropes', ensureAuthenticated, async (req, res) => {
 });
 
 // Get trope categories with counts
-router.get('/tropes/categories', ensureAuthenticated, async (req, res) => {
+router.get('/tropes/categories', isAuthenticated, async (req, res) => {
   try {
     const categories = await db
       .select({
@@ -178,7 +182,7 @@ router.get('/tropes/categories', ensureAuthenticated, async (req, res) => {
 });
 
 // Get most popular tropes
-router.get('/tropes/popular', ensureAuthenticated, async (req, res) => {
+router.get('/tropes/popular', isAuthenticated, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     
@@ -196,7 +200,7 @@ router.get('/tropes/popular', ensureAuthenticated, async (req, res) => {
 });
 
 // Create new trope (admin only)
-router.post('/tropes', ensureAuthenticated, async (req, res) => {
+router.post('/tropes', isAuthenticated, async (req, res) => {
   try {
     const { category, name, description } = req.body;
     
@@ -223,7 +227,7 @@ router.post('/tropes', ensureAuthenticated, async (req, res) => {
 });
 
 // Update trope (admin only)
-router.put('/tropes/:id', ensureAuthenticated, async (req, res) => {
+router.put('/tropes/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const { category, name, description } = req.body;
@@ -254,7 +258,7 @@ router.put('/tropes/:id', ensureAuthenticated, async (req, res) => {
 });
 
 // Delete trope (admin only)
-router.delete('/tropes/:id', ensureAuthenticated, async (req, res) => {
+router.delete('/tropes/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -271,7 +275,7 @@ router.delete('/tropes/:id', ensureAuthenticated, async (req, res) => {
 // ===== SCHEDULE ROUTES =====
 
 // Get prompt schedule
-router.get('/prompts/schedule', ensureAuthenticated, async (req, res) => {
+router.get('/prompts/schedule', isAuthenticated, async (req, res) => {
   try {
     const schedules = await db.select().from(promptSchedule);
     res.json(schedules);
@@ -282,7 +286,7 @@ router.get('/prompts/schedule', ensureAuthenticated, async (req, res) => {
 });
 
 // Create/update prompt schedule (admin only)
-router.post('/prompts/schedule', ensureAuthenticated, async (req, res) => {
+router.post('/prompts/schedule', isAuthenticated, async (req, res) => {
   try {
     const { channelId, guildId, scheduleTime, category, enabled } = req.body;
     
@@ -314,7 +318,7 @@ router.post('/prompts/schedule', ensureAuthenticated, async (req, res) => {
 });
 
 // Delete prompt schedule (admin only)
-router.delete('/prompts/schedule/:channelId', ensureAuthenticated, async (req, res) => {
+router.delete('/prompts/schedule/:channelId', isAuthenticated, async (req, res) => {
   try {
     const { channelId } = req.params;
     
