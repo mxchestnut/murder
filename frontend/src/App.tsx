@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import DatabaseSetup from './components/DatabaseSetup';
 import { api, fetchCsrfToken } from './utils/api';
 import { useTheme } from './utils/useTheme';
 
@@ -45,6 +46,10 @@ function App() {
         <Route 
           path="/login" 
           element={user ? <Navigate to="/" /> : <Login onLogin={checkAuth} />} 
+        />
+        <Route 
+          path="/setup" 
+          element={user ? <DatabaseSetup /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/*" 
