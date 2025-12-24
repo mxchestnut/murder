@@ -92,10 +92,18 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
         // Remove scripts, ads, and unwanted elements
         mainContent.find('script, style, .adsbygoogle, [id*="nitropay"], [class*="ad-"], iframe').remove();
         
+        // Convert common HTML elements to text with line breaks
+        mainContent.find('h1, h2, h3, h4, h5, h6').after('\n\n');
+        mainContent.find('p, div, br').after('\n');
+        mainContent.find('li').before('• ').after('\n');
+        
         // Get the full text content, cleaning it up
         let fullText = mainContent.text()
-          .replace(/\s+/g, ' ')  // Collapse whitespace
-          .replace(/\n{3,}/g, '\n\n')  // Limit consecutive newlines
+          .split('\n')  // Split into lines
+          .map(line => line.trim())  // Trim each line
+          .filter(line => line.length > 0)  // Remove empty lines
+          .join('\n')  // Rejoin with single newlines
+          .replace(/\n{3,}/g, '\n\n')  // Limit to max 2 consecutive newlines
           .replace(/ognCreateVideoAdSpotOutstream\([^)]*\);?/g, '')  // Remove ad scripts
           .replace(/Section 15: Copyright Notice.*$/i, '')  // Remove copyright footer
           .trim();
