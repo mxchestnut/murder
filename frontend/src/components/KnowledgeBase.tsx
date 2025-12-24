@@ -571,8 +571,8 @@ export default function KnowledgeBase() {
                   type="submit"
                   style={{
                     padding: '0.5rem 1rem',
-                    background: 'var(--accent-primary)',
-                    color: 'white',
+                    background: 'var(--accent-color)',
+                    color: 'var(--accent-text)',
                     border: 'none',
                     borderRadius: '6px',
                     cursor: 'pointer',
