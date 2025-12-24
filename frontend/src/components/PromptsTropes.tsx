@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import ScheduleManager from './ScheduleManager';
 import '../index.css';
 
 interface Prompt {
@@ -27,7 +28,7 @@ interface CategoryStats {
   totalUses: number;
 }
 
-type ViewMode = 'prompts' | 'tropes';
+type ViewMode = 'prompts' | 'tropes' | 'schedules';
 
 const promptCategories = ['character', 'world', 'combat', 'social', 'plot'];
 const tropeCategories = ['archetype', 'dynamic', 'situation', 'plot'];
@@ -231,8 +232,32 @@ export default function PromptsTropes() {
         >
           🎭 Tropes
         </button>
+        <button
+          onClick={() => setViewMode('schedules')}
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            viewMode === 'schedules'
+              ? 'bg-purple-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          ⏰ Schedules
+        </button>
       </div>
 
+      {/* Schedules View */}
+      {viewMode === 'schedules' ? (
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold text-purple-600 mb-4">Prompt Schedules</h2>
+            <ScheduleManager type="prompts" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-purple-600 mb-4">Trope Schedules</h2>
+            <ScheduleManager type="tropes" />
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Category Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <button
@@ -412,6 +437,8 @@ export default function PromptsTropes() {
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (

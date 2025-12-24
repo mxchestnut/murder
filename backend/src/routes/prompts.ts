@@ -332,4 +332,64 @@ router.delete('/prompts/schedule/:channelId', isAuthenticated, async (req, res) 
   }
 });
 
+// ===== TROPE SCHEDULE ROUTES =====
+
+// Get trope schedule
+router.get('/tropes/schedule', isAuthenticated, async (req, res) => {
+  try {
+    const schedules = await db.select().from(promptSchedule);
+    res.json(schedules);
+  } catch (error) {
+    console.error('Error fetching trope schedules:', error);
+    res.status(500).json({ error: 'Failed to fetch schedules' });
+  }
+});
+
+// Create/update trope schedule (admin only)
+router.post('/tropes/schedule', isAuthenticated, async (req, res) => {
+  try {
+    const { channelId, guildId, scheduleTime, category, enabled } = req.body;
+    
+    if (!channelId || !guildId || !scheduleTime) {
+      return res.status(400).json({ error: 'Channel ID, guild ID, and schedule time required' });
+    }
+    
+    // Upsert schedule
+    const [schedule] = await db.insert(promptSchedule).values({
+      channelId,
+      guildId,
+      scheduleTime,
+      category: category || null,
+      enabled: enabled !== undefined ? enabled : true
+    }).onConflictDoUpdate({
+      target: promptSchedule.channelId,
+      set: {
+        scheduleTime,
+        category: category || null,
+        enabled: enabled !== undefined ? enabled : true
+      }
+    }).returning();
+    
+    res.json(schedule);
+  } catch (error) {
+    console.error('Error creating/updating trope schedule:', error);
+    res.status(500).json({ error: 'Failed to save schedule' });
+  }
+});
+
+// Delete trope schedule (admin only)
+router.delete('/tropes/schedule/:channelId', isAuthenticated, async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    
+    await db.delete(promptSchedule)
+      .where(eq(promptSchedule.channelId, channelId));
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting trope schedule:', error);
+    res.status(500).json({ error: 'Failed to delete schedule' });
+  }
+});
+
 export default router;
