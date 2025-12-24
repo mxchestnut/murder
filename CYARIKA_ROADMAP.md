@@ -48,12 +48,13 @@
 - **Estimate:** 1-2 days
 
 ### Prompt & Trope Library 💭
-- [ ] Build browse interface for all prompts by category
-- [ ] Implement add/edit/delete prompts (admin)
-- [ ] Create trope browser with descriptions
-- [ ] Add usage analytics (most popular prompts)
+- [x] Build browse interface for all prompts by category
+- [x] Implement add/edit/delete prompts (admin)
+- [x] Create trope browser with descriptions
+- [x] Add usage analytics (most popular prompts)
+- [x] Populated with 25 prompts + 33 tropes (starter content)
 - [ ] Build schedule management for auto-posting
-- **Estimate:** 1-2 days
+- **Estimate:** ~~1-2 days~~ **MOSTLY COMPLETE** (only auto-posting UI remaining)
 
 ---
 
