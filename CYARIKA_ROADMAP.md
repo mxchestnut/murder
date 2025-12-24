@@ -32,11 +32,13 @@
 - **Estimate:** 1 day
 
 ### Database Backups
-- [ ] Set up automated Neon backups (daily)
+- [ ] **CHECK NEON CONSOLE:** Verify PITR enabled and retention period (see NEON_BACKUP_GUIDE.md)
 - [ ] Test point-in-time recovery
+- [ ] Set up optional weekly manual SQL exports (if desired)
 - [ ] Configure backup monitoring/alerts
 - [ ] Create data export utilities
 - **Estimate:** 1 day
+- **Note:** Neon likely has automatic backups already - just need to verify settings
 
 ---
 
