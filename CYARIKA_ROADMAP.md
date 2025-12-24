@@ -24,12 +24,12 @@
 ## 🎯 Priority 3: Portal UI Enhancements
 
 ### Stats Dashboard 📊
-- [ ] Build charts/graphs for character statistics
-- [ ] Create activity timeline visualization
-- [ ] Add leaderboards with filtering (daily, weekly, all-time)
-- [ ] Implement character comparison tools
-- [ ] Build damage/rolls distribution charts
-- **Estimate:** 2-3 days
+- [x] Build charts/graphs for character statistics
+- [x] Create activity timeline visualization
+- [x] Add leaderboards with filtering (daily, weekly, all-time)
+- [x] Implement character comparison tools
+- [x] Build damage/rolls distribution charts
+- **Estimate:** ~~2-3 days~~ **COMPLETE**
 
 ### Sessions & Scenes Archive 📖
 - [ ] Build session list with search/filter
