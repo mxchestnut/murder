@@ -1,6 +1,6 @@
 # Cyar'ika - Completed Features
 
-**Last Updated:** December 23, 2025
+**Last Updated:** December 24, 2025
 
 This document tracks all completed features that have been implemented and deployed to production.
 
@@ -308,20 +308,184 @@ files
 - Documentation: Commit 42c511c
 
 ---
+## ✅ Priority 3.2: Stats Dashboard (Dec 24, 2025)
 
+### Web Portal Features
+- ✅ Interactive charts/graphs for character statistics
+- ✅ Activity timeline visualization with Recharts
+- ✅ Leaderboards with filtering (daily, weekly, all-time)
+- ✅ Character comparison tools (side-by-side view)
+- ✅ Damage/rolls distribution charts
+- ✅ Real-time data updates from character_stats table
+- ✅ Responsive design with Obsidian-like UI
+
+### Charts Implemented
+- ✅ Message activity area chart (30-day timeline)
+- ✅ Dice rolls bar chart with nat20/nat1 highlights
+- ✅ Top characters horizontal bar chart
+- ✅ Character comparison radar chart
+- ✅ Interactive tooltips and legends
+
+### Technical Implementation
+- ✅ Recharts library integration
+- ✅ API routes for stats data (/api/stats/overview, /character/:id)
+- ✅ Date range filtering
+- ✅ CSRF protection on all routes
+- ✅ TypeScript interfaces for stats data
+
+**Status:** Fully deployed and functional
+
+---
+
+## ✅ Priority 3.3: Prompt & Trope Library (Dec 24, 2025)
+
+### Web Portal Features
+- ✅ Browse interface for all prompts by category
+- ✅ Category tabs (Character, World, Combat, Social, Plot)
+- ✅ Add/edit/delete prompts (admin controls)
+- ✅ Trope browser with descriptions
+- ✅ Category filtering for tropes (Character, Plot, Relationship, World)
+- ✅ Usage analytics (most popular prompts)
+- ✅ Schedule management for auto-posting
+- ✅ Tiptap 3.0 rich text editor for prompt/trope editing
+
+### Content Library
+- ✅ 25 default prompts across 5 categories
+- ✅ 33 default tropes across 4 categories
+- ✅ Starter content populated in database
+
+### Scheduling Features
+- ✅ Daily prompt auto-posting
+- ✅ Custom schedule configuration (time, channel, category)
+- ✅ Enable/disable scheduled posts
+- ✅ Last posted timestamp tracking
+
+### Technical Implementation
+- ✅ API routes: /api/prompts, /api/tropes, /api/prompt-schedule
+- ✅ CRUD operations with CSRF protection
+- ✅ Database tables: prompts, tropes, prompt_schedule
+- ✅ Discord integration for scheduled posts
+
+**Status:** Fully deployed and functional
+
+---
+
+## ✅ Priority 3.4: Hall of Fame Gallery (Dec 24, 2025)
+
+### Web Portal Features
+- ✅ Gallery view of Hall of Fame messages (card grid layout)
+- ✅ Filter by character (dropdown with all characters)
+- ✅ Filter by date range (start/end date pickers)
+- ✅ Filter by star count (minimum stars input)
+- ✅ Export as text/markdown (download functionality)
+- ✅ Social sharing features (copy to clipboard)
+- ✅ Random "gem from the vault" feature (modal with gold border)
+- ✅ Context messages display (before/after starred message)
+- ✅ Stats view with overview cards and character leaderboard
+- ✅ Pagination (20 messages per page)
+
+### API Endpoints
+- ✅ GET /api/hall-of-fame/list - Filtered list with pagination
+- ✅ GET /api/hall-of-fame/random - Random message (optional minStars)
+- ✅ GET /api/hall-of-fame/stats - Aggregate statistics
+- ✅ GET /api/hall-of-fame/characters - Unique character list
+
+### Features Implemented
+- ✅ Gallery/Stats view toggle
+- ✅ Total messages and stars display
+- ✅ Top message highlight with trophy icon
+- ✅ Character leaderboard with medal badges (🥇🥈🥉)
+- ✅ Recent additions timeline (last 5)
+- ✅ Copy button for individual messages
+- ✅ Export entire filtered list (text or markdown format)
+- ✅ Responsive card layout with hover effects
+
+### Technical Implementation
+- ✅ React component: HallOfFameGallery.tsx (788 lines)
+- ✅ Backend routes: hall-of-fame.ts (195 lines)
+- ✅ Integration with existing hallOfFame table
+- ✅ CSRF protection on all routes
+- ✅ TypeScript interfaces for message data
+
+**Git Commits:**
+- Hall of Fame: Commits ef036cf, 9844d3e
+
+**Status:** Fully deployed and functional
+
+---
+
+## ✅ Priority 3.5: Character Memories (Dec 24, 2025)
+
+### Database Schema
+```sql
+characterMemories
+- id, characterId (FK to characterSheets)
+- guildId, memory, addedBy
+- createdAt
+```
+
+### Discord Commands
+- ✅ `!Memory <Character> | <memory>` - Add memory to character
+- ✅ `!<Character> Memories` - View all memories in Discord embed
+- ✅ Numbered memory list with timestamps
+- ✅ Pattern matching to intercept before dice rolls
+
+### Web Portal Features
+- ✅ Character panel tab system (Bio | Memories)
+- ✅ Add new memory (textarea with submit)
+- ✅ Edit existing memories (inline editing)
+- ✅ Delete memories (with confirmation)
+- ✅ Memory timeline with timestamps
+- ✅ Source indicator (Discord vs Portal badge)
+- ✅ Numbered memory list (#1, #2, etc.)
+- ✅ Empty state with instructions
+
+### API Endpoints
+- ✅ GET /api/memories/:characterId/memories - Fetch all
+- ✅ POST /api/memories/:characterId/memories - Add new
+- ✅ PUT /api/memories/:memoryId - Update memory text
+- ✅ DELETE /api/memories/:memoryId - Delete memory
+
+### Technical Implementation
+- ✅ React component: CharacterMemories.tsx (351 lines)
+- ✅ Backend routes: memories.ts (92 lines)
+- ✅ Database indexes on characterId and guildId
+- ✅ CSRF protection on all routes
+- ✅ Cross-platform sync (Discord ↔ Portal)
+- ✅ Character lookup by name only (global characters)
+
+### Features Implemented
+- ✅ Character development tracking
+- ✅ Cross-platform memory management
+- ✅ Chronological memory timeline
+- ✅ Edit/delete functionality in portal
+- ✅ Discord embed display with numbered list
+- ✅ Help command updated with memory commands
+
+**Git Commits:**
+- Character Memories: Commits 11c9e78, 0a14f5a
+
+**Status:** Fully deployed and functional (Replaced Sessions & Scenes Archive)
+
+---
 ## �📊 Overall Completion Summary
 
 ### Completed Phases
 - ✅ Phase 0: Infrastructure & Setup (100%)
 - ✅ Priority 1: AI Features (100% - 2/2 features)
 - ✅ Priority 2: RP Tools & Social Features (100% - 7/7 features)
-- ✅ Priority 3: Portal UI Enhancements (1/5 features - Knowledge Base Browser)
+- ✅ Priority 3: Portal UI Enhancements (100% - 5/5 features)
+  - Knowledge Base Browser
+  - Stats Dashboard
+  - Prompt & Trope Library
+  - Hall of Fame Gallery
+  - Character Memories
 
 ### Platform Statistics
 - **Discord Commands:** 32+ commands operational
 - **Database Tables:** 20+ tables
-- **Major Systems:** 10 deployed features
-- **Overall Platform Completion:** ~80%
+- **Major Systems:** 14 deployed features
+- **Overall Platform Completion:** ~85%
 
 ---
 
