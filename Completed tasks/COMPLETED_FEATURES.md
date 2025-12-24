@@ -263,12 +263,59 @@ files
 
 ---
 
-## 📊 Overall Completion Summary
+## � Priority 3.1: Knowledge Base Browser (Dec 24, 2025)
+
+### Web Portal Features
+- ✅ Browse interface for all knowledge base entries
+- ✅ Search functionality with real-time filtering
+- ✅ Category-based organization (kink, feat, spell, rule, general)
+- ✅ Add/edit/delete entries (admin only)
+- ✅ Usage statistics display (upvotes, query count)
+- ✅ Tiptap 3.0 rich text editor integration
+- ✅ HTML→markdown conversion for Discord compatibility
+- ✅ CSRF protection and security
+
+### Discord Integration
+- ✅ `!learnurl <url> [category]` - Web scraping command
+  - d20pfsrd.com support with clean parsing
+  - Automatic script/ad filtering
+  - Line break preservation
+  - Stat table extraction for spells
+  - Angle bracket syntax for Discord URL handling
+- ✅ PDF learning from File Manager (BookOpen button)
+  - Text extraction with pdf-parse
+  - Automatic chunking for large documents
+  - Knowledge base integration
+
+### Technical Implementation
+- ✅ Cheerio for HTML parsing
+- ✅ Content sanitization (remove ads, scripts, copyright)
+- ✅ Smart table filtering (only extract stat tables)
+- ✅ PDF text extraction with pdf-parse library
+- ✅ Category-based knowledge organization
+
+### Supported Sites & Features
+- ✅ d20pfsrd.com (feats, spells, rules)
+- ✅ General web pages
+- ✅ PDF documents (via file upload)
+
+**Time Invested:** ~5 hours
+- 3 hours: Portal browser interface + CSRF debugging
+- 2 hours: Web scraping, PDF learning, Discord URL debugging
+
+**Git Commits:**
+- Web scraping: Commits 89b837d, 22378a8, 18dcf21, bb9402b, 2f237f4
+- Documentation: Commit 42c511c
+
+---
+
+## �📊 Overall Completion Summary
 
 ### Completed Phases
 - ✅ Phase 0: Infrastructure & Setup (100%)
 - ✅ Priority 1: AI Features (100% - 2/2 features)
 - ✅ Priority 2: RP Tools & Social Features (100% - 7/7 features)
+- ✅ Priority 3: Portal UI Enhancements (1/5 features - Knowledge Base Browser)
 
 ### Platform Statistics
 - **Discord Commands:** 32+ commands operational

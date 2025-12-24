@@ -31,17 +31,6 @@
 - [ ] Build damage/rolls distribution charts
 - **Estimate:** 2-3 days
 
-### Knowledge Base Browser 📚 ✅ **COMPLETED**
-- ✅ Create web interface to browse all FAQ entries
-- ✅ Add search and filter functionality
-- ✅ Implement add/edit/delete entries (admin only)
-- ✅ Build category organization system
-- ✅ Add usage statistics display
-- ✅ Tiptap rich text editor with HTML→markdown conversion
-- ✅ Web scraping with `!learnurl` (d20pfsrd.com and general sites)
-- ✅ PDF learning from File Manager (BookOpen button)
-- **Time Invested:** ~5 hours (3 hrs browser + 2 hrs web scraping/PDF + Discord URL debugging)
-
 ### Sessions & Scenes Archive 📖
 - [ ] Build session list with search/filter
 - [ ] Create session detail view with messages
