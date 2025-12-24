@@ -5,49 +5,49 @@
 }
 
 :root {
-  /* Light theme - Lavender & Dark */
-  --bg-primary: #AE9ABB;
-  --bg-secondary: #c4b0ce;
-  --bg-tertiary: #9a86a7;
-  --text-primary: #060409;
-  --text-secondary: #1a0f1f;
-  --text-tertiary: #2e2333;
-  --border-color: #51375B;
-  --hover-bg: #baa6c7;
+  /* Light theme - Clean black on white */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --border-color: #dee2e6;
+  --hover-bg: #f1f3f5;
   
-  /* Accent colors */
-  --accent-color: #768340;
-  --accent-hover: #606830;
-  --accent-light: rgba(118, 131, 64, 0.15);
-  --accent-text: #060409;
+  /* User-customizable accent color (default: blue) */
+  --accent-color: #0066cc;
+  --accent-hover: #0052a3;
+  --accent-light: rgba(0, 102, 204, 0.1);
+  --accent-text: #ffffff;
   
-  /* Secondary accent */
-  --accent-secondary: #51375B;
-  --accent-secondary-hover: #3f2b48;
-  --accent-secondary-light: rgba(81, 55, 91, 0.15);
+  /* Subtle shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 :root[data-theme="dark"] {
-  /* Dark theme - Dark & Lavender */
-  --bg-primary: #060409;
-  --bg-secondary: #12101a;
-  --bg-tertiary: #1e1b28;
-  --text-primary: #AE9ABB;
-  --text-secondary: #9a86a7;
-  --text-tertiary: #86728f;
-  --border-color: #51375B;
-  --hover-bg: #1a1623;
+  /* Dark theme - Clean white on black */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --text-primary: #f8f9fa;
+  --text-secondary: #e9ecef;
+  --text-tertiary: #adb5bd;
+  --border-color: #495057;
+  --hover-bg: #404040;
   
-  /* Accent colors */
-  --accent-color: #768340;
-  --accent-hover: #8a9b4a;
-  --accent-light: rgba(118, 131, 64, 0.2);
-  --accent-text: #AE9ABB;
+  /* User-customizable accent color (default: blue) */
+  --accent-color: #3399ff;
+  --accent-hover: #5cadff;
+  --accent-light: rgba(51, 153, 255, 0.15);
+  --accent-text: #ffffff;
   
-  /* Secondary accent */
-  --accent-secondary: #51375B;
-  --accent-secondary-hover: #634575;
-  --accent-secondary-light: rgba(81, 55, 91, 0.2);
+  /* Subtle shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8);
 }
 
 body {

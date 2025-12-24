@@ -6,7 +6,7 @@ import { api, fetchCsrfToken } from './utils/api';
 import { useTheme } from './utils/useTheme';
 
 function App() {
-  console.log('Write Pretend v2.0.0 - Rebranded & Enhanced');
+  console.log('Cyar\'ika v2.0.0 - Roleplay Smarter');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   useTheme(); // Initialize theme on app load

@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { BookOpen, Search, Plus, Edit, Trash2, X, Tag, TrendingUp, Sparkles, User } from 'lucide-react';
+import TiptapField from './TiptapField';
+import TurndownService from 'turndown';
+
+const turndownService = new TurndownService({
+  headingStyle: 'atx',
+  codeBlockStyle: 'fenced'
+});
 
 interface KnowledgeEntry {
   id: number;
   question: string;
   answer: string;
+  answerHtml: string | null;
   sourceUrl: string | null;
   category: string | null;
   aiGenerated: boolean;
@@ -34,7 +42,7 @@ export default function KnowledgeBase() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     question: '',
-    answer: '',
+    answerHtml: '',
     sourceUrl: '',
     category: ''
   });
@@ -76,15 +84,26 @@ export default function KnowledgeBase() {
     e.preventDefault();
     
     try {
+      // Convert HTML to markdown for Discord
+      const markdown = turndownService.turndown(formData.answerHtml);
+      
+      const payload = {
+        question: formData.question,
+        answer: markdown,
+        answerHtml: formData.answerHtml,
+        sourceUrl: formData.sourceUrl,
+        category: formData.category
+      };
+      
       if (editingEntry) {
-        await api.put(`/knowledge-base/${editingEntry.id}`, formData);
+        await api.put(`/knowledge-base/${editingEntry.id}`, payload);
       } else {
-        await api.post('/knowledge-base', formData);
+        await api.post('/knowledge-base', payload);
       }
       
       setShowModal(false);
       setEditingEntry(null);
-      setFormData({ question: '', answer: '', sourceUrl: '', category: '' });
+      setFormData({ question: '', answerHtml: '', sourceUrl: '', category: '' });
       loadEntries();
       loadStats();
     } catch (error) {
@@ -97,7 +116,7 @@ export default function KnowledgeBase() {
     setEditingEntry(entry);
     setFormData({
       question: entry.question,
-      answer: entry.answer,
+      answerHtml: entry.answerHtml || entry.answer, // Use HTML if available, fallback to markdown
       sourceUrl: entry.sourceUrl || '',
       category: entry.category || ''
     });
@@ -120,7 +139,7 @@ export default function KnowledgeBase() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingEntry(null);
-    setFormData({ question: '', answer: '', sourceUrl: '', category: '' });
+    setFormData({ question: '', answerHtml: '', sourceUrl: '', category: '' });
   };
 
   return (
@@ -381,14 +400,14 @@ export default function KnowledgeBase() {
                   </div>
                 </div>
                 
-                <p style={{ 
-                  margin: '0 0 0.75rem 0', 
-                  color: 'var(--text-primary)',
-                  lineHeight: '1.6',
-                  whiteSpace: 'pre-wrap'
-                }}>
-                  {entry.answer}
-                </p>
+                <div 
+                  style={{ 
+                    margin: '0 0 0.75rem 0', 
+                    color: 'var(--text-primary)',
+                    lineHeight: '1.6'
+                  }}
+                  dangerouslySetInnerHTML={{ __html: entry.answerHtml || entry.answer }}
+                />
 
                 {entry.sourceUrl && (
                   <a 
@@ -483,24 +502,13 @@ export default function KnowledgeBase() {
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: '500' }}>
-                  Answer *
-                </label>
-                <textarea
-                  required
-                  value={formData.answer}
-                  onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                  rows={6}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'inherit',
-                    resize: 'vertical'
-                  }}
+                <TiptapField
+                  label="Answer *"
+                  value={formData.answerHtml}
+                  onChange={(html) => setFormData({ ...formData, answerHtml: html })}
+                  placeholder="Enter the answer with rich formatting..."
+                  maxLength={10000}
+                  rows={10}
                 />
               </div>
 

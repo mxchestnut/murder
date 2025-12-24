@@ -64,5 +64,16 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
     };
   }
 
-  return loadSecrets();
+  // In production, try AWS Secrets Manager first, fall back to .env
+  try {
+    return await loadSecrets();
+  } catch (error) {
+    console.warn('Failed to load from AWS Secrets Manager, falling back to .env:', error);
+    return {
+      DATABASE_URL: process.env.DATABASE_URL || '',
+      SESSION_SECRET: process.env.SESSION_SECRET || '',
+      DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
+    };
+  }
 }

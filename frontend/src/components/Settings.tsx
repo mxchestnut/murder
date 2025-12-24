@@ -116,7 +116,7 @@ export default function Settings() {
             Appearance
           </h2>
           <p className="section-description">
-            Customize the look and feel of Write Pretend with your preferred theme and accent color.
+            Customize the look and feel of Cyar'ika with your preferred theme and accent color.
           </p>
 
           <div className="appearance-controls">

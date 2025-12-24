@@ -6,6 +6,7 @@ export const users = pgTable('users', {
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
   email: text('email'),
+  isAdmin: boolean('is_admin').default(false).notNull(),
   // PathCompanion account binding (optional)
   pathCompanionUsername: text('path_companion_username'),
   pathCompanionPassword: text('path_companion_password'), // Encrypted
@@ -219,7 +220,8 @@ export const channelCharacterMappingsRelations = relations(channelCharacterMappi
 export const knowledgeBase = pgTable('knowledge_base', {
   id: serial('id').primaryKey(),
   question: text('question').notNull(),
-  answer: text('answer').notNull(),
+  answer: text('answer').notNull(), // Markdown for Discord
+  answerHtml: text('answer_html'), // HTML from Tiptap for web display
   sourceUrl: text('source_url'),
   category: text('category'),
   aiGenerated: boolean('ai_generated').default(false),

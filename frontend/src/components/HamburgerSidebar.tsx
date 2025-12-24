@@ -9,9 +9,11 @@ interface HamburgerSidebarProps {
   onRefresh: () => void;
   currentDocument: any;
   currentCharacter: any;
+  user: any;
+  onShowAdminPanel: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel }: HamburgerSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
@@ -201,7 +203,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
         overflowY: 'auto'
       }}>
         <div style={{ padding: '1rem', paddingTop: '4rem', borderBottom: `1px solid var(--border-color)` }}>
-          <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Write Pretend</h2>
+          <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Cyar'ika</h2>
         </div>
 
         {/* Campaigns Section */}
@@ -564,6 +566,35 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             </>
           )}
         </div>
+
+        {/* Admin Panel (only for admins) */}
+        {user?.isAdmin && (
+          <div style={{ padding: '1rem', borderTop: `1px solid var(--border-color)` }}>
+            <button
+              onClick={() => {
+                onShowAdminPanel();
+                setIsOpen(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: 'var(--accent-color)',
+                color: 'var(--accent-text)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                fontSize: '1rem',
+                fontWeight: 500
+              }}
+            >
+              🛡️ Admin Panel
+            </button>
+          </div>
+        )}
       </div>
 
       {/* PathCompanion Import Modal */}

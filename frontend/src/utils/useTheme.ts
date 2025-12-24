@@ -6,8 +6,8 @@ export interface ThemeSettings {
 }
 
 const PRESET_COLORS = [
+  { name: 'Blue', value: '#0066cc', hover: '#0052a3' },
   { name: 'Indigo', value: '#6366f1', hover: '#4f46e5' },
-  { name: 'Blue', value: '#3b82f6', hover: '#2563eb' },
   { name: 'Purple', value: '#a855f7', hover: '#9333ea' },
   { name: 'Pink', value: '#ec4899', hover: '#db2777' },
   { name: 'Red', value: '#ef4444', hover: '#dc2626' },
@@ -21,9 +21,9 @@ const PRESET_COLORS = [
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeSettings>(() => {
     const savedMode = localStorage.getItem('theme-mode') as 'light' | 'dark' | null;
-    const savedAccent = localStorage.getItem('theme-accent') || '#6366f1';
+    const savedAccent = localStorage.getItem('theme-accent') || '#0066cc';
     return {
-      mode: savedMode || 'dark', // Default to dark theme for Cyar'ika colors
+      mode: savedMode || 'dark', // Default to dark theme
       accentColor: savedAccent,
     };
   });

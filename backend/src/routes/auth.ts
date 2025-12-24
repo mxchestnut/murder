@@ -196,6 +196,7 @@ router.get('/me', (req, res) => {
       user: { 
         id: user.id, 
         username: user.username,
+        isAdmin: user.isAdmin || false,
         pathCompanionConnected: !!user.pathCompanionSessionTicket,
         pathCompanionUsername: user.pathCompanionUsername
       } 

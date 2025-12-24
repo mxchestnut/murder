@@ -5,9 +5,11 @@ import Settings from './Settings';
 import DiscordCommands from './DiscordCommands';
 import CharacterBio from './CharacterBio';
 import FileManager from './FileManager';
+import KnowledgeBase from './KnowledgeBase';
+import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
-import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle, FolderOpen } from 'lucide-react';
+import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle, FolderOpen, BookOpen } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -21,6 +23,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [showDiscordCommands, setShowDiscordCommands] = useState(false);
   const [showFileManager, setShowFileManager] = useState(false);
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -48,6 +52,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setShowSettings(false);
     setShowDiscordCommands(false);
     setShowFileManager(false);
+    setShowKnowledgeBase(false);
+    setShowAdminPanel(false);
   };
 
   const handleSelectCharacter = (character: any) => {
@@ -56,6 +62,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setShowSettings(false);
     setShowDiscordCommands(false);
     setShowFileManager(false);
+    setShowKnowledgeBase(false);
     setCharacterPanelCollapsed(false);
   };
 
@@ -110,6 +117,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         onRefresh={loadDocuments}
         currentDocument={currentDocument}
         currentCharacter={currentCharacter}
+        user={user}
+        onShowAdminPanel={() => {
+          setShowAdminPanel(!showAdminPanel);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowFileManager(false);
+          setShowKnowledgeBase(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
       />
 
       {/* Main Content */}
@@ -125,7 +142,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           background: 'var(--bg-secondary)'
         }}>
           <h2 style={{ color: 'var(--text-primary)' }}>
-            {currentCharacter?.name || currentDocument?.name || 'Write Pretend'}
+            {currentCharacter?.name || currentDocument?.name || 'Cyar\'ika'}
           </h2>
           
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -152,6 +169,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowDiscordCommands(!showDiscordCommands);
                 setShowSettings(false);
                 setShowFileManager(false);
+                setShowKnowledgeBase(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -172,9 +190,34 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
+                setShowKnowledgeBase(!showKnowledgeBase);
+                setShowSettings(false);
+                setShowDiscordCommands(false);
+                setShowFileManager(false);
+                setCurrentCharacter(null);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showKnowledgeBase ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showKnowledgeBase ? 'var(--accent-text)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <BookOpen size={18} />
+              Knowledge Base
+            </button>
+
+            <button
+              onClick={() => {
                 setShowSettings(!showSettings);
                 setShowDiscordCommands(false);
                 setShowFileManager(false);
+                setShowKnowledgeBase(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -198,6 +241,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowFileManager(!showFileManager);
                 setShowSettings(false);
                 setShowDiscordCommands(false);
+                setShowKnowledgeBase(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -254,6 +298,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           ) : showFileManager ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <FileManager />
+            </div>
+          ) : showKnowledgeBase ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <KnowledgeBase />
+            </div>
+          ) : showAdminPanel ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <AdminPanel />
             </div>
           ) : (
             <>

@@ -21,6 +21,8 @@ import pathcompanionRoutes from './routes/pathcompanion';
 import discordRoutes from './routes/discord';
 import systemRoutes from './routes/system';
 import filesRoutes from './routes/files';
+import knowledgeBaseRoutes from './routes/knowledgeBase';
+import adminRoutes from './routes/admin';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -67,7 +69,9 @@ app.use(helmet({
   contentSecurityPolicy: false, // Disable for serving frontend
 }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://cyarika.com', 'https://www.cyarika.com']
+    : 'http://localhost:5173',
   credentials: true
 }));
 
@@ -100,8 +104,8 @@ app.use(express.urlencoded({ extended: true }));
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days, refreshed on activity
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      domain: process.env.NODE_ENV === 'production' ? '.cyarika.com' : undefined, // Share cookie across www and apex domain
+      sameSite: 'lax', // Changed from 'none' - same domain means we can use 'lax'
+      domain: undefined, // Remove domain restriction - let browser handle it
       path: '/'
     }
   }));
@@ -121,8 +125,8 @@ const {
   cookieOptions: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NODE_ENV === 'production' ? '.cyarika.com' : undefined,
+    sameSite: 'lax', // Changed from 'none' - same domain
+    domain: undefined, // Remove domain restriction
     path: '/'
   },
   size: 64,
@@ -143,6 +147,8 @@ app.use('/api/pathcompanion', doubleCsrfProtection);
 app.use('/api/discord', doubleCsrfProtection);
 app.use('/api/system', doubleCsrfProtection);
 app.use('/api/files', doubleCsrfProtection);
+app.use('/api/knowledge-base', doubleCsrfProtection);
+app.use('/api/admin', doubleCsrfProtection);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -152,6 +158,8 @@ app.use('/api/pathcompanion', pathcompanionRoutes);
 app.use('/api/discord', discordRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/files', filesRoutes);
+app.use('/api/knowledge-base', knowledgeBaseRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
