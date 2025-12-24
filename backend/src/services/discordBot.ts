@@ -4,6 +4,7 @@ import { channelCharacterMappings, characterSheets, users, knowledgeBase, charac
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
+import { learnFromUrl } from './gemini';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
@@ -112,6 +113,9 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'learn':
           await handleLearn(message, args);
+          break;
+        case 'learnurl':
+          await handleLearnUrl(message, args);
           break;
         case 'kink':
           await handleKink(message, args);
@@ -1024,7 +1028,7 @@ async function handleHelp(message: Message) {
       { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
       { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
       { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
-      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)', inline: false },
+      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Learn from webpage (admin)', inline: false },
       { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
       { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
@@ -1539,6 +1543,70 @@ async function handleLearn(message: Message, args: string[]) {
   } catch (error) {
     console.error('Error in !learn command:', error);
     await message.reply('❌ Failed to add to knowledge base.');
+  }
+}
+
+async function handleLearnUrl(message: Message, args: string[]) {
+  // Check if user has admin permissions
+  if (!message.member?.permissions.has('Administrator')) {
+    await message.reply('❌ Only administrators can use this command.');
+    return;
+  }
+
+  if (args.length === 0) {
+    await message.reply(
+      'Usage: `!learnurl <url> [category]`\n' +
+      'Example: `!learnurl https://www.d20pfsrd.com/feats/combat-feats/power-attack-combat/ feat`\n' +
+      'Supported sites: d20pfsrd.com and most standard web pages\n' +
+      'Categories: `kink`, `feat`, `spell`, or leave blank for general'
+    );
+    return;
+  }
+
+  const url = args[0];
+  const category = args[1] || null;
+
+  // Validate URL
+  try {
+    new URL(url);
+  } catch {
+    await message.reply('❌ Invalid URL. Please provide a valid URL.');
+    return;
+  }
+
+  await message.reply(`⏳ Learning from ${url}... This may take a few moments.`);
+
+  try {
+    const entries = await learnFromUrl(url);
+
+    if (entries.length === 0) {
+      await message.reply('❌ Could not extract any information from that URL. Try a different page or use `!learn` to manually add entries.');
+      return;
+    }
+
+    // Insert all entries into knowledge base
+    let successCount = 0;
+    for (const entry of entries) {
+      try {
+        await db.insert(knowledgeBase).values({
+          question: entry.question,
+          answer: entry.answer,
+          category: category,
+          aiGenerated: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        successCount++;
+      } catch (error) {
+        console.error('Error inserting entry:', error);
+      }
+    }
+
+    const categoryTag = category ? ` to category [${category.toUpperCase()}]` : '';
+    await message.reply(`✅ Added **${successCount}** entries${categoryTag} from ${url}!\nTry asking me about it with \`!ask\``);
+  } catch (error) {
+    console.error('Error in !learnurl command:', error);
+    await message.reply('❌ Failed to learn from that URL. The site may be blocking scraping or the page structure is not supported.');
   }
 }
 
