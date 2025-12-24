@@ -89,10 +89,15 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
       const mainContent = $('.article-content, .sites-canvas-main, #sites-canvas-main-content').first();
       
       if (mainContent.length > 0) {
+        // Remove scripts, ads, and unwanted elements
+        mainContent.find('script, style, .adsbygoogle, [id*="nitropay"], [class*="ad-"], iframe').remove();
+        
         // Get the full text content, cleaning it up
         let fullText = mainContent.text()
-          .replace(/\s+/g, ' ')
-          .replace(/\n{3,}/g, '\n\n')
+          .replace(/\s+/g, ' ')  // Collapse whitespace
+          .replace(/\n{3,}/g, '\n\n')  // Limit consecutive newlines
+          .replace(/ognCreateVideoAdSpotOutstream\([^)]*\);?/g, '')  // Remove ad scripts
+          .replace(/Section 15: Copyright Notice.*$/i, '')  // Remove copyright footer
           .trim();
         
         // Split into chunks if content is very long (max 2000 chars per entry)
