@@ -100,8 +100,8 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
         // Get the full text content, cleaning it up
         let fullText = mainContent.text()
           .split('\n')  // Split into lines
-          .map(line => line.trim())  // Trim each line
-          .filter(line => line.length > 0)  // Remove empty lines
+          .map((line: string) => line.trim())  // Trim each line
+          .filter((line: string) => line.length > 0)  // Remove empty lines
           .join('\n')  // Rejoin with single newlines
           .replace(/\n{3,}/g, '\n\n')  // Limit to max 2 consecutive newlines
           .replace(/ognCreateVideoAdSpotOutstream\([^)]*\);?/g, '')  // Remove ad scripts
