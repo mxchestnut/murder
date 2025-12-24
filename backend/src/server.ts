@@ -116,10 +116,7 @@ app.use(passport.session());
 setupPassport();
 
 // CSRF Protection
-const {
-  doubleCsrfProtection, // Middleware to validate CSRF token
-  generateToken // Function to generate CSRF tokens
-} = doubleCsrf({
+const csrfProtection = doubleCsrf({
   getSecret: () => secrets.SESSION_SECRET,
   getSessionIdentifier: (req) => req.session.id || '',
   cookieName: 'cyarika.x-csrf-token',
@@ -134,9 +131,11 @@ const {
   ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
 });
 
+const doubleCsrfProtection = csrfProtection.doubleCsrfProtection;
+
 // CSRF token endpoint (no protection needed for GET)
 app.get('/api/csrf-token', (req, res) => {
-  const token = generateToken(req, res);
+  const token = csrfProtection.generateToken(req, res);
   res.json({ csrfToken: token });
 });
 
