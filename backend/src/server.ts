@@ -25,6 +25,7 @@ import knowledgeBaseRoutes from './routes/knowledgeBase';
 import adminRoutes from './routes/admin';
 import promptsRoutes from './routes/prompts';
 import importDefaultsRoutes from './routes/import-defaults';
+import statsRoutes from './routes/stats';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -153,6 +154,7 @@ app.use('/api/knowledge-base', doubleCsrfProtection);
 app.use('/api/admin', doubleCsrfProtection);
 app.use('/api/prompts', doubleCsrfProtection);
 app.use('/api/import-defaults', doubleCsrfProtection);
+app.use('/api/stats', doubleCsrfProtection);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -166,6 +168,7 @@ app.use('/api/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/prompts', promptsRoutes);
 app.use('/api/import-defaults', importDefaultsRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
