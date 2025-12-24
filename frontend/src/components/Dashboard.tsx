@@ -6,6 +6,7 @@ import DiscordCommands from './DiscordCommands';
 import CharacterBio from './CharacterBio';
 import FileManager from './FileManager';
 import KnowledgeBase from './KnowledgeBase';
+import PromptsTropes from './PromptsTropes';
 import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
@@ -24,6 +25,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [showDiscordCommands, setShowDiscordCommands] = useState(false);
   const [showFileManager, setShowFileManager] = useState(false);
   const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
+  const [showPromptsTropes, setShowPromptsTropes] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
@@ -53,6 +55,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setShowDiscordCommands(false);
     setShowFileManager(false);
     setShowKnowledgeBase(false);
+    setShowPromptsTropes(false);
     setShowAdminPanel(false);
   };
 
@@ -62,6 +65,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setShowSettings(false);
     setShowDiscordCommands(false);
     setShowFileManager(false);
+    setShowPromptsTropes(false);
     setShowKnowledgeBase(false);
     setCharacterPanelCollapsed(false);
   };
@@ -123,6 +127,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowSettings(false);
           setShowDiscordCommands(false);
           setShowFileManager(false);
+          setShowPromptsTropes(false);
           setShowKnowledgeBase(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
@@ -194,6 +199,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowSettings(false);
                 setShowDiscordCommands(false);
                 setShowFileManager(false);
+                setShowPromptsTropes(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -214,10 +220,36 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
+                setShowPromptsTropes(!showPromptsTropes);
+                setShowSettings(false);
+                setShowDiscordCommands(false);
+                setShowFileManager(false);
+                setShowKnowledgeBase(false);
+                setCurrentCharacter(null);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showPromptsTropes ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showPromptsTropes ? 'var(--accent-text)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <MessageCircle size={18} />
+              Prompts & Tropes
+            </button>
+
+            <button
+              onClick={() => {
                 setShowSettings(!showSettings);
                 setShowDiscordCommands(false);
                 setShowFileManager(false);
                 setShowKnowledgeBase(false);
+                setShowPromptsTropes(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -242,6 +274,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowSettings(false);
                 setShowDiscordCommands(false);
                 setShowKnowledgeBase(false);
+                setShowPromptsTropes(false);
                 setCurrentCharacter(null);
               }}
               style={{
@@ -302,6 +335,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           ) : showKnowledgeBase ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <KnowledgeBase />
+            </div>
+          ) : showPromptsTropes ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <PromptsTropes />
             </div>
           ) : showAdminPanel ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
