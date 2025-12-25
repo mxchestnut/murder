@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut, HelpCircle } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -33,6 +33,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   // Collapsible sections
   const [charactersExpanded, setCharactersExpanded] = useState(true);
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
+  const [helpMenuExpanded, setHelpMenuExpanded] = useState(false);
   const [userMenuExpanded, setUserMenuExpanded] = useState(false);
 
   useEffect(() => {
@@ -497,30 +498,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           </button>
         </div>
 
-        {/* Discord Commands Button */}
-        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
-          <button
-            onClick={() => onShowDiscordCommands()}
-            style={{
-              width: '100%',
-              padding: '1rem',
-              borderRadius: '0',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '1rem',
-              textAlign: 'left'
-            }}
-          >
-            <MessageCircle size={18} />
-            Discord Commands
-          </button>
-        </div>
-
         {/* Prompts & Tropes Button */}
         <div style={{ borderBottom: `1px solid var(--border-color)` }}>
           <button
@@ -597,8 +574,58 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           </div>
         )}
 
-        {/* User Menu at bottom - Accordion */}
+        {/* Help Accordion Menu */}
         <div style={{ marginTop: 'auto', borderTop: `2px solid var(--border-color)` }}>
+          <div
+            onClick={() => setHelpMenuExpanded(!helpMenuExpanded)}
+            style={{
+              padding: '1rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              background: 'var(--bg-primary)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <HelpCircle size={18} />
+              <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '1rem' }}>
+                Help
+              </span>
+            </div>
+            {helpMenuExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </div>
+          {helpMenuExpanded && (
+            <div style={{ padding: '0.5rem 1rem 1rem 1rem' }}>
+              <button
+                onClick={() => {
+                  onShowDiscordCommands();
+                  setHelpMenuExpanded(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1rem',
+                  textAlign: 'left'
+                }}
+              >
+                <MessageCircle size={18} />
+                Discord Commands
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* User Menu Accordion */}
+        <div style={{ borderTop: `1px solid var(--border-color)` }}>
           <div
             onClick={() => setUserMenuExpanded(!userMenuExpanded)}
             style={{
