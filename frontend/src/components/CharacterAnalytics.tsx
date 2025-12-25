@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MessageCircle, Target, User, TrendingUp, CheckCircle, Circle } from 'lucide-react';
+import { Calendar, Clock, MessageCircle, Target, TrendingUp, CheckCircle, Circle } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface CharacterAnalyticsProps {
