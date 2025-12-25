@@ -31,6 +31,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   const [pathCompanionCharacters, setPathCompanionCharacters] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [loadingCharacters, setLoadingCharacters] = useState(false);
   const [importingPC, setImportingPC] = useState(false);
+  const [importingCharacterId, setImportingCharacterId] = useState<string | null>(null);
 
   // Collapsible sections
   const [charactersExpanded, setCharactersExpanded] = useState(true);
@@ -71,6 +72,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
 
   const importPathCompanionCharacter = async (charId: string) => {
     setImportingPC(true);
+    setImportingCharacterId(charId);
     try {
       await api.post('/pathcompanion/import', { characterId: charId });
       loadCharacters();
@@ -81,6 +83,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
       alert(errorMsg);
     } finally {
       setImportingPC(false);
+      setImportingCharacterId(null);
     }
   };
 
@@ -797,8 +800,8 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                   onClick={() => loadPathCompanionCharacters()}
                   style={{
                     padding: '0.5rem 1rem',
-                    background: 'var(--accent-1)',
-                    color: 'var(--text-primary)',
+                    background: 'var(--accent-color)',
+                    color: 'white',
                     border: 'none',
                     borderRadius: '4px',
                     cursor: 'pointer',
@@ -819,8 +822,8 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                     disabled={importingPC}
                     style={{
                       padding: '0.75rem 1.5rem',
-                      background: 'var(--accent-1)',
-                      color: 'var(--text-primary)',
+                      background: 'var(--accent-color)',
+                      color: 'white',
                       border: 'none',
                       borderRadius: '4px',
                       cursor: importingPC ? 'not-allowed' : 'pointer',
@@ -878,15 +881,15 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                       disabled={importingPC}
                       style={{
                         padding: '0.5rem 1rem',
-                        background: 'var(--accent-1)',
-                        color: 'var(--text-primary)',
+                        background: 'var(--accent-color)',
+                        color: 'white',
                         border: 'none',
                         borderRadius: '4px',
                         cursor: importingPC ? 'not-allowed' : 'pointer',
                         opacity: importingPC ? 0.5 : 1
                       }}
                     >
-                      {importingPC ? 'Importing...' : 'Import'}
+                      {importingCharacterId === pcChar.id ? 'Importing...' : 'Import'}
                     </button>
                   </div>
                 ))}
