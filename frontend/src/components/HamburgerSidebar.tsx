@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, Download, ExternalLink, X, RefreshCw, ChevronDown, ChevronRight, Menu } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, Download, ExternalLink, X, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -14,7 +14,6 @@ interface HamburgerSidebarProps {
 }
 
 export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel }: HamburgerSidebarProps) {
-  const [isOpen, setIsOpen] = useState(true); // Always open
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
