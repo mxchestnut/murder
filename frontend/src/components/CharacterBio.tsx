@@ -96,6 +96,10 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showPathCompanionLink, setShowPathCompanionLink] = useState(false);
+  const [characterKey, setCharacterKey] = useState('');
+  const [isLinking, setIsLinking] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     // Update bio data when character changes
@@ -179,6 +183,49 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       setMessage({ type: 'error', text: 'Failed to save bio' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleLinkPathCompanion = async () => {
+    if (!characterKey.trim()) {
+      setMessage({ type: 'error', text: 'Please enter a character key' });
+      return;
+    }
+
+    setIsLinking(true);
+    setMessage(null);
+
+    try {
+      const response = await api.post(`/pathcompanion/link/${character.id}`, { characterKey });
+      setMessage({ type: 'success', text: response.data.message });
+      setShowPathCompanionLink(false);
+      setCharacterKey('');
+      setTimeout(() => setMessage(null), 5000);
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error linking PathCompanion:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to link character';
+      setMessage({ type: 'error', text: errorMsg });
+    } finally {
+      setIsLinking(false);
+    }
+  };
+
+  const handleSyncPathCompanion = async () => {
+    setIsSyncing(true);
+    setMessage(null);
+
+    try {
+      await api.post(`/pathcompanion/sync/${character.id}`);
+      setMessage({ type: 'success', text: 'Combat stats synced from PathCompanion!' });
+      setTimeout(() => setMessage(null), 3000);
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error syncing PathCompanion:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to sync character';
+      setMessage({ type: 'error', text: errorMsg });
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -392,27 +439,144 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           <User size={20} />
           Character Profile
         </h3>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            border: 'none',
-            background: isSaving ? 'var(--bg-tertiary)' : 'var(--accent-color)',
-            color: isSaving ? 'var(--text-secondary)' : 'var(--accent-text)',
-            cursor: isSaving ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.9rem',
-            fontWeight: 500
-          }}
-        >
-          <Save size={16} />
-          {isSaving ? 'Saving...' : 'Save Bio'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {character.isPathCompanion && (
+            <button
+              onClick={handleSyncPathCompanion}
+              disabled={isSyncing}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid var(--accent-color)',
+                background: isSyncing ? 'var(--bg-tertiary)' : 'transparent',
+                color: isSyncing ? 'var(--text-secondary)' : 'var(--accent-color)',
+                cursor: isSyncing ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.9rem',
+                fontWeight: 500
+              }}
+              title="Sync combat stats from PathCompanion (preserves bio)"
+            >
+              <Target size={16} />
+              {isSyncing ? 'Syncing...' : 'Sync Stats'}
+            </button>
+          )}
+          {!character.isPathCompanion && (
+            <button
+              onClick={() => setShowPathCompanionLink(!showPathCompanionLink)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid var(--accent-color)',
+                background: 'transparent',
+                color: 'var(--accent-color)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.9rem',
+                fontWeight: 500
+              }}
+              title="Link to PathCompanion for combat stats"
+            >
+              <Target size={16} />
+              Link PathCompanion
+            </button>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              border: 'none',
+              background: isSaving ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+              color: isSaving ? 'var(--text-secondary)' : 'var(--accent-text)',
+              cursor: isSaving ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}
+          >
+            <Save size={16} />
+            {isSaving ? 'Saving...' : 'Save Bio'}
+          </button>
+        </div>
       </div>
+
+      {showPathCompanionLink && (
+        <div style={{
+          padding: '1rem',
+          marginBottom: '1rem',
+          borderRadius: '6px',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)'
+        }}>
+          <h4 style={{ margin: '0 0 0.75rem 0', color: 'var(--text-primary)', fontSize: '1rem' }}>
+            Link to PathCompanion
+          </h4>
+          <p style={{ margin: '0 0 0.75rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Paste your PathCompanion character key here. You can find it by opening your character in PathCompanion
+            and clicking "Copy Character Key". This will sync combat stats while preserving your Murder.tech bio.
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <input
+              type="text"
+              value={characterKey}
+              onChange={(e) => setCharacterKey(e.target.value)}
+              placeholder="Paste character key here..."
+              style={{
+                flex: 1,
+                padding: '0.5rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-primary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.9rem',
+                fontFamily: 'monospace'
+              }}
+            />
+            <button
+              onClick={handleLinkPathCompanion}
+              disabled={isLinking || !characterKey.trim()}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: 'none',
+                background: (isLinking || !characterKey.trim()) ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+                color: (isLinking || !characterKey.trim()) ? 'var(--text-secondary)' : 'white',
+                cursor: (isLinking || !characterKey.trim()) ? 'not-allowed' : 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {isLinking ? 'Linking...' : 'Link'}
+            </button>
+            <button
+              onClick={() => {
+                setShowPathCompanionLink(false);
+                setCharacterKey('');
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div style={{

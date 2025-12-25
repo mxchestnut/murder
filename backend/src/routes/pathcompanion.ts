@@ -596,9 +596,10 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
     const armor = PlayFabService.extractArmor(character.data);
     const spells = PlayFabService.extractSpells(character.data);
 
-    // Update the character sheet
+    // Update the character sheet - ONLY update combat stats, preserve bio/personality
     const [updated] = await db.update(characterSheets)
       .set({
+        // Update combat stats and mechanics from PathCompanion
         name: character.characterName,
         strength: abilities.strength,
         dexterity: abilities.dexterity,
@@ -612,7 +613,8 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
         alignment: basicInfo.alignment,
         deity: basicInfo.deity,
         size: basicInfo.size,
-        avatarUrl: basicInfo.avatarUrl,
+        // Only update avatar if Murder.tech doesn't have a custom one
+        ...(sheet.avatarUrl ? {} : { avatarUrl: basicInfo.avatarUrl }),
         currentHp: combatStats.currentHp,
         maxHp: combatStats.maxHp,
         tempHp: combatStats.tempHp,
@@ -636,6 +638,8 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
         pathCompanionData: JSON.stringify(character.data),
         lastSynced: new Date(),
         updatedAt: new Date()
+        // NOTE: bio, personality, backstory, appearance, etc. are NOT updated
+        // This preserves Murder.tech-specific character development
       })
       .where(eq(characterSheets.id, sheetId))
       .returning();
@@ -844,6 +848,84 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
     console.error('Failed to import all characters:', error);
     res.status(500).json({
       error: 'Failed to import characters',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Link an existing Murder.tech character to PathCompanion using a character key
+ * POST /api/pathcompanion/link/:id
+ * Body: { characterKey }
+ */
+router.post('/link/:id', isAuthenticated, async (req, res) => {
+  try {
+    const user = req.user as any;
+    const userId = user.id;
+    const sheetId = parseInt(req.params.id);
+    const { characterKey } = req.body;
+
+    if (!characterKey) {
+      return res.status(400).json({ error: 'Character key is required' });
+    }
+
+    // Get the character sheet
+    const [sheet] = await db.select().from(characterSheets).where(
+      eq(characterSheets.id, sheetId)
+    );
+
+    if (!sheet) {
+      return res.status(404).json({ error: 'Character sheet not found' });
+    }
+
+    if (sheet.userId !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Decode the character key (it's base64 encoded JSON)
+    let keyData;
+    try {
+      const decoded = Buffer.from(characterKey, 'base64').toString('utf-8');
+      keyData = JSON.parse(decoded);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid character key format' });
+    }
+
+    if (!keyData.character) {
+      return res.status(400).json({ error: 'Invalid character key - missing character ID' });
+    }
+
+    // Automatically refresh session if needed
+    const sessionTicket = await refreshSessionIfNeeded(user.id);
+
+    // Fetch the character from PathCompanion to verify it exists
+    const character = await PlayFabService.getCharacter(sessionTicket, keyData.character);
+
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found in PathCompanion' });
+    }
+
+    // Link the character but don't overwrite bio/personality fields
+    const [updated] = await db.update(characterSheets)
+      .set({
+        isPathCompanion: true,
+        pathCompanionId: keyData.character,
+        pathCompanionSession: user.pathCompanionSessionTicket,
+        lastSynced: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(characterSheets.id, sheetId))
+      .returning();
+
+    res.json({
+      message: `Successfully linked to PathCompanion character: ${character.characterName}`,
+      character: updated,
+      pathCompanionName: character.characterName
+    });
+  } catch (error) {
+    console.error('Failed to link PathCompanion character:', error);
+    res.status(500).json({
+      error: 'Failed to link character',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
