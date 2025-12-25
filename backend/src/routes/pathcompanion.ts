@@ -1,11 +1,58 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { characterSheets } from '../db/schema';
+import { characterSheets, users } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 import * as PlayFabService from '../services/playfab';
+import crypto from 'crypto';
 
 const router = Router();
+
+// Encryption utilities for PathCompanion password (same as in auth.ts)
+const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const ALGORITHM = 'aes-256-cbc';
+
+function decryptPassword(encryptedPassword: string): string {
+  const parts = encryptedPassword.split(':');
+  const iv = Buffer.from(parts[0], 'hex');
+  const encrypted = parts[1];
+  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
+
+// Helper function to refresh PathCompanion session if needed
+async function refreshSessionIfNeeded(userId: number): Promise<string> {
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+
+  if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
+    throw new Error('No PathCompanion account connected. Please connect your PathCompanion account in Settings first.');
+  }
+
+  // Try to use existing session ticket first
+  if (user.pathCompanionSessionTicket) {
+    try {
+      // Test if session is still valid
+      await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+      return user.pathCompanionSessionTicket;
+    } catch (error) {
+      console.log('Session ticket expired, refreshing...');
+    }
+  }
+
+  // Session expired or doesn't exist, refresh it
+  const decryptedPassword = decryptPassword(user.pathCompanionPassword);
+  const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, decryptedPassword);
+
+  // Update session ticket in database
+  await db.update(users)
+    .set({ pathCompanionSessionTicket: auth.sessionTicket })
+    .where(eq(users.id, userId));
+
+  return auth.sessionTicket;
+}
 
 // Login endpoint doesn't require Murder Tech auth
 router.post('/login', async (req, res) => {
@@ -40,14 +87,11 @@ router.get('/characters', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
 
-    if (!user.pathCompanionSessionTicket) {
-      return res.status(400).json({
-        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.'
-      });
-    }
+    // Automatically refresh session if needed
+    const sessionTicket = await refreshSessionIfNeeded(user.id);
 
     // Get user data from PathCompanion
-    const userData = await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+    const userData = await PlayFabService.getUserData(sessionTicket);
 
     // Filter to character entries (character1-99, gm1-99, shared1-99, portraits, etc.)
     const characterKeys = Object.keys(userData)
@@ -63,7 +107,7 @@ router.get('/characters', isAuthenticated, async (req, res) => {
     const allItems = await Promise.all(
       characterKeys.map(async (key) => {
         try {
-          const char = await PlayFabService.getCharacter(user.pathCompanionSessionTicket, key);
+          const char = await PlayFabService.getCharacter(sessionTicket, key);
 
           // GM characters and shared characters are campaigns
           // character1, character2, etc. are player characters
@@ -147,15 +191,11 @@ router.post('/import', isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'Character ID is required' });
     }
 
-    // Check if user has connected PathCompanion account
-    if (!user.pathCompanionSessionTicket) {
-      return res.status(400).json({
-        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.'
-      });
-    }
+    // Automatically refresh session if needed
+    const sessionTicket = await refreshSessionIfNeeded(user.id);
 
-    // Fetch the character from PathCompanion using stored session ticket
-    const character = await PlayFabService.getCharacter(user.pathCompanionSessionTicket, characterId);
+    // Fetch the character from PathCompanion using session ticket
+    const character = await PlayFabService.getCharacter(sessionTicket, characterId);
 
     if (!character) {
       return res.status(404).json({ error: 'Character not found in PathCompanion' });
