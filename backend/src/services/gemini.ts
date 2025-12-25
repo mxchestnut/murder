@@ -150,8 +150,14 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
 
     console.log(`Extracted ${entries.length} entries from ${url}`);
     return entries;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error learning from URL:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.status,
+      url: url
+    });
     return [];
   }
 }

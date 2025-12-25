@@ -318,21 +318,35 @@ async function handleShowChar(message: Message) {
 async function handleProfile(message: Message, args: string[]) {
   let character: any;
 
+  // Get user by Discord ID first
+  const [user] = await db.select()
+    .from(users)
+    .where(eq(users.discordUserId, message.author.id));
+
+  if (!user) {
+    await message.reply('❌ **Discord account not linked to Murder.**\n\n' +
+      '**To link your account:**\n' +
+      '1. Use `!connect <username> <password>` in Discord, OR\n' +
+      '2. Visit murder.tech to create/manage your account');
+    return;
+  }
+
   if (args.length > 0) {
-    // Profile for a specific character by name (fuzzy matching)
+    // Profile for a specific character by name (fuzzy matching, user's characters only)
     const characterName = args.join(' ');
     const normalizedInput = normalizeString(characterName);
 
-    const allCharacters = await db
+    const userCharacters = await db
       .select()
-      .from(characterSheets);
+      .from(characterSheets)
+      .where(eq(characterSheets.userId, user.id));
 
-    const matchedCharacters = allCharacters.filter(char =>
+    const matchedCharacters = userCharacters.filter(char =>
       normalizeString(char.name) === normalizedInput
     );
 
     if (matchedCharacters.length === 0) {
-      await message.reply(`❌ Character "${characterName}" not found.`);
+      await message.reply(`❌ Character "${characterName}" not found in your account.`);
       return;
     }
 
@@ -1626,7 +1640,7 @@ async function handleLearnUrl(message: Message, args: string[]) {
     const entries = await learnFromUrl(url);
 
     if (entries.length === 0) {
-      await message.reply('❌ Could not extract any information from that URL. Try a different page or use `!learn` to manually add entries.');
+      await message.reply('❌ Could not extract any information from that URL. The site may be blocking scraping, the page structure is not supported, or there was a connection error. Check the server logs for details.');
       return;
     }
 
