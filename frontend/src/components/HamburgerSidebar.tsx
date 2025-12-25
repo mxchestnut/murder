@@ -33,6 +33,9 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   const [loadingCharacters, setLoadingCharacters] = useState(false);
   const [importingPC, setImportingPC] = useState(false);
   const [importingCharacterId, setImportingCharacterId] = useState<string | null>(null);
+  const [showBulkCreate, setShowBulkCreate] = useState(false);
+  const [bulkCharacterNames, setBulkCharacterNames] = useState('');
+  const [bulkCreating, setBulkCreating] = useState(false);
 
   // Collapsible sections
   const [charactersExpanded, setCharactersExpanded] = useState(true);
@@ -110,6 +113,56 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
     } finally {
       setImportingPC(false);
     }
+  };
+
+  const handleBulkCreate = async () => {
+    // Parse names from textarea (split by newlines or commas)
+    const names = bulkCharacterNames
+      .split(/[,\n]/)
+      .map(name => name.trim())
+      .filter(name => name.length > 0);
+
+    if (names.length === 0) {
+      alert('Please enter at least one character name');
+      return;
+    }
+
+    if (!confirm(`Create ${names.length} character${names.length > 1 ? 's' : ''}?`)) {
+      return;
+    }
+
+    setBulkCreating(true);
+    let created = 0;
+    let failed = 0;
+
+    for (const name of names) {
+      try {
+        await api.post('/characters', {
+          name,
+          level: 1,
+          characterClass: '',
+          race: '',
+          alignment: '',
+          strength: 10,
+          dexterity: 10,
+          constitution: 10,
+          intelligence: 10,
+          wisdom: 10,
+          charisma: 10
+        });
+        created++;
+      } catch (error) {
+        console.error(`Failed to create ${name}:`, error);
+        failed++;
+      }
+    }
+
+    setBulkCreating(false);
+    setBulkCharacterNames('');
+    setShowBulkCreate(false);
+    await loadCharacters();
+
+    alert(`Created ${created} character${created !== 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}!`);
   };
 
   const handleCreateFolder = async () => {
@@ -301,6 +354,31 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               >
                 <Plus size={16} />
                 Create Character
+              </button>
+              <button
+                onClick={() => {
+                  console.log('Bulk create clicked');
+                  setShowBulkCreate(true);
+                  setShowCharactersMenu(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <Plus size={16} />
+                Bulk Create
               </button>
               <button
                 onClick={() => {
@@ -1056,6 +1134,112 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Create Characters Modal */}
+      {showBulkCreate && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: 'var(--bg-primary)',
+            padding: '2rem',
+            borderRadius: '8px',
+            width: '90%',
+            maxWidth: '500px',
+            border: `2px solid var(--border-color)`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Plus size={24} />
+                Bulk Create Characters
+              </h2>
+              <button
+                onClick={() => {
+                  setShowBulkCreate(false);
+                  setBulkCharacterNames('');
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  padding: '0.5rem'
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Enter character names, one per line or separated by commas. Characters will be created with default stats - you can add details later.
+            </p>
+
+            <textarea
+              value={bulkCharacterNames}
+              onChange={(e) => setBulkCharacterNames(e.target.value)}
+              placeholder="Aragorn&#10;Legolas, Gimli&#10;Frodo&#10;Sam"
+              style={{
+                width: '100%',
+                minHeight: '200px',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.95rem',
+                resize: 'vertical',
+                fontFamily: 'inherit',
+                marginBottom: '1rem'
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowBulkCreate(false);
+                  setBulkCharacterNames('');
+                }}
+                disabled={bulkCreating}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: bulkCreating ? 'not-allowed' : 'pointer',
+                  opacity: bulkCreating ? 0.5 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkCreate}
+                disabled={bulkCreating || !bulkCharacterNames.trim()}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: (bulkCreating || !bulkCharacterNames.trim()) ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+                  color: (bulkCreating || !bulkCharacterNames.trim()) ? 'var(--text-secondary)' : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: (bulkCreating || !bulkCharacterNames.trim()) ? 'not-allowed' : 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                {bulkCreating ? 'Creating...' : 'Create Characters'}
+              </button>
+            </div>
           </div>
         </div>
       )}
