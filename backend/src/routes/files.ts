@@ -132,7 +132,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
       if (category === 'avatar') {
         // Create optimized avatar
         const optimized = await createAvatar(fileBuffer, 512);
-        fileBuffer = optimized.buffer;
+        fileBuffer = Buffer.from(optimized.buffer);
         finalMimeType = `image/${optimized.format}`;
         finalSize = optimized.size;
         isOptimized = true;
@@ -144,7 +144,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
           quality: 85,
           format: 'webp'
         });
-        fileBuffer = optimized.buffer;
+        fileBuffer = Buffer.from(optimized.buffer);
         finalMimeType = `image/${optimized.format}`;
         finalSize = optimized.size;
         isOptimized = true;
@@ -239,12 +239,17 @@ router.get('/', isAuthenticated, async (req, res) => {
       ));
 
     // Add category filter if provided
+    let userFiles;
     if (category) {
-      query = query.where(and(
-        eq(files.userId, user.id),
-        eq(files.category, category),
-        isNull(files.deletedAt)
-      ));
+      userFiles = await db.select().from(files)
+        .where(and(
+          eq(files.userId, user.id),
+          eq(files.category, category),
+          isNull(files.deletedAt)
+        ))
+        .orderBy(sql`${files.uploadedAt} DESC`);
+    } else {
+      userFiles = await query.orderBy(sql`${files.uploadedAt} DESC`);
     }
 
     const userFiles = await query.orderBy(sql`${files.uploadedAt} DESC`);
