@@ -255,9 +255,30 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               overflow: 'hidden'
             }}>
               <button
-                onClick={() => {
+                onClick={async () => {
                   console.log('Create character menu item clicked');
-                  onSelectCharacter(null);
+                  try {
+                    // Create a new blank character
+                    const response = await api.post('/characters', {
+                      name: 'New Character',
+                      level: 1,
+                      characterClass: '',
+                      race: '',
+                      alignment: '',
+                      strength: 10,
+                      dexterity: 10,
+                      constitution: 10,
+                      intelligence: 10,
+                      wisdom: 10,
+                      charisma: 10
+                    });
+                    // Select the newly created character
+                    onSelectCharacter(response.data);
+                    // Reload the character list
+                    await loadCharacters();
+                  } catch (error) {
+                    console.error('Failed to create character:', error);
+                  }
                   setCharactersExpanded(true);
                   setShowCharactersMenu(false);
                 }}
