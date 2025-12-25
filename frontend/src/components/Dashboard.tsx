@@ -157,7 +157,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           background: 'var(--bg-secondary)'
         }}>
           <h2 style={{ color: 'var(--text-primary)' }}>
-            {currentCharacter?.name || currentDocument?.name || 'Cyar\'ika'}
+            {currentCharacter?.name || currentDocument?.name || 'Murder'}
           </h2>
 
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
