@@ -143,6 +143,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
+        onShowFileManager={() => {
+          setShowFileManager(true);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowPromptsTropes(false);
+          setShowStats(false);
+          setShowHallOfFame(false);
+          setShowKnowledgeBase(false);
+          setShowAdminPanel(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
       />
 
       {/* Main Content */}
@@ -157,7 +169,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           background: 'var(--bg-secondary)'
         }}>
           <h2 style={{ color: 'var(--text-primary)' }}>
-            {currentCharacter?.name || currentDocument?.name || 'Murder'}
+            {currentCharacter?.name || currentDocument?.name || ''}
           </h2>
 
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -383,37 +395,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               }}
             >
               Hall of Fame
-            </button>
-
-            <button
-              onClick={() => {
-                setShowFileManager(!showFileManager);
-                setShowSettings(false);
-                setShowDiscordCommands(false);
-                setShowKnowledgeBase(false);
-                setShowPromptsTropes(false);
-                setShowStats(false);
-                setShowHallOfFame(false);
-                setShowAdminPanel(false);
-                setCurrentCharacter(null);
-                setRightMenuOpen(false);
-              }}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showFileManager ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showFileManager ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              <FolderOpen size={18} />
-              File Manager
             </button>
 
             <button

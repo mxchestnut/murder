@@ -11,9 +11,10 @@ interface HamburgerSidebarProps {
   currentCharacter: any;
   user: any;
   onShowAdminPanel: () => void;
+  onShowFileManager: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -333,10 +334,15 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           )}
         </div>
 
-        {/* Documents Section */}
+        {/* File Manager Section */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div
-            onClick={() => setDocumentsExpanded(!documentsExpanded)}
+            onClick={() => {
+              setDocumentsExpanded(!documentsExpanded);
+              if (!documentsExpanded) {
+                onShowFileManager();
+              }
+            }}
             style={{
               padding: '1rem',
               display: 'flex',
@@ -350,7 +356,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {documentsExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
               <File size={18} />
-              Documents
+              File Manager
             </h3>
           </div>
           {documentsExpanded && (
