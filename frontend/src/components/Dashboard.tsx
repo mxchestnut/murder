@@ -13,7 +13,7 @@ import HallOfFameGallery from './HallOfFameGallery';
 import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
-import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle, BookOpen, Bird } from 'lucide-react';
+import { FileText, LogOut, Sun, Moon, X, Dices, MessageCircle, Bird } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -155,6 +155,42 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
+        onShowKnowledgeBase={() => {
+          setShowKnowledgeBase(true);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowPromptsTropes(false);
+          setShowStats(false);
+          setShowHallOfFame(false);
+          setShowFileManager(false);
+          setShowAdminPanel(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
+        onShowStats={() => {
+          setShowStats(true);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowPromptsTropes(false);
+          setShowKnowledgeBase(false);
+          setShowHallOfFame(false);
+          setShowFileManager(false);
+          setShowAdminPanel(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
+        onShowSettings={() => {
+          setShowSettings(true);
+          setShowDiscordCommands(false);
+          setShowPromptsTropes(false);
+          setShowStats(false);
+          setShowHallOfFame(false);
+          setShowKnowledgeBase(false);
+          setShowFileManager(false);
+          setShowAdminPanel(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
       />
 
       {/* Main Content */}
@@ -277,37 +313,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
             <button
               onClick={() => {
-                setShowKnowledgeBase(!showKnowledgeBase);
-                setShowSettings(false);
-                setShowDiscordCommands(false);
-                setShowFileManager(false);
-                setShowPromptsTropes(false);
-                setShowStats(false);
-                setShowHallOfFame(false);
-                setShowAdminPanel(false);
-                setCurrentCharacter(null);
-                setRightMenuOpen(false);
-              }}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showKnowledgeBase ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showKnowledgeBase ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              <BookOpen size={18} />
-              Knowledge Base
-            </button>
-
-            <button
-              onClick={() => {
                 setShowPromptsTropes(!showPromptsTropes);
                 setShowSettings(false);
                 setShowDiscordCommands(false);
@@ -395,37 +400,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               }}
             >
               Hall of Fame
-            </button>
-
-            <button
-              onClick={() => {
-                setShowSettings(!showSettings);
-                setShowDiscordCommands(false);
-                setShowFileManager(false);
-                setShowKnowledgeBase(false);
-                setShowPromptsTropes(false);
-                setShowStats(false);
-                setShowHallOfFame(false);
-                setShowAdminPanel(false);
-                setCurrentCharacter(null);
-                setRightMenuOpen(false);
-              }}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showSettings ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showSettings ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              <SettingsIcon size={18} />
-              Settings
             </button>
 
             <div style={{ borderTop: `1px solid var(--border-color)`, margin: '1rem 0' }} />

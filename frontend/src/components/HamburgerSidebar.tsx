@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, Download, ExternalLink, X, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, Download, ExternalLink, X, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -12,9 +12,12 @@ interface HamburgerSidebarProps {
   user: any;
   onShowAdminPanel: () => void;
   onShowFileManager: () => void;
+  onShowKnowledgeBase: () => void;
+  onShowStats: () => void;
+  onShowSettings: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -165,79 +168,15 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.5rem' }}>Murder</h2>
         </div>
 
-        {/* Campaigns Section */}
-        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
-          <div
-            onClick={() => setCampaignsExpanded(!campaignsExpanded)}
-            style={{
-              padding: '1rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              background: campaignsExpanded ? 'var(--accent-1)' : 'transparent'
-            }}
-          >
-            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {campaignsExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-              <Folder size={18} />
-              Campaigns
-            </h3>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                loadCampaigns();
-              }}
-              style={{
-                padding: '0.25rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: 'var(--accent-2)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-              title="Refresh campaigns"
-            >
-              <RefreshCw size={14} />
-            </button>
-          </div>
-          {campaignsExpanded && (
-            <div style={{ padding: '0 1rem 1rem 1rem', maxHeight: '200px', overflow: 'auto' }}>
-              {campaigns.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                  No campaigns available
-                </p>
-              ) : (
-                campaigns.map((campaign) => (
-                  <div
-                    key={campaign.id}
-                    style={{
-                      padding: '0.5rem',
-                      borderRadius: '4px',
-                      background: 'var(--bg-primary)',
-                      marginBottom: '0.25rem',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.9rem',
-                      border: '1px solid var(--border-color)'
-                    }}
-                  >
-                    <div style={{ fontWeight: 500 }}>{campaign.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-                      Campaign
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
         {/* Characters Section */}
         <div style={{ borderBottom: `1px solid var(--border-color)` }}>
           <div
-            onClick={() => setCharactersExpanded(!charactersExpanded)}
+            onClick={() => {
+              setCharactersExpanded(!charactersExpanded);
+              if (!charactersExpanded) {
+                onShowStats();
+              }
+            }}
             style={{
               padding: '1rem',
               display: 'flex',
@@ -252,50 +191,28 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <Dices size={18} />
               Characters
             </h3>
-            <div style={{ display: 'flex', gap: '0.25rem' }}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  loadCharacters();
-                }}
-                style={{
-                  padding: '0.25rem',
-                  borderRadius: '4px',
-                  border: 'none',
-                  background: 'var(--accent-2)',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-                title="Refresh characters"
-              >
-                <RefreshCw size={14} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowPathCompanionImport(true);
-                  loadPathCompanionCharacters();
-                }}
-                style={{
-                  padding: '0.25rem',
-                  borderRadius: '4px',
-                  border: 'none',
-                  background: 'var(--accent-2)',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-                title="Import from PathCompanion"
-              >
-                <Download size={14} />
-              </button>
-            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                loadCharacters();
+              }}
+              style={{
+                padding: '0.25rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              title="Refresh characters"
+            >
+              <RefreshCw size={14} />
+            </button>
           </div>
           {charactersExpanded && (
-            <div style={{ padding: '0 1rem 1rem 1rem', maxHeight: '300px', overflow: 'auto' }}>
+            <div style={{ padding: '0 1rem 1rem 1rem', maxHeight: '200px', overflow: 'auto' }}>
               {characters.length === 0 ? (
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic' }}>
                   No characters yet
@@ -306,27 +223,20 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                     key={char.id}
                     onClick={() => {
                       onSelectCharacter(char);
+
                     }}
                     style={{
                       padding: '0.5rem',
                       borderRadius: '4px',
-                      cursor: 'pointer',
                       background: currentCharacter?.id === char.id ? 'var(--accent-2)' : 'var(--bg-primary)',
                       marginBottom: '0.25rem',
                       color: 'var(--text-primary)',
                       fontSize: '0.9rem',
-                      border: '1px solid var(--border-color)'
+                      border: '1px solid var(--border-color)',
+                      cursor: 'pointer'
                     }}
                   >
-                    <div style={{ fontWeight: 500 }}>
-                      {char.name}
-                      {char.isPathCompanion && (
-                        <ExternalLink size={10} style={{ marginLeft: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
-                      )}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-                      {char.characterClass && `${char.characterClass} `}Level {char.level}
-                    </div>
+                    <div style={{ fontWeight: 500 }}>{char.name}</div>
                   </div>
                 ))
               )}
@@ -335,7 +245,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
         </div>
 
         {/* File Manager Section */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
           <div
             onClick={() => {
               setDocumentsExpanded(!documentsExpanded);
@@ -528,6 +438,54 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               </div>
             </>
           )}
+        </div>
+
+        {/* Knowledge Base Button */}
+        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
+          <button
+            onClick={() => onShowKnowledgeBase()}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              borderRadius: '0',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '1rem',
+              textAlign: 'left'
+            }}
+          >
+            <BookOpen size={18} />
+            Knowledge Base
+          </button>
+        </div>
+
+        {/* Settings Button */}
+        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
+          <button
+            onClick={() => onShowSettings()}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              borderRadius: '0',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '1rem',
+              textAlign: 'left'
+            }}
+          >
+            <Settings size={18} />
+            Settings
+          </button>
         </div>
 
         {/* Admin Panel (only for admins) */}
