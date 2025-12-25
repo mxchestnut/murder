@@ -305,7 +305,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                     key={char.id}
                     onClick={() => {
                       onSelectCharacter(char);
-                      setIsOpen(false);
                     }}
                     style={{
                       padding: '0.5rem',
@@ -478,7 +477,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                     key={doc.id}
                     onClick={() => {
                       onSelectDocument(doc);
-                      setIsOpen(false);
+
                     }}
                     style={{
                       padding: '0.75rem',
@@ -531,7 +530,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             <button
               onClick={() => {
                 onShowAdminPanel();
-                setIsOpen(false);
               }}
               style={{
                 width: '100%',
