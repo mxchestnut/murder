@@ -217,7 +217,7 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
     setMessage(null);
 
     try {
-      const response = await api.post(`/pathcompanion/sync/${character.id}`);
+      await api.post(`/pathcompanion/sync/${character.id}`);
       setMessage({ type: 'success', text: 'Combat stats synced from PathCompanion!' });
       setTimeout(() => setMessage(null), 3000);
       await onUpdate();
