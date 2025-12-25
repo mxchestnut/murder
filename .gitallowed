@@ -33,7 +33,7 @@ Buffer\.from\(ENCRYPTION_KEY
 
 # Allow documentation references
 DATABASE_URL in \.env
-your Neon DATABASE_URL
+your AWS RDS DATABASE_URL
 strong SESSION_SECRET
 DISCORD_BOT_TOKEN=\.\.\.
 DATABASE_URL=postgresql://\.\.\.

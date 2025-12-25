@@ -31,7 +31,7 @@ export default function PasswordRotationBanner() {
   };
 
   const handleConfirmRotation = async () => {
-    if (!confirm('Have you rotated the Neon database password in AWS Secrets Manager?')) {
+    if (!confirm('Have you rotated the AWS RDS database password in AWS Secrets Manager?')) {
       return;
     }
 
@@ -79,7 +79,7 @@ export default function PasswordRotationBanner() {
             {isOverdue ? (
               `Password rotation is overdue by ${Math.abs(status.daysUntilRotation)} days. Please rotate immediately.`
             ) : (
-              `Password rotation needed in ${status.daysUntilRotation} days. Rotate your Neon database password soon.`
+              `Password rotation needed in ${status.daysUntilRotation} days. Rotate your AWS RDS password soon.`
             )}
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function PasswordRotationBanner() {
         </button>
 
         <a
-          href="https://console.neon.tech"
+          href="https://console.aws.amazon.com/rds/"
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -117,7 +117,7 @@ export default function PasswordRotationBanner() {
             fontWeight: 'bold'
           }}
         >
-          Open Neon Console
+          Open AWS RDS Console
         </a>
 
         <button
