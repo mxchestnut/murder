@@ -1441,12 +1441,21 @@ async function handleAsk(message: Message, args: string[]) {
   }
 
   const question = args.join(' ');
+  const guildId = message.guild?.id;
+
+  if (!guildId) {
+    await message.reply('❌ This command can only be used in a server, not in DMs.');
+    return;
+  }
 
   try {
-    // First, search knowledge base
+    // First, search THIS server's knowledge base
     const searchResults = await db.select()
       .from(knowledgeBase)
-      .where(sql`LOWER(${knowledgeBase.question}) LIKE LOWER(${'%' + question + '%'})`)
+      .where(and(
+        eq(knowledgeBase.guildId, guildId),
+        sql`LOWER(${knowledgeBase.question}) LIKE LOWER(${'%' + question + '%'})`
+      ))
       .limit(1);
 
     if (searchResults.length > 0) {
@@ -1506,13 +1515,14 @@ async function handleAsk(message: Message, args: string[]) {
     collector.on('collect', async () => {
       try {
         await db.insert(knowledgeBase).values({
+          guildId,
           question,
           answer,
           aiGenerated: true,
           createdAt: new Date(),
           updatedAt: new Date()
         });
-        await message.reply('✅ Saved to knowledge base!');
+        await message.reply('✅ Saved to this server\'s knowledge base!');
       } catch (error) {
         console.error('Error saving to knowledge base:', error);
       }
@@ -1528,6 +1538,12 @@ async function handleLearn(message: Message, args: string[]) {
   // Check if user has admin permissions
   if (!message.member?.permissions.has('Administrator')) {
     await message.reply('❌ Only administrators can add knowledge base entries.');
+    return;
+  }
+
+  const guildId = message.guild?.id;
+  if (!guildId) {
+    await message.reply('❌ This command can only be used in a server, not in DMs.');
     return;
   }
 
@@ -1548,6 +1564,7 @@ async function handleLearn(message: Message, args: string[]) {
 
   try {
     await db.insert(knowledgeBase).values({
+      guildId,
       question,
       answer,
       category: category || null,
@@ -1557,7 +1574,7 @@ async function handleLearn(message: Message, args: string[]) {
     });
 
     const categoryTag = category ? ` [${category.toUpperCase()}]` : '';
-    await message.reply(`✅ Added to knowledge base!${categoryTag}\n**Q:** ${question}\n**A:** ${answer.substring(0, 200)}${answer.length > 200 ? '...' : ''}`);
+    await message.reply(`✅ Added to this server's knowledge base!${categoryTag}\n**Q:** ${question}\n**A:** ${answer.substring(0, 200)}${answer.length > 200 ? '...' : ''}`);
   } catch (error) {
     console.error('Error in !learn command:', error);
     await message.reply('❌ Failed to add to knowledge base.');
@@ -1568,6 +1585,12 @@ async function handleLearnUrl(message: Message, args: string[]) {
   // Check if user has admin permissions
   if (!message.member?.permissions.has('Administrator')) {
     await message.reply('❌ Only administrators can use this command.');
+    return;
+  }
+
+  const guildId = message.guild?.id;
+  if (!guildId) {
+    await message.reply('❌ This command can only be used in a server, not in DMs.');
     return;
   }
 
@@ -1612,6 +1635,7 @@ async function handleLearnUrl(message: Message, args: string[]) {
     for (const entry of entries) {
       try {
         await db.insert(knowledgeBase).values({
+          guildId,
           question: entry.question,
           answer: entry.answer,
           category: category,
@@ -1626,7 +1650,7 @@ async function handleLearnUrl(message: Message, args: string[]) {
     }
 
     const categoryTag = category ? ` to category [${category.toUpperCase()}]` : '';
-    await message.reply(`✅ Added **${successCount}** entries${categoryTag} from ${url}!\nTry asking me about it with \`!ask\``);
+    await message.reply(`✅ Added **${successCount}** entries${categoryTag} to this server's knowledge base from ${url}!\nTry asking me about it with \`!ask\``);
   } catch (error) {
     console.error('Error in !learnurl command:', error);
     await message.reply('❌ Failed to learn from that URL. The site may be blocking scraping or the page structure is not supported.');

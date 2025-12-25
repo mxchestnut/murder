@@ -219,9 +219,10 @@ export const channelCharacterMappingsRelations = relations(channelCharacterMappi
   })
 }));
 
-// Knowledge Base for AI FAQ System
+// Knowledge Base for AI FAQ System (per-guild/server)
 export const knowledgeBase = pgTable('knowledge_base', {
   id: serial('id').primaryKey(),
+  guildId: text('guild_id').notNull(), // Discord server ID - each server has its own knowledge base
   question: text('question').notNull(),
   answer: text('answer').notNull(), // Markdown for Discord
   answerHtml: text('answer_html'), // HTML from Tiptap for web display
