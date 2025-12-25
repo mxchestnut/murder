@@ -6,7 +6,7 @@ import { api, fetchCsrfToken } from './utils/api';
 import { useTheme } from './utils/useTheme';
 
 function App() {
-  console.log('Murder Tech v2.0.0 - Roleplay Platform');
+  console.log('Murder v2.0.0 - Roleplay Platform');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   useTheme(); // Initialize theme on app load
