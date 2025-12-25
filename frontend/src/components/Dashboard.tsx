@@ -13,7 +13,7 @@ import HallOfFameGallery from './HallOfFameGallery';
 import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
-import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle, FolderOpen, BookOpen } from 'lucide-react';
+import { FileText, LogOut, Sun, Moon, X, Settings as SettingsIcon, Dices, MessageCircle, FolderOpen, BookOpen, Bird } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -35,6 +35,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [characterTab, setCharacterTab] = useState<'bio' | 'memories'>('bio');
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
+  const [rightMenuOpen, setRightMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
     return (saved as 'light' | 'dark') || 'light';
@@ -145,14 +146,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       />
 
       {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginLeft: '300px' }}>
         {/* Header */}
         <header style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '1rem',
-          paddingLeft: '5rem', // Make room for hamburger button
           borderBottom: `1px solid var(--border-color)`,
           background: 'var(--bg-secondary)'
         }}>
@@ -167,7 +167,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 padding: '0.5rem',
                 borderRadius: '4px',
                 border: 'none',
-                background: 'var(--accent-2)',
+                background: 'var(--bg-tertiary)',
                 color: 'var(--text-primary)',
                 cursor: 'pointer',
                 display: 'flex',
@@ -179,6 +179,59 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
+            {/* Bird Menu Button */}
+            <button
+              onClick={() => setRightMenuOpen(!rightMenuOpen)}
+              style={{
+                padding: '0.75rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: rightMenuOpen ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: rightMenuOpen ? 'var(--accent-text)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              title="Menu"
+            >
+              <Bird size={20} />
+            </button>
+          </div>
+        </header>
+
+        {/* Right Side Menu Overlay */}
+        {rightMenuOpen && (
+          <div
+            onClick={() => setRightMenuOpen(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 999
+            }}
+          />
+        )}
+
+        {/* Right Side Menu */}
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          right: rightMenuOpen ? 0 : '-350px',
+          bottom: 0,
+          width: '300px',
+          background: 'var(--bg-secondary)',
+          borderLeft: `2px solid var(--border-color)`,
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 1000,
+          transition: 'right 0.3s ease',
+          overflowY: 'auto',
+          padding: '2rem 1rem'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <button
               onClick={() => {
                 setShowDiscordCommands(!showDiscordCommands);
@@ -188,10 +241,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowPromptsTropes(false);
                 setShowStats(false);
                 setShowHallOfFame(false);
+                setShowAdminPanel(false);
                 setCurrentCharacter(null);
+                setRightMenuOpen(false);
               }}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '1rem',
                 borderRadius: '4px',
                 border: 'none',
                 background: showDiscordCommands ? 'var(--accent-color)' : 'var(--bg-tertiary)',
@@ -199,11 +254,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
               }}
             >
               <MessageCircle size={18} />
-              Discord
+              Discord Commands
             </button>
 
             <button
@@ -215,10 +272,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowPromptsTropes(false);
                 setShowStats(false);
                 setShowHallOfFame(false);
+                setShowAdminPanel(false);
                 setCurrentCharacter(null);
+                setRightMenuOpen(false);
               }}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '1rem',
                 borderRadius: '4px',
                 border: 'none',
                 background: showKnowledgeBase ? 'var(--accent-color)' : 'var(--bg-tertiary)',
@@ -226,7 +285,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
               }}
             >
               <BookOpen size={18} />
@@ -242,10 +303,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowKnowledgeBase(false);
                 setShowStats(false);
                 setShowHallOfFame(false);
+                setShowAdminPanel(false);
                 setCurrentCharacter(null);
+                setRightMenuOpen(false);
               }}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '1rem',
                 borderRadius: '4px',
                 border: 'none',
                 background: showPromptsTropes ? 'var(--accent-color)' : 'var(--bg-tertiary)',
@@ -253,10 +316,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
               }}
             >
-              <MessageCircle size={18} />
+              <Dices size={18} />
               Prompts & Tropes
             </button>
 
@@ -269,10 +334,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowKnowledgeBase(false);
                 setShowPromptsTropes(false);
                 setShowHallOfFame(false);
+                setShowAdminPanel(false);
                 setCurrentCharacter(null);
+                setRightMenuOpen(false);
               }}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '1rem',
                 borderRadius: '4px',
                 border: 'none',
                 background: showStats ? 'var(--accent-color)' : 'var(--bg-tertiary)',
@@ -280,7 +347,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
               }}
             >
               Stats
@@ -295,10 +364,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowKnowledgeBase(false);
                 setShowPromptsTropes(false);
                 setShowStats(false);
+                setShowAdminPanel(false);
                 setCurrentCharacter(null);
+                setRightMenuOpen(false);
               }}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '1rem',
                 borderRadius: '4px',
                 border: 'none',
                 background: showHallOfFame ? 'var(--accent-color)' : 'var(--bg-tertiary)',
@@ -306,37 +377,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
               }}
             >
-              ⭐ Hall of Fame
-            </button>
-
-            <button
-              onClick={() => {
-                setShowSettings(!showSettings);
-                setShowDiscordCommands(false);
-                setShowFileManager(false);
-                setShowKnowledgeBase(false);
-                setShowPromptsTropes(false);
-                setShowStats(false);
-                setShowHallOfFame(false);
-                setCurrentCharacter(null);
-              }}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showSettings ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showSettings ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <SettingsIcon size={18} />
-              Settings
+              Hall of Fame
             </button>
 
             <button
@@ -348,10 +394,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 setShowPromptsTropes(false);
                 setShowStats(false);
                 setShowHallOfFame(false);
+                setShowAdminPanel(false);
                 setCurrentCharacter(null);
+                setRightMenuOpen(false);
               }}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '1rem',
                 borderRadius: '4px',
                 border: 'none',
                 background: showFileManager ? 'var(--accent-color)' : 'var(--bg-tertiary)',
@@ -359,19 +407,56 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
               }}
             >
               <FolderOpen size={18} />
-              Files
+              File Manager
             </button>
 
-            <span style={{ color: 'var(--text-primary)' }}>{user.username}</span>
+            <button
+              onClick={() => {
+                setShowSettings(!showSettings);
+                setShowDiscordCommands(false);
+                setShowFileManager(false);
+                setShowKnowledgeBase(false);
+                setShowPromptsTropes(false);
+                setShowStats(false);
+                setShowHallOfFame(false);
+                setShowAdminPanel(false);
+                setCurrentCharacter(null);
+                setRightMenuOpen(false);
+              }}
+              style={{
+                padding: '1rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showSettings ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showSettings ? 'var(--accent-text)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
+              }}
+            >
+              <SettingsIcon size={18} />
+              Settings
+            </button>
+
+            <div style={{ borderTop: `1px solid var(--border-color)`, margin: '1rem 0' }} />
+
+            <div style={{ padding: '0.5rem 1rem', color: 'var(--text-secondary)' }}>
+              {user.username}
+            </div>
 
             <button
               onClick={handleLogout}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '1rem',
                 borderRadius: '4px',
                 border: 'none',
                 background: 'var(--accent-color)',
@@ -379,14 +464,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                fontSize: '1rem',
+                textAlign: 'left'
               }}
             >
               <LogOut size={18} />
               Logout
             </button>
           </div>
-        </header>
+        </div>
 
         {/* Password Rotation Banner */}
         <PasswordRotationBanner />

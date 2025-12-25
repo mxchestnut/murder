@@ -14,7 +14,7 @@ interface HamburgerSidebarProps {
 }
 
 export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel }: HamburgerSidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Always open
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -147,51 +147,11 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
 
   return (
     <>
-      {/* Hamburger button - always visible */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          position: 'fixed',
-          top: '1rem',
-          left: '1rem',
-          zIndex: 1001,
-          padding: '0.75rem',
-          borderRadius: '4px',
-          border: 'none',
-          background: 'var(--bg-tertiary)',
-          color: 'var(--text-primary)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}
-        title="Toggle menu"
-      >
-        <Menu size={20} />
-      </button>
-
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          onClick={() => setIsOpen(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 999
-          }}
-        />
-      )}
-
-      {/* Sidebar */}
+      {/* Sidebar - always visible */}
       <div style={{
         position: 'fixed',
         top: 0,
-        left: isOpen ? 0 : '-350px',
+        left: 0,
         bottom: 0,
         width: '300px',
         background: 'var(--bg-secondary)',
@@ -199,11 +159,10 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
         display: 'flex',
         flexDirection: 'column',
         zIndex: 1000,
-        transition: 'left 0.3s ease',
         overflowY: 'auto'
       }}>
-        <div style={{ padding: '1rem', paddingTop: '4rem', borderBottom: `1px solid var(--border-color)` }}>
-          <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Murder</h2>
+        <div style={{ padding: '1.5rem 1rem', borderBottom: `1px solid var(--border-color)` }}>
+          <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.5rem' }}>Murder</h2>
         </div>
 
         {/* Campaigns Section */}
