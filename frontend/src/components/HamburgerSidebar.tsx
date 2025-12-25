@@ -311,10 +311,14 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <button
                 onClick={async () => {
                   console.log('Create character menu item clicked');
+                  const characterName = prompt('Enter character name:');
+                  if (!characterName || !characterName.trim()) {
+                    return; // User cancelled or entered empty name
+                  }
                   try {
                     // Create a new blank character
                     const response = await api.post('/characters', {
-                      name: 'New Character',
+                      name: characterName.trim(),
                       level: 1,
                       characterClass: '',
                       race: '',
