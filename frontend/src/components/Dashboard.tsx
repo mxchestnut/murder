@@ -5,6 +5,7 @@ import Settings from './Settings';
 import DiscordCommands from './DiscordCommands';
 import CharacterBio from './CharacterBio';
 import CharacterMemories from './CharacterMemories';
+import CharacterAnalytics from './CharacterAnalytics';
 import FileManager from './FileManager';
 import KnowledgeBase from './KnowledgeBase';
 import PromptsTropes from './PromptsTropes';
@@ -32,7 +33,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [showStats, setShowStats] = useState(false);
   const [showHallOfFame, setShowHallOfFame] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const [characterTab, setCharacterTab] = useState<'bio' | 'memories'>('bio');
+  const [characterTab, setCharacterTab] = useState<'bio' | 'memories' | 'analytics'>('bio');
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -365,6 +366,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         >
                           💭 Memories
                         </button>
+                        <button
+                          onClick={() => setCharacterTab('analytics')}
+                          style={{
+                            padding: '0.75rem 1.25rem',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: characterTab === 'analytics' ? '2px solid var(--primary-color)' : '2px solid transparent',
+                            color: characterTab === 'analytics' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            fontWeight: characterTab === 'analytics' ? '600' : '400',
+                            marginBottom: '-2px'
+                          }}
+                        >
+                          📊 Analytics
+                        </button>
                       </div>
 
                       {/* Character Content Based on Tab */}
@@ -378,11 +394,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                             loadDocuments();
                           }}
                         />
-                      ) : (
+                      ) : characterTab === 'memories' ? (
                         <CharacterMemories
                           characterId={currentCharacter.id}
                           characterName={currentCharacter.name}
                           guildId={currentCharacter.guildId}
+                        />
+                      ) : (
+                        <CharacterAnalytics
+                          character={currentCharacter}
                         />
                       )}
 
