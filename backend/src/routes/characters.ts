@@ -516,7 +516,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a character sheet
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
     const sheetId = parseInt(req.params.id);
