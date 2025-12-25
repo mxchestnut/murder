@@ -10,40 +10,54 @@ interface ImageCropperProps {
 export default function ImageCropper({ image, onCropComplete, onCancel }: ImageCropperProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 200, height: 200 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      if (imageRef.current) {
-        imageRef.current.src = image;
-        setImageLoaded(true);
-        // Center the crop area
-        const size = Math.min(img.width, img.height) * 0.6;
-        setCropArea({
-          x: (img.width - size) / 2,
-          y: (img.height - size) / 2,
-          width: size,
-          height: size
-        });
-      }
-    };
-    img.src = image;
-  }, [image]);
+    if (imageRef.current && imageLoaded) {
+      const img = imageRef.current;
+      const displayWidth = img.clientWidth;
+      const displayHeight = img.clientHeight;
+
+      // Center the crop area based on displayed size
+      const size = Math.min(displayWidth, displayHeight) * 0.6;
+      setCropArea({
+        x: (displayWidth - size) / 2,
+        y: (displayHeight - size) / 2,
+        width: size,
+        height: size
+      });
+
+      setImageDimensions({
+        width: displayWidth,
+        height: displayHeight
+      });
+    }
+  }, [imageLoaded]);
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (!imageRef.current) return;
+    const rect = imageRef.current.getBoundingClientRect();
     setIsDragging(true);
-    setDragStart({ x: e.clientX - cropArea.x, y: e.clientY - cropArea.y });
+    setDragStart({
+      x: e.clientX - rect.left - cropArea.x,
+      y: e.clientY - rect.top - cropArea.y
+    });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !imageRef.current) return;
-    const img = imageRef.current;
-    const newX = Math.max(0, Math.min(e.clientX - dragStart.x, img.width - cropArea.width));
-    const newY = Math.max(0, Math.min(e.clientY - dragStart.y, img.height - cropArea.height));
+    const rect = imageRef.current.getBoundingClientRect();
+    const newX = Math.max(0, Math.min(e.clientX - rect.left - dragStart.x, imageDimensions.width - cropArea.width));
+    const newY = Math.max(0, Math.min(e.clientY - rect.top - dragStart.y, imageDimensions.height - cropArea.height));
     setCropArea(prev => ({ ...prev, x: newX, y: newY }));
   };
 
@@ -58,19 +72,27 @@ export default function ImageCropper({ image, onCropComplete, onCancel }: ImageC
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = cropArea.width;
-    canvas.height = cropArea.height;
+    const img = imageRef.current;
 
+    // Calculate scale factor between natural size and displayed size
+    const scaleX = img.naturalWidth / img.clientWidth;
+    const scaleY = img.naturalHeight / img.clientHeight;
+
+    // Set canvas to crop size
+    canvas.width = cropArea.width * scaleX;
+    canvas.height = cropArea.height * scaleY;
+
+    // Draw the cropped portion
     ctx.drawImage(
-      imageRef.current,
-      cropArea.x,
-      cropArea.y,
-      cropArea.width,
-      cropArea.height,
+      img,
+      cropArea.x * scaleX,
+      cropArea.y * scaleY,
+      cropArea.width * scaleX,
+      cropArea.height * scaleY,
       0,
       0,
-      cropArea.width,
-      cropArea.height
+      canvas.width,
+      canvas.height
     );
 
     canvas.toBlob((blob) => {
@@ -148,28 +170,30 @@ export default function ImageCropper({ image, onCropComplete, onCancel }: ImageC
         padding: '2rem',
         overflow: 'auto'
       }}>
-        {imageLoaded && (
-          <div
+        <div
+          ref={containerRef}
+          style={{
+            position: 'relative',
+            display: 'inline-block'
+          }}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          <img
+            ref={imageRef}
+            src={image}
+            alt="Crop preview"
+            onLoad={handleImageLoad}
             style={{
-              position: 'relative',
-              display: 'inline-block'
+              maxWidth: '90vw',
+              maxHeight: '70vh',
+              display: 'block',
+              userSelect: 'none'
             }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
-            <img
-              ref={imageRef}
-              src={image}
-              alt="Crop preview"
-              style={{
-                maxWidth: '90vw',
-                maxHeight: '70vh',
-                display: 'block',
-                userSelect: 'none'
-              }}
-              draggable={false}
-            />
+            draggable={false}
+          />
+          {imageLoaded && (
             <div
               onMouseDown={handleMouseDown}
               style={{
@@ -199,8 +223,8 @@ export default function ImageCropper({ image, onCropComplete, onCancel }: ImageC
                 Drag to reposition
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
         <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
 
