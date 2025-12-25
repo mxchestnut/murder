@@ -7,7 +7,7 @@ import * as PlayFabService from '../services/playfab';
 
 const router = Router();
 
-// Login endpoint doesn't require Cyarika auth
+// Login endpoint doesn't require Murder Tech auth
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -135,7 +135,7 @@ router.post('/character/share', async (req, res) => {
  * Import a PathCompanion character
  * POST /api/pathcompanion/import
  * Body: { characterId } - uses stored PathCompanion session
- * Requires Cyarika authentication AND PathCompanion account connection
+ * Requires Murder Tech authentication AND PathCompanion account connection
  */
 router.post('/import', isAuthenticated, async (req, res) => {
   try {
@@ -435,7 +435,7 @@ router.post('/sync/:id', async (req, res) => {
 /**
  * Import all characters from PathCompanion account
  * POST /api/pathcompanion/import-all
- * Requires Cyarika authentication AND PathCompanion account connection
+ * Requires Murder Tech authentication AND PathCompanion account connection
  */
 router.post('/import-all', isAuthenticated, async (req, res) => {
   try {

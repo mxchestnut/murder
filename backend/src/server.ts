@@ -71,11 +71,30 @@ async function startServer() {
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable for serving frontend
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", 'data:'],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://cyarika.com', 'https://www.cyarika.com']
+    ? ['https://murder.tech', 'https://www.murder.tech']
     : 'http://localhost:5173',
   credentials: true
 }));
@@ -98,7 +117,7 @@ app.use(express.urlencoded({ extended: true }));
   app.use(session({
     store: new RedisStore({ 
       client: redisClient,
-      prefix: 'cyarika:sess:',
+      prefix: 'murder:sess:',
       ttl: 86400 * 30 // 30 days absolute maximum in seconds
     }),
     secret: secrets.SESSION_SECRET,
@@ -124,7 +143,7 @@ setupPassport();
 const csrfProtection = doubleCsrf({
   getSecret: () => secrets.SESSION_SECRET,
   getSessionIdentifier: (req) => req.session?.id || '',
-  cookieName: 'cyarika.x-csrf-token',
+  cookieName: 'murder.x-csrf-token',
   cookieOptions: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

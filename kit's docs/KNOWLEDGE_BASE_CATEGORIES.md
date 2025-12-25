@@ -1,26 +1,9 @@
 # Categorized Knowledge Base Commands
 
 ## Overview
-The knowledge base now supports categorized lookups with AI fallback for kinks, feats, and spells.
+The knowledge base supports categorized lookups with AI fallback for feats and spells.
 
-## New Commands
-
-### 💋 !kink <name>
-Look up information about a kink/fetish.
-
-**Examples:**
-```
-!kink bondage
-!kink roleplay
-!kink sensory deprivation
-```
-
-**How it works:**
-1. Searches your custom knowledge base entries first
-2. If not found, asks Gemini AI for information
-3. React with ⭐ to save AI responses to your knowledge base
-
----
+## Commands
 
 ### ⚔️ !feat <name>
 Look up D&D feat information.

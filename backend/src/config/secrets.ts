@@ -35,10 +35,10 @@ export async function loadSecrets(): Promise<Secrets> {
   console.log('Loading secrets from AWS Secrets Manager...');
 
   const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey] = await Promise.all([
-    getSecret('cyarika/database-url'),
-    getSecret('cyarika/session-secret'),
-    getSecret('cyarika/discord-bot-token'),
-    getSecret('cyarika/gemini-api-key')
+    getSecret('murder/database-url'),
+    getSecret('murder/session-secret'),
+    getSecret('murder/discord-bot-token'),
+    getSecret('murder/gemini-api-key')
   ]);
 
   cachedSecrets = {

@@ -6,17 +6,17 @@ import { eq } from 'drizzle-orm';
 
 const router = Router();
 
-// Discord bot authentication - validates Cyarika credentials and returns user data
+// Discord bot authentication - validates Murder Tech credentials and returns user data
 router.post('/login', async (req, res) => {
   try {
     const { username, password, discordUserId } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password required' });
+    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Valid username and password required' });
     }
 
-    if (!discordUserId) {
-      return res.status(400).json({ error: 'Discord user ID required' });
+    if (!discordUserId || typeof discordUserId !== 'string') {
+      return res.status(400).json({ error: 'Valid Discord user ID required' });
     }
 
     // Find user by username
@@ -41,11 +41,11 @@ router.post('/login', async (req, res) => {
 
       if (existingLink && existingLink.id !== user.id) {
         return res.status(400).json({
-          error: `This Discord account is already linked to another Cyarika account (${existingLink.username})`
+          error: `This Discord account is already linked to another Murder Tech account (${existingLink.username})`
         });
       }
 
-      // Link this Discord user to the Cyarika account
+      // Link this Discord user to the Murder Tech account
       await db.update(users)
         .set({ discordUserId })
         .where(eq(users.id, user.id));
@@ -91,7 +91,7 @@ router.get('/user/:discordUserId', async (req, res) => {
       .where(eq(users.discordUserId, discordUserId));
 
     if (!user) {
-      return res.status(404).json({ error: 'Discord account not linked to Cyarika' });
+      return res.status(404).json({ error: 'Discord account not linked to Murder Tech' });
     }
 
     // Get user's characters

@@ -38,6 +38,26 @@ router.post('/register', async (req, res) => {
   try {
     const { username, password, email } = req.body;
 
+    // Input validation
+    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Invalid username or password' });
+    }
+
+    if (username.length < 3 || username.length > 50) {
+      return res.status(400).json({ error: 'Username must be between 3 and 50 characters' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    if (email && typeof email === 'string' && email.length > 0) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+    }
+
     // Check if user already exists
     const [existingUser] = await db.select().from(users).where(eq(users.username, username));
     if (existingUser) {
@@ -45,7 +65,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
     const [newUser] = await db.insert(users).values({
@@ -149,7 +169,7 @@ router.post('/logout-all-devices', isAuthenticated, async (req, res) => {
     }
 
     // Get all session keys
-    const sessionKeys = await redisClient.keys('cyarika:sess:*');
+    const sessionKeys = await redisClient.keys('murder:sess:*');
     
     let deletedCount = 0;
     
@@ -212,8 +232,8 @@ router.post('/pathcompanion/connect', isAuthenticated, async (req, res) => {
     const userId = (req.user as any).id;
     const { username, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password required' });
+    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Valid username and password required' });
     }
 
     // Import PlayFab service

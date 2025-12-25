@@ -7,7 +7,7 @@ export default function DiscordCommands() {
         <MessageCircle size={32} />
         <div>
           <h1>Discord Bot Commands</h1>
-          <p>Use these commands with Cyar'ika bot in your Discord server - 32+ commands available!</p>
+          <p>Use these commands with Murder Tech bot in your Discord server - 32+ commands available!</p>
         </div>
       </div>
 
@@ -386,7 +386,7 @@ export default function DiscordCommands() {
       <div className="setup-section">
         <h2>Setup Instructions</h2>
         <ol>
-          <li>Make sure Cyar'ika bot is in your Discord server</li>
+          <li>Make sure Murder Tech bot is in your Discord server</li>
           <li>Create a <code>#hall-of-fame</code> channel for starred messages</li>
           <li>Create or import your characters in the Character Sheets tab</li>
           <li>Optionally add avatar URLs to your characters for custom proxying</li>

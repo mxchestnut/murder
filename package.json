@@ -1,7 +1,7 @@
 {
-  "name": "cyarika",
+  "name": "murder-tech",
   "version": "1.0.0",
-  "description": "Private portal with secure authentication, document management, and messaging",
+  "description": "Murder Tech - Discord-integrated roleplay platform with character management and AI features",
   "private": true,
   "workspaces": [
     "backend",

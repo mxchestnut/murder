@@ -1,6 +1,6 @@
 # Cyar'ika - Completed Features
 
-**Last Updated:** December 24, 2025
+**Last Updated:** December 25, 2025
 
 This document tracks all completed features that have been implemented and deployed to production.
 
@@ -537,6 +537,93 @@ characterMemories
 - ✅ `check-discord-tables.ts` - Validation script for required tables
 - ✅ `check-tables.ts` - General table listing utility
 - ✅ All migrations run successfully on Neon PostgreSQL
+
+---
+
+## ✅ AWS S3 File Management Enhancements (Dec 24, 2025)
+
+### Features Implemented
+- **File Categories**: Avatar, Image, Document, Other
+- **Image Optimization**: Automatic WebP conversion with Sharp library
+- **Thumbnail Generation**: 300px max dimension thumbnails for all images
+- **Circular Avatars**: 512px circular cropping for avatar images
+- **Storage Quotas**: Per-user quota tracking (1GB default)
+- **MIME Validation**: Category-specific file type validation
+- **Photo Gallery**: Pinterest-style masonry grid component with filters
+
+### Technical Details
+- Sharp library for image processing (WebP, quality 80%)
+- S3 storage structure: `{category}/{userId}/{filename}`
+- Automatic thumbnail generation on upload
+- Quota enforcement before upload
+- Category-based MIME type restrictions
+
+### Database Changes
+- Added `category` field to files table
+- Added `thumbnail_s3_key` field
+- Added `is_optimized` boolean flag
+- Quota tracking in users table
+
+### Components Created
+- `backend/src/utils/imageOptimization.ts` - Sharp utilities
+- `frontend/src/components/PhotoGallery.tsx` - Pinterest-style gallery
+
+---
+
+## ✅ AWS RDS PostgreSQL Migration (Dec 25, 2025)
+
+### Migration Summary
+Migrated from Neon PostgreSQL to AWS RDS PostgreSQL for improved backup capabilities and long-term cost efficiency.
+
+### Reason for Migration
+- **Neon Limitation**: Free tier only provides 6-hour PITR (Point-in-Time Recovery)
+- **RDS Advantage**: 7-day PITR (expandable to 35 days), 12 months free tier
+
+### RDS Instance Configuration
+- **Instance ID**: cyarika-db
+- **Instance Class**: db.t4g.micro (ARM-based, 1 vCPU, 1 GB RAM)
+- **Engine**: PostgreSQL 16.6
+- **Storage**: 20 GB GP3 SSD (3000 IOPS, 125 MB/s throughput)
+- **Backup Retention**: 7 days (automated daily backups at 03:00 UTC)
+- **Endpoint**: cyarika-db.csdgukyoelj0.us-east-1.rds.amazonaws.com
+- **Encryption**: AWS KMS encryption enabled
+- **Multi-AZ**: Disabled (free tier limitation)
+- **Public Access**: Disabled (VPC-only access from EC2)
+
+### Security Configuration
+- **VPC**: vpc-0af3bd99650024a69
+- **Security Group**: sg-0bc62749afe4f64d8 (RDS)
+- **Allowed Access**: Only from EC2 security group (sg-068344f8a044ec991) on port 5432
+- **SSL**: Required with `rejectUnauthorized: false` in code
+- **Subnet Group**: cyarika-db-subnet-group across 3 AZs (us-east-1c, us-east-1e, us-east-1f)
+
+### Migration Statistics
+- **Total Tables**: 23 tables migrated successfully
+- **Data Verified**: 2 users, 3 characters, 1 relationship
+- **Backup Size**: 126 KB
+- **Migration Time**: ~45 minutes (including RDS provisioning)
+
+### Cost Analysis
+- **Free Tier (12 months)**: $0/month (750 hours/month db.t4g.micro)
+- **After Free Tier**: ~$15-20/month
+- **Compared to Neon Pro**: Savings of $3-4/month with better features
+
+### Post-Migration Actions
+- ✅ Backed up Neon database (rollback capability at /tmp/cyarika-neon-backup.dump)
+- ✅ Restored all 23 tables to RDS
+- ✅ Updated AWS Secrets Manager with new DATABASE_URL
+- ✅ Configured SSL connection with certificate validation disabled
+- ✅ Restarted EC2 instance and PM2 processes
+- ✅ Updated Route 53 DNS after EC2 IP change (98.92.57.204)
+- ✅ Verified Discord bot functionality
+- ✅ Verified web portal functionality
+- ✅ Configured PM2 systemd auto-start
+
+### Monitoring & Maintenance
+- **Backup Window**: 03:00-04:00 UTC daily
+- **Maintenance Window**: Sunday 04:00-05:00 UTC
+- **Auto Minor Version Upgrade**: Enabled
+- **Point-in-Time Recovery**: Any second within last 7 days
 
 ---
 

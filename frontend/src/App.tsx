@@ -2,12 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import DatabaseSetup from './components/DatabaseSetup';
 import { api, fetchCsrfToken } from './utils/api';
 import { useTheme } from './utils/useTheme';
 
 function App() {
-  console.log('Cyar\'ika v2.0.0 - Roleplay Smarter');
+  console.log('Murder Tech v2.0.0 - Roleplay Platform');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   useTheme(); // Initialize theme on app load
@@ -46,10 +45,6 @@ function App() {
         <Route 
           path="/login" 
           element={user ? <Navigate to="/" /> : <Login onLogin={checkAuth} />} 
-        />
-        <Route 
-          path="/setup" 
-          element={user ? <DatabaseSetup /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/*" 

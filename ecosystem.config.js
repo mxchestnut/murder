@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'cyarika-backend',
+    name: 'murder-tech-backend',
     script: './backend/dist/server.js',
     instances: 1,
     exec_mode: 'fork',

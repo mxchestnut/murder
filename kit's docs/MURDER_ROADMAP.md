@@ -1,9 +1,9 @@
-# Cyar'ika - Development Roadmap
+# Murder Tech - Development Roadmap
 
 **Last Updated:** December 24, 2025  
 **Current Phase:** Priority 3 Complete - Ready for Priority 4
 
-> 📝 **Note:** Completed features have been moved to `Completed tasks/COMPLETED_FEATURES.md`
+> 📝 **Note:** Completed features have been moved to `COMPLETED_FEATURES.md`
 
 ---
 

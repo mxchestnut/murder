@@ -138,15 +138,6 @@ Ask the AI anything about D&D, Pathfinder, or your campaign. Searches knowledge 
 !ask What is AC?
 ```
 
-### !kink <name>
-Look up kink/fetish information. Searches your knowledge base first, then asks AI.
-
-**Examples:**
-```
-!kink bondage
-!kink roleplay
-```
-
 ### !feat <name>
 Look up D&D/Pathfinder feat information. Searches your knowledge base first, then asks AI.
 
@@ -391,7 +382,7 @@ This data powers `!stats`, `!leaderboard`, `!recap`, and relationship tracking.
 **Account & Setup:** `!connect`, `!syncall`, `!botset`  
 **Characters:** `!setchar`, `!char`, `!profile`, `CharName: message`  
 **Dice & Stats:** `!roll`, `!stats`, `!leaderboard`  
-**AI & Knowledge:** `!ask`, `!kink`, `!feat`, `!spell`, `!learn`, `!learnurl`  
+**AI & Knowledge:** `!ask`, `!feat`, `!spell`, `!learn`, `!learnurl`  
 **RP Tools:** `!prompt`, `!trope`  
 **Sessions:** `!session start/end/pause/resume/list`, `!recap`  
 **Scenes:** `!scene start/end/tag/location/list`  

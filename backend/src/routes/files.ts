@@ -276,6 +276,9 @@ router.get('/:id/download', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const fileId = parseInt(req.params.id);
+    if (isNaN(fileId) || fileId < 1) {
+      return res.status(400).json({ error: 'Invalid file ID' });
+    }
     const thumbnail = req.query.thumbnail === 'true';
 
     const [fileRecord] = await db
@@ -315,6 +318,9 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const fileId = parseInt(req.params.id);
+    if (isNaN(fileId) || fileId < 1) {
+      return res.status(400).json({ error: 'Invalid file ID' });
+    }
 
     const [fileRecord] = await db
       .select()

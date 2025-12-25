@@ -6,7 +6,7 @@ A Discord-integrated roleplay platform with character management, document editi
 ## Tech Stack
 - **Backend**: Node.js, Express, TypeScript, Passport.js
 - **Frontend**: React, TypeScript, Tiptap 3.0
-- **Database**: PostgreSQL (Neon)
+- **Database**: PostgreSQL (AWS RDS)
 - **Storage**: AWS S3
 - **Messaging**: Discord bot integration
 - **Deployment**: AWS EC2 (free tier)

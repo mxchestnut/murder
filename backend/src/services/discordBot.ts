@@ -123,9 +123,6 @@ export function initializeDiscordBot(token: string) {
         case 'learnurl':
           await handleLearnUrl(message, args);
           break;
-        case 'kink':
-          await handleKink(message, args);
-          break;
         case 'feat':
           await handleFeat(message, args);
           break;
@@ -401,7 +398,7 @@ async function handleProfile(message: Message, args: string[]) {
       // Convert relative URL to absolute URL for Discord
       const avatarUrl = character.avatarUrl.startsWith('http') 
         ? character.avatarUrl 
-        : `https://cyarika.com${character.avatarUrl}`;
+        : `https://murder.tech${character.avatarUrl}`;
       embed.setThumbnail(avatarUrl);
     }
 
@@ -935,9 +932,9 @@ async function handleConnect(message: Message, args: string[]) {
 
   try {
     // Send a DM to the user for privacy
-    await message.author.send('🔐 Connecting to Write Pretend...');
+    await message.author.send('🔐 Connecting to Murder Tech...');
 
-    // Authenticate with Cyarika backend
+    // Authenticate with Murder Tech backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
     const response = await axios.post(`${API_URL}/api/discord/login`, {
       username,
@@ -947,7 +944,7 @@ async function handleConnect(message: Message, args: string[]) {
 
     const { user, characters } = response.data;
 
-    await message.author.send('✅ **Successfully connected to Write Pretend!**\n\n' +
+    await message.author.send('✅ **Successfully connected to Murder Tech!**\n\n' +
       `🎭 Account: **${user.username}**\n` +
       `🎲 Characters: **${characters.length}**\n` +
       (user.pathCompanionConnected ? '🔗 PathCompanion: **Connected**\n' : '') +
@@ -988,11 +985,11 @@ async function handleSyncAll(message: Message) {
       .where(eq(users.discordUserId, message.author.id));
 
     if (!user) {
-      await message.reply('❌ **Discord account not linked to Cyarika.**\n\n' +
+      await message.reply('❌ **Discord account not linked to Murder Tech.**\n\n' +
         '**To link your account:**\n' +
         '1. Use `!connect <username> <password>` in Discord, OR\n' +
-        '2. Visit http://54.242.214.56 to create/manage your account\n\n' +
-        '💡 Once linked, all your Cyarika characters will be available!');
+        '2. Visit murder.tech to create/manage your account\n\n' +
+        '💡 Once linked, all your Murder Tech characters will be available!');
       return;
     }
 
@@ -1037,14 +1034,14 @@ async function handleHelp(message: Message) {
       { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
       { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
       { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
-      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!kink <name>` - Kink information\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
+      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
       { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
       { name: '� Character Memories', value: '`!Memory <Character> | <memory>` - Add memory\n`!<Character> Memories` - View all memories\nExample: `!Memory Ogun | Had a dream`', inline: false },
       { name: '�🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
       { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false }
     )
-    .setFooter({ text: 'Visit cyarika.com to manage characters!' });
+    .setFooter({ text: 'Visit murder.tech to manage characters!' });
 
   await message.reply({ embeds: [embed] });
 }
@@ -1814,10 +1811,6 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     console.error(`Error in !${category} command:`, error);
     await message.reply(`❌ Sorry, I encountered an error looking up that ${categoryName.toLowerCase()}.`);
   }
-}
-
-async function handleKink(message: Message, args: string[]) {
-  await handleKnowledgeLookup(message, args, 'kink', '💋', 'Kink');
 }
 
 async function handleFeat(message: Message, args: string[]) {

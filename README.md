@@ -1,8 +1,8 @@
-# Cyar'ika - Discord-Integrated Roleplay Platform
+# Murder Tech - Discord-Integrated Roleplay Platform
 
-**Cyar'ika** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
+**Murder Tech** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
 
-🌐 **Website:** [cyarika.com](https://cyarika.com)
+🌐 **Website:** [murdertech.com](https://murder.tech)
 
 ## Features
 
@@ -39,10 +39,10 @@
 
 ### Backend
 - **Runtime:** Node.js, Express, TypeScript
-- **Database:** PostgreSQL (Neon serverless)
+- **Database:** PostgreSQL (AWS RDS)
 - **Authentication:** Passport.js
 - **Discord:** Discord.js v14
-- **AI:** OpenAI GPT-4 *(planned)*
+- **AI:** Google Gemini 2.5 Flash *(optional)*
 - **Storage:** AWS S3
 
 ### Frontend
@@ -55,23 +55,23 @@
 - **Hosting:** AWS EC2 (free tier)
 - **Storage:** AWS S3
 - **DNS:** AWS Route53
-- **Domain:** writepretend.com
+- **Domain:** murder.tech
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+
-- PostgreSQL database (Neon recommended)
+- PostgreSQL database (AWS RDS recommended)
 - Discord bot token
 - AWS S3 credentials
-- OpenAI API key *(for AI features)*
+- Google Gemini API key *(optional - for AI features)*
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/mxchestnut/writepretend.git
-cd writepretend
+git clone https://github.com/mxchestnut/murder-tech.git
+cd murder-tech
 ```
 
 2. **Set up git-secrets** (IMPORTANT - Prevents committing secrets)
@@ -139,7 +139,7 @@ npm run dev
 
 1. **Create Discord Application**
    - Go to [Discord Developer Portal](https://discord.com/developers/applications)
-   - Create new application named "Write Pretend Bot"
+   - Create new application named "Murder Tech Bot"
    - Go to Bot section, create bot, copy token to `.env`
 
 2. **Set Bot Permissions**
@@ -185,12 +185,12 @@ sudo cp -r frontend/dist/* /var/www/html/
 
 ### DNS Configuration
 
-Route53 is already configured to point writepretend.com to your EC2 instance.
+Route53 is already configured to point murder.tech to your EC2 instance.
 
 ## Project Structure
 
 ```
-cyarika/
+murder-tech/
 ├── backend/
 │   ├── src/
 │   │   ├── routes/          # API endpoints
@@ -206,14 +206,13 @@ cyarika/
 │   │   ├── utils/           # API client
 │   │   └── App.tsx
 │   └── package.json
-├── WRITEPRETEND_ROADMAP.md  # Feature roadmap
-├── REBRAND_TO_WRITEPRETEND.md  # Migration guide
+├── kit's docs/              # Project documentation
 └── README.md                # This file
 ```
 
 ## Roadmap
 
-See [WRITEPRETEND_ROADMAP.md](WRITEPRETEND_ROADMAP.md) for the complete feature roadmap.
+See [kit's docs/MURDER_ROADMAP.md](kit's%20docs/MURDER_ROADMAP.md) for the complete feature roadmap.
 
 ### Current Focus
 **Phase 1.1** - AI-Powered FAQ System
@@ -233,7 +232,7 @@ See [WRITEPRETEND_ROADMAP.md](WRITEPRETEND_ROADMAP.md) for the complete feature 
 ### Discord Bot Commands
 
 **Account Setup:**
-- `!connect <username> <password>` - Link Discord to Write Pretend
+- `!connect <username> <password>` - Link Discord to Murder Tech
 - `!syncall` - Refresh character list
 
 **Character Commands:**
