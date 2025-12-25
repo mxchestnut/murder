@@ -182,7 +182,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onNewCharacter();
+                  onSelectCharacter(null);
                 }}
                 style={{
                   padding: '0.25rem',
