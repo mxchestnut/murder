@@ -19,10 +19,10 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiting for registration - 3 accounts per hour per IP
+// Rate limiting for registration - 20 accounts per hour per IP (relaxed for testing)
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 20,
   message: 'Too many accounts created, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
