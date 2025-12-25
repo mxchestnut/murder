@@ -104,6 +104,16 @@ export default function Login({ onLogin }: LoginProps) {
               }}
               required
             />
+            {isRegister && (
+              <div style={{
+                marginTop: '0.5rem',
+                fontSize: '0.85rem',
+                color: 'var(--text-muted)',
+                lineHeight: '1.4'
+              }}>
+                Must be at least 8 characters with uppercase, lowercase, and number
+              </div>
+            )}
           </div>
 
           <button
