@@ -2,7 +2,7 @@
 
 **Murder Tech** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
 
-🌐 **Website:** [murdertech.com](https://murder.tech)
+🌐 **Website:** [murder.tech](https://murder.tech)
 
 ## Features
 
