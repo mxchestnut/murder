@@ -65,6 +65,12 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
     return auth.sessionTicket;
   } catch (error) {
     console.error(`Failed to refresh session for user ${userId}:`, error);
+
+    // Check if it's a decryption error (encryption key changed)
+    if (error instanceof Error && error.message.includes('bad decrypt')) {
+      throw new Error('PathCompanion credentials need to be re-entered. Please go to Settings and reconnect your PathCompanion account.');
+    }
+
     throw new Error(`Failed to refresh PathCompanion session: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
