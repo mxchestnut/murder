@@ -525,9 +525,10 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
  * Sync a PathCompanion character (refresh data from PlayFab)
  * POST /api/pathcompanion/sync/:id
  */
-router.post('/sync/:id', async (req, res) => {
+router.post('/sync/:id', isAuthenticated, async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const user = req.user as any;
+    const userId = user.id;
     const sheetId = parseInt(req.params.id);
 
     // Get the character sheet
@@ -543,13 +544,16 @@ router.post('/sync/:id', async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    if (!sheet.isPathCompanion || !sheet.pathCompanionId || !sheet.pathCompanionSession) {
-      return res.status(400).json({ error: 'Not a PathCompanion character or missing session' });
+    if (!sheet.isPathCompanion || !sheet.pathCompanionId) {
+      return res.status(400).json({ error: 'Not a PathCompanion character' });
     }
+
+    // Automatically refresh session if needed
+    const sessionTicket = await refreshSessionIfNeeded(user.id);
 
     // Fetch fresh data from PathCompanion
     const character = await PlayFabService.getCharacter(
-      sheet.pathCompanionSession,
+      sessionTicket,
       sheet.pathCompanionId
     );
 

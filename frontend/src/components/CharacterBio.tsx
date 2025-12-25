@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { api } from '../utils/api';
 import TiptapField from './TiptapField';
+import ImageCropper from './ImageCropper';
 
 interface CharacterBioProps {
   character: any;
@@ -93,6 +94,8 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
 
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     // Update bio data when character changes
@@ -321,29 +324,15 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           id="bio-avatar-upload"
           accept="image/*"
           style={{ display: 'none' }}
-          onChange={async (e) => {
+          onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
-              try {
-                const formData = new FormData();
-                formData.append('avatar', file);
-
-                const uploadResponse = await api.post('/characters/upload-avatar', formData, {
-                  headers: {
-                    'Content-Type': 'multipart/form-data'
-                  }
-                });
-                const avatarUrl = uploadResponse.data.url;
-
-                await api.put(`/characters/${character.id}`, { avatarUrl });
-                onUpdate();
-                setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
-                setTimeout(() => setMessage(null), 3000);
-              } catch (error) {
-                console.error('Error uploading avatar:', error);
-                setMessage({ type: 'error', text: 'Failed to upload avatar' });
-                setTimeout(() => setMessage(null), 3000);
-              }
+              const reader = new FileReader();
+              reader.onload = () => {
+                setSelectedImage(reader.result as string);
+                setShowCropper(true);
+              };
+              reader.readAsDataURL(file);
             }
             e.target.value = '';
           }}
@@ -363,6 +352,40 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           {character.avatarUrl ? 'Change Avatar' : 'Upload Avatar'}
         </button>
       </div>
+
+      {showCropper && selectedImage && (
+        <ImageCropper
+          image={selectedImage}
+          onCropComplete={async (croppedBlob) => {
+            try {
+              const formData = new FormData();
+              formData.append('avatar', croppedBlob, 'avatar.jpg');
+
+              const uploadResponse = await api.post('/characters/upload-avatar', formData, {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                }
+              });
+              const avatarUrl = uploadResponse.data.url;
+
+              await api.put(`/characters/${character.id}`, { avatarUrl });
+              onUpdate();
+              setShowCropper(false);
+              setSelectedImage(null);
+              setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
+              setTimeout(() => setMessage(null), 3000);
+            } catch (error) {
+              console.error('Error uploading avatar:', error);
+              setMessage({ type: 'error', text: 'Failed to upload avatar' });
+              setTimeout(() => setMessage(null), 3000);
+            }
+          }}
+          onCancel={() => {
+            setShowCropper(false);
+            setSelectedImage(null);
+          }}
+        />
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
