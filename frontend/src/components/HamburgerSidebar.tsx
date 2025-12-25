@@ -789,29 +789,68 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             {loadingCharacters ? (
               <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>Loading characters...</p>
             ) : pathCompanionCharacters.length === 0 ? (
-              <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>
-                No PathCompanion characters found. Make sure you've connected your PathCompanion account in Settings.
-              </p>
-            ) : (
-              <div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                  No PathCompanion characters found. Make sure you've connected your PathCompanion account in Settings.
+                </p>
                 <button
-                  onClick={() => importAllPathCompanionCharacters()}
-                  disabled={importingPC}
+                  onClick={() => loadPathCompanionCharacters()}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    padding: '0.5rem 1rem',
                     background: 'var(--accent-1)',
                     color: 'var(--text-primary)',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: importingPC ? 'not-allowed' : 'pointer',
-                    opacity: importingPC ? 0.5 : 1,
-                    width: '100%',
-                    marginBottom: '1rem',
-                    fontWeight: 600
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}
                 >
-                  {importingPC ? 'Importing All...' : `Import All (${pathCompanionCharacters.length})`}
+                  <RefreshCw size={16} />
+                  Try Again
                 </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <button
+                    onClick={() => importAllPathCompanionCharacters()}
+                    disabled={importingPC}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'var(--accent-1)',
+                      color: 'var(--text-primary)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: importingPC ? 'not-allowed' : 'pointer',
+                      opacity: importingPC ? 0.5 : 1,
+                      flex: 1,
+                      fontWeight: 600
+                    }}
+                  >
+                    {importingPC ? 'Importing All...' : `Import All (${pathCompanionCharacters.length})`}
+                  </button>
+                  <button
+                    onClick={() => loadPathCompanionCharacters()}
+                    disabled={loadingCharacters}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      cursor: loadingCharacters ? 'not-allowed' : 'pointer',
+                      opacity: loadingCharacters ? 0.5 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                    title="Refresh list"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                </div>
                 {pathCompanionCharacters.map((pcChar) => (
                   <div
                     key={pcChar.id}
