@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Upload, FileText, Download, Trash2, Loader, AlertCircle, CheckCircle, BookOpen } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Upload, FileText, Download, Trash2, Loader, CheckCircle, BookOpen, Image as ImageIcon, File, Search, X, Eye, FolderOpen, Grid, List } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface FileRecord {
@@ -10,14 +10,23 @@ interface FileRecord {
   mimeType: string;
   uploadedAt: string;
   virusScanStatus: string;
+  category?: string;
+  thumbnailUrl?: string;
 }
 
 export default function FileManager() {
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string>('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [learning, setLearning] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FileRecord | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<Array<{ name: string; progress: number; status: string }>>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
   useEffect(() => {
     loadFiles();
@@ -32,43 +41,106 @@ export default function FileManager() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    setUploadProgress('Uploading file...');
-    setMessage(null);
+  const uploadFile = async (file: File) => {
+    const fileIndex = uploadingFiles.length;
+    setUploadingFiles(prev => [...prev, { name: file.name, progress: 0, status: 'uploading' }]);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      setUploadProgress('Scanning for viruses...');
       await api.post('/files/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadingFiles(prev => prev.map((f, i) =>
+              i === fileIndex ? { ...f, progress: percentCompleted } : f
+            ));
+          }
         }
       });
 
-      setMessage({
-        type: 'success',
-        text: `File "${file.name}" uploaded successfully!`
-      });
+      setUploadingFiles(prev => prev.map((f, i) =>
+        i === fileIndex ? { ...f, status: 'complete', progress: 100 } : f
+      ));
 
-      await loadFiles();
-
-      // Clear file input
-      event.target.value = '';
+      return true;
     } catch (error: any) {
-      setMessage({
-        type: 'error',
-        text: error.response?.data?.error || 'Failed to upload file'
-      });
-    } finally {
-      setUploading(false);
-      setUploadProgress('');
+      setUploadingFiles(prev => prev.map((f, i) =>
+        i === fileIndex ? { ...f, status: 'error' } : f
+      ));
+      return false;
     }
+  };
+
+  const handleMultipleFiles = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+
+    setUploading(true);
+    setMessage(null);
+
+    const filesArray = Array.from(fileList);
+    let successCount = 0;
+
+    for (const file of filesArray) {
+      const success = await uploadFile(file);
+      if (success) successCount++;
+    }
+
+    await loadFiles();
+    setUploading(false);
+
+    setMessage({
+      type: successCount === filesArray.length ? 'success' : 'error',
+      text: `Uploaded ${successCount} of ${filesArray.length} file(s)`
+    });
+
+    // Clear upload list after 3 seconds
+    setTimeout(() => setUploadingFiles([]), 3000);
+  };
+
+  const handleFileInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleMultipleFiles(event.target.files);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+
+    const files = e.dataTransfer.files;
+    handleMultipleFiles(files);
   };
 
   const handleDownload = async (file: FileRecord) => {
@@ -76,7 +148,6 @@ export default function FileManager() {
       const response = await api.get(`/files/${file.id}/download`);
       const { downloadUrl, fileName } = response.data;
 
-      // Open download URL in new tab
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = fileName;
@@ -101,348 +172,569 @@ export default function FileManager() {
   };
 
   const handleLearnFromPDF = async (file: FileRecord) => {
-    if (!file.originalFileName.toLowerCase().endsWith('.pdf')) {
-      setMessage({ type: 'error', text: 'Only PDF files can be learned from' });
-      return;
-    }
-
-    if (!confirm(`Add content from "${file.originalFileName}" to the knowledge base?`)) return;
-
     setLearning(file.id);
-    setMessage(null);
-
     try {
-      const response = await api.post(`/files/${file.id}/learn`);
-      const { entriesAdded } = response.data;
-
-      setMessage({
-        type: 'success',
-        text: `✅ Added ${entriesAdded} entries from "${file.originalFileName}" to knowledge base!`
-      });
+      await api.post(`/files/${file.id}/learn`);
+      setMessage({ type: 'success', text: 'PDF content learned successfully!' });
     } catch (error: any) {
-      setMessage({
-        type: 'error',
-        text: error.response?.data?.error || 'Failed to learn from PDF'
-      });
+      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to learn from PDF' });
     } finally {
       setLearning(null);
     }
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const getFileIcon = (file: FileRecord) => {
+    if (file.mimeType.startsWith('image/')) return <ImageIcon size={20} />;
+    if (file.mimeType === 'application/pdf') return <FileText size={20} />;
+    return <File size={20} />;
+  };
+
+  const getFileCategory = (file: FileRecord) => {
+    if (file.category) return file.category;
+    if (file.mimeType.startsWith('image/')) return 'image';
+    if (file.mimeType === 'application/pdf') return 'document';
+    return 'other';
+  };
+
+  // Filter files
+  const filteredFiles = files.filter(file => {
+    const matchesSearch = file.originalFileName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || getFileCategory(file) === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const categories = [
+    { value: 'all', label: 'All Files', count: files.length },
+    { value: 'image', label: 'Images', count: files.filter(f => getFileCategory(f) === 'image').length },
+    { value: 'document', label: 'Documents', count: files.filter(f => getFileCategory(f) === 'document').length },
+    { value: 'other', label: 'Other', count: files.filter(f => getFileCategory(f) === 'other').length }
+  ];
+
+  const isImage = (mimeType: string) => mimeType.startsWith('image/');
+  const isPDF = (mimeType: string) => mimeType === 'application/pdf';
+
   return (
-    <div className="file-manager-container">
-      <div className="file-manager-header">
-        <h1>File Manager</h1>
-        <p className="subtitle">Upload and manage your files securely</p>
-      </div>
-
-      {message && (
-        <div className={`message ${message.type}`}>
-          {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-          <span>{message.text}</span>
+    <div
+      style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div>
+            <h1 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '2rem' }}>
+              <FolderOpen size={32} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+              File Manager
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
+              {filteredFiles.length} file{filteredFiles.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              style={{
+                padding: '0.5rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer'
+              }}
+              title={`Switch to ${viewMode === 'grid' ? 'list' : 'grid'} view`}
+            >
+              {viewMode === 'grid' ? <List size={20} /> : <Grid size={20} />}
+            </button>
+          </div>
         </div>
-      )}
 
-      <div className="upload-section">
-        <label className="upload-button">
+        {/* Message Banner */}
+        {message && (
+          <div style={{
+            padding: '1rem',
+            borderRadius: '6px',
+            background: message.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            border: `1px solid ${message.type === 'success' ? '#10b981' : '#ef4444'}`,
+            color: message.type === 'success' ? '#10b981' : '#ef4444',
+            marginBottom: '1rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {message.type === 'success' ? <CheckCircle size={20} /> : <X size={20} />}
+              {message.text}
+            </div>
+            <button
+              onClick={() => setMessage(null)}
+              style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* Upload Area */}
+        <div style={{
+          position: 'relative',
+          padding: '2rem',
+          borderRadius: '8px',
+          border: isDragging ? '2px dashed var(--accent-color)' : '2px dashed var(--border-color)',
+          background: isDragging ? 'rgba(220, 20, 60, 0.05)' : 'var(--bg-secondary)',
+          textAlign: 'center',
+          marginBottom: '1.5rem',
+          transition: 'all 0.2s'
+        }}>
           <input
+            ref={fileInputRef}
             type="file"
-            onChange={handleFileUpload}
+            onChange={handleFileInput}
+            multiple
             disabled={uploading}
             style={{ display: 'none' }}
           />
-          {uploading ? (
-            <>
-              <Loader size={20} className="spinner" />
-              {uploadProgress}
-            </>
-          ) : (
-            <>
-              <Upload size={20} />
-              Choose File to Upload
-            </>
-          )}
-        </label>
-        <p className="upload-note">
-          All files are scanned for viruses before upload. No file size limits.
-        </p>
+          <Upload size={48} style={{ color: 'var(--accent-color)', marginBottom: '1rem' }} />
+          <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
+            {isDragging ? 'Drop files here' : 'Upload Files'}
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Drag and drop files here, or click to browse
+          </p>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            style={{
+              padding: '0.75rem 1.5rem',
+              borderRadius: '6px',
+              border: 'none',
+              background: uploading ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+              color: uploading ? 'var(--text-secondary)' : 'white',
+              cursor: uploading ? 'not-allowed' : 'pointer',
+              fontWeight: 500,
+              fontSize: '1rem'
+            }}
+          >
+            {uploading ? <><Loader size={18} style={{ animation: 'spin 1s linear infinite', verticalAlign: 'middle' }} /> Uploading...</> : 'Choose Files'}
+          </button>
+        </div>
+
+        {/* Upload Progress */}
+        {uploadingFiles.length > 0 && (
+          <div style={{
+            padding: '1rem',
+            borderRadius: '6px',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            marginBottom: '1.5rem'
+          }}>
+            <h4 style={{ margin: '0 0 0.75rem 0', color: 'var(--text-primary)' }}>Uploading Files</h4>
+            {uploadingFiles.map((file, idx) => (
+              <div key={idx} style={{ marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.9rem' }}>
+                  <span style={{ color: 'var(--text-primary)' }}>{file.name}</span>
+                  <span style={{ color: file.status === 'complete' ? '#10b981' : file.status === 'error' ? '#ef4444' : 'var(--text-secondary)' }}>
+                    {file.status === 'complete' ? '✓ Complete' : file.status === 'error' ? '✗ Failed' : `${file.progress}%`}
+                  </span>
+                </div>
+                <div style={{ height: '4px', background: 'var(--bg-tertiary)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${file.progress}%`,
+                    background: file.status === 'error' ? '#ef4444' : file.status === 'complete' ? '#10b981' : 'var(--accent-color)',
+                    transition: 'width 0.3s'
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Search and Filters */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
+            <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+            <input
+              type="text"
+              placeholder="Search files..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.95rem'
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {categories.map(cat => (
+              <button
+                key={cat.value}
+                onClick={() => setCategoryFilter(cat.value)}
+                style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  background: categoryFilter === cat.value ? 'var(--accent-color)' : 'var(--bg-secondary)',
+                  color: categoryFilter === cat.value ? 'white' : 'var(--text-primary)',
+                  cursor: 'pointer',
+                  fontWeight: categoryFilter === cat.value ? 600 : 400,
+                  fontSize: '0.9rem'
+                }}
+              >
+                {cat.label} ({cat.count})
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="files-list">
-        {files.length === 0 ? (
-          <div className="empty-state">
-            <FileText size={48} />
-            <p>No files uploaded yet</p>
-          </div>
-        ) : (
-          <table className="files-table">
+      {/* Files Display */}
+      {filteredFiles.length === 0 ? (
+        <div style={{
+          textAlign: 'center',
+          padding: '4rem 2rem',
+          background: 'var(--bg-secondary)',
+          borderRadius: '8px',
+          border: '1px dashed var(--border-color)'
+        }}>
+          <FileText size={64} style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }} />
+          <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>No files found</h3>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {searchQuery || categoryFilter !== 'all' ? 'Try adjusting your filters' : 'Upload your first file to get started'}
+          </p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: '1rem'
+        }}>
+          {filteredFiles.map((file) => (
+            <div
+              key={file.id}
+              style={{
+                background: 'var(--bg-secondary)',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <div
+                style={{
+                  height: '150px',
+                  background: 'var(--bg-tertiary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative'
+                }}
+                onClick={() => isImage(file.mimeType) || isPDF(file.mimeType) ? setPreviewFile(file) : null}
+              >
+                {isImage(file.mimeType) && file.thumbnailUrl ? (
+                  <img src={file.thumbnailUrl} alt={file.originalFileName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)' }}>
+                    {getFileIcon(file)}
+                  </div>
+                )}
+                {(isImage(file.mimeType) || isPDF(file.mimeType)) && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '0.5rem',
+                    right: '0.5rem',
+                    background: 'rgba(0,0,0,0.6)',
+                    borderRadius: '50%',
+                    padding: '0.25rem',
+                    color: 'white'
+                  }}>
+                    <Eye size={16} />
+                  </div>
+                )}
+              </div>
+              <div style={{ padding: '1rem' }}>
+                <div style={{
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  color: 'var(--text-primary)',
+                  marginBottom: '0.5rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }} title={file.originalFileName}>
+                  {file.originalFileName}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                  {formatFileSize(file.fileSize)}
+                </div>
+                <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'space-between' }}>
+                  {isPDF(file.mimeType) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLearnFromPDF(file);
+                      }}
+                      disabled={learning === file.id}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem',
+                        borderRadius: '4px',
+                        border: 'none',
+                        background: learning === file.id ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+                        color: learning === file.id ? 'var(--text-secondary)' : 'white',
+                        cursor: learning === file.id ? 'not-allowed' : 'pointer',
+                        fontSize: '0.85rem'
+                      }}
+                      title="Learn from PDF"
+                    >
+                      {learning === file.id ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <BookOpen size={14} />}
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(file);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      borderRadius: '4px',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                    title="Download"
+                  >
+                    <Download size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(file);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      borderRadius: '4px',
+                      border: '1px solid #ef4444',
+                      background: 'transparent',
+                      color: '#ef4444',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{
+          background: 'var(--bg-secondary)',
+          borderRadius: '8px',
+          border: '1px solid var(--border-color)',
+          overflow: 'hidden'
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>File Name</th>
-                <th>Size</th>
-                <th>Uploaded</th>
-                <th>Status</th>
-                <th>Actions</th>
+              <tr style={{ background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
+                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-primary)', fontWeight: 600 }}>Name</th>
+                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-primary)', fontWeight: 600 }}>Size</th>
+                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-primary)', fontWeight: 600 }}>Uploaded</th>
+                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-primary)', fontWeight: 600 }}>Status</th>
+                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-primary)', fontWeight: 600 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {files.map((file) => (
-                <tr key={file.id}>
-                  <td className="file-name">
-                    <FileText size={18} />
-                    {file.originalFileName}
+              {filteredFiles.map((file) => (
+                <tr key={file.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '1rem', color: 'var(--text-primary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {getFileIcon(file)}
+                      <span>{file.originalFileName}</span>
+                    </div>
                   </td>
-                  <td>{formatFileSize(file.fileSize)}</td>
-                  <td>{new Date(file.uploadedAt).toLocaleDateString()}</td>
-                  <td>
-                    <span className={`status-badge ${file.virusScanStatus}`}>
+                  <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{formatFileSize(file.fileSize)}</td>
+                  <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{new Date(file.uploadedAt).toLocaleDateString()}</td>
+                  <td style={{ padding: '1rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      background: file.virusScanStatus === 'clean' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: file.virusScanStatus === 'clean' ? '#10b981' : '#ef4444',
+                      fontSize: '0.85rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}>
                       {file.virusScanStatus === 'clean' && <CheckCircle size={14} />}
                       {file.virusScanStatus}
                     </span>
                   </td>
-                  <td className="actions">
-                    {file.originalFileName.toLowerCase().endsWith('.pdf') && (
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {(isImage(file.mimeType) || isPDF(file.mimeType)) && (
+                        <button
+                          onClick={() => setPreviewFile(file)}
+                          style={{
+                            padding: '0.5rem',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer'
+                          }}
+                          title="Preview"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      )}
+                      {isPDF(file.mimeType) && (
+                        <button
+                          onClick={() => handleLearnFromPDF(file)}
+                          disabled={learning === file.id}
+                          style={{
+                            padding: '0.5rem',
+                            borderRadius: '4px',
+                            border: 'none',
+                            background: learning === file.id ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+                            color: learning === file.id ? 'var(--text-secondary)' : 'white',
+                            cursor: learning === file.id ? 'not-allowed' : 'pointer'
+                          }}
+                          title="Learn from PDF"
+                        >
+                          {learning === file.id ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <BookOpen size={16} />}
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleLearnFromPDF(file)}
-                        className="action-button learn"
-                        title="Learn from PDF"
-                        disabled={learning === file.id}
+                        onClick={() => handleDownload(file)}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid var(--border-color)',
+                          background: 'var(--bg-secondary)',
+                          color: 'var(--text-primary)',
+                          cursor: 'pointer'
+                        }}
+                        title="Download"
                       >
-                        {learning === file.id ? (
-                          <Loader size={18} className="spinner" />
-                        ) : (
-                          <BookOpen size={18} />
-                        )}
+                        <Download size={16} />
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleDownload(file)}
-                      className="action-button download"
-                      title="Download"
-                    >
-                      <Download size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(file)}
-                      className="action-button delete"
-                      title="Delete"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                      <button
+                        onClick={() => handleDelete(file)}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid #ef4444',
+                          background: 'transparent',
+                          color: '#ef4444',
+                          cursor: 'pointer'
+                        }}
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewFile && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 3000
+          }}
+          onClick={() => setPreviewFile(null)}
+        >
+          <div style={{
+            padding: '1rem 2rem',
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h3 style={{ margin: 0, color: 'white' }}>{previewFile.originalFileName}</h3>
+            <button
+              onClick={() => setPreviewFile(null)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isImage(previewFile.mimeType) ? (
+              <img
+                src={previewFile.thumbnailUrl || `/api/files/${previewFile.id}/download`}
+                alt={previewFile.originalFileName}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              />
+            ) : isPDF(previewFile.mimeType) ? (
+              <iframe
+                src={`/api/files/${previewFile.id}/download`}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title={previewFile.originalFileName}
+              />
+            ) : null}
+          </div>
+        </div>
+      )}
 
       <style>{`
-        .file-manager-container {
-          padding: 2rem;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .file-manager-header h1 {
-          margin: 0 0 0.5rem 0;
-          font-size: 2rem;
-        }
-
-        .subtitle {
-          margin: 0;
-          color: var(--text-secondary);
-        }
-
-        .message {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 1rem 1.5rem;
-          border-radius: 8px;
-          margin: 1.5rem 0;
-          font-weight: 500;
-        }
-
-        .message.success {
-          background-color: var(--accent-light);
-          color: var(--accent-color);
-          border: 1px solid var(--accent-color);
-        }
-
-        .message.error {
-          background-color: #fef2f2;
-          color: #991b1b;
-          border: 1px solid #fecaca;
-        }
-
-        .upload-section {
-          background: var(--bg-secondary);
-          border: 2px dashed var(--border-color);
-          border-radius: 12px;
-          padding: 2rem;
-          text-align: center;
-          margin: 2rem 0;
-        }
-
-        .upload-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 1rem 2rem;
-          background: var(--accent-color);
-          color: var(--accent-text);
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 600;
-          font-size: 1rem;
-          transition: all 0.2s;
-        }
-
-        .upload-button:hover:not(:disabled) {
-          background: var(--accent-hover);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .upload-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .upload-note {
-          margin: 1rem 0 0 0;
-          font-size: 0.9rem;
-          color: var(--text-secondary);
-        }
-
-        .files-list {
-          margin-top: 2rem;
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 4rem 2rem;
-          color: var(--text-secondary);
-        }
-
-        .empty-state svg {
-          margin-bottom: 1rem;
-          opacity: 0.5;
-        }
-
-        .files-table {
-          width: 100%;
-          border-collapse: collapse;
-          background: var(--bg-secondary);
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .files-table thead {
-          background: var(--bg-tertiary);
-        }
-
-        .files-table th {
-          padding: 1rem 1.5rem;
-          text-align: left;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .files-table td {
-          padding: 1rem 1.5rem;
-          border-top: 1px solid var(--border-color);
-        }
-
-        .files-table tr:hover {
-          background: var(--hover-bg);
-        }
-
-        .file-name {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          font-weight: 500;
-        }
-
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.25rem 0.75rem;
-          border-radius: 12px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          text-transform: capitalize;
-        }
-
-        .status-badge.clean {
-          background: #dcfce7;
-          color: #166534;
-        }
-
-        .status-badge.pending {
-          background: #fef3c7;
-          color: #92400e;
-        }
-
-        .status-badge.infected {
-          background: #fee2e2;
-          color: #991b1b;
-        }
-
-        .actions {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .action-button {
-          padding: 0.5rem;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.2s;
-          background: var(--bg-tertiary);
-          color: var(--text-primary);
-        }
-
-        .action-button:hover {
-          transform: translateY(-2px);
-        }
-
-        .action-button.download:hover {
-          background: var(--accent-color);
-          color: var(--accent-text);
-        }
-
-        .action-button.learn:hover:not(:disabled) {
-          background: #10b981;
-          color: white;
-        }
-
-        .action-button.learn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .action-button.delete:hover {
-          background: #ef4444;
-          color: white;
-        }
-
-        .spinner {
-          animation: spin 1s linear infinite;
-        }
-
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
