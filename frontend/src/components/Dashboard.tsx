@@ -191,6 +191,42 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
+        onShowDiscordCommands={() => {
+          setShowDiscordCommands(true);
+          setShowSettings(false);
+          setShowPromptsTropes(false);
+          setShowStats(false);
+          setShowHallOfFame(false);
+          setShowKnowledgeBase(false);
+          setShowFileManager(false);
+          setShowAdminPanel(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
+        onShowPromptsTropes={() => {
+          setShowPromptsTropes(true);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowStats(false);
+          setShowHallOfFame(false);
+          setShowKnowledgeBase(false);
+          setShowFileManager(false);
+          setShowAdminPanel(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
+        onShowHallOfFame={() => {
+          setShowHallOfFame(true);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowPromptsTropes(false);
+          setShowStats(false);
+          setShowKnowledgeBase(false);
+          setShowFileManager(false);
+          setShowAdminPanel(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
       />
 
       {/* Main Content */}
@@ -280,131 +316,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           padding: '2rem 1rem'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <button
-              onClick={() => {
-                setShowDiscordCommands(!showDiscordCommands);
-                setShowSettings(false);
-                setShowFileManager(false);
-                setShowKnowledgeBase(false);
-                setShowPromptsTropes(false);
-                setShowStats(false);
-                setShowHallOfFame(false);
-                setShowAdminPanel(false);
-                setCurrentCharacter(null);
-                setRightMenuOpen(false);
-              }}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showDiscordCommands ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showDiscordCommands ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              <MessageCircle size={18} />
-              Discord Commands
-            </button>
-
-            <button
-              onClick={() => {
-                setShowPromptsTropes(!showPromptsTropes);
-                setShowSettings(false);
-                setShowDiscordCommands(false);
-                setShowFileManager(false);
-                setShowKnowledgeBase(false);
-                setShowStats(false);
-                setShowHallOfFame(false);
-                setShowAdminPanel(false);
-                setCurrentCharacter(null);
-                setRightMenuOpen(false);
-              }}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showPromptsTropes ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showPromptsTropes ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              <Dices size={18} />
-              Prompts & Tropes
-            </button>
-
-            <button
-              onClick={() => {
-                setShowStats(!showStats);
-                setShowSettings(false);
-                setShowDiscordCommands(false);
-                setShowFileManager(false);
-                setShowKnowledgeBase(false);
-                setShowPromptsTropes(false);
-                setShowHallOfFame(false);
-                setShowAdminPanel(false);
-                setCurrentCharacter(null);
-                setRightMenuOpen(false);
-              }}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showStats ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showStats ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              Stats
-            </button>
-
-            <button
-              onClick={() => {
-                setShowHallOfFame(!showHallOfFame);
-                setShowSettings(false);
-                setShowDiscordCommands(false);
-                setShowFileManager(false);
-                setShowKnowledgeBase(false);
-                setShowPromptsTropes(false);
-                setShowStats(false);
-                setShowAdminPanel(false);
-                setCurrentCharacter(null);
-                setRightMenuOpen(false);
-              }}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: showHallOfFame ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: showHallOfFame ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              Hall of Fame
-            </button>
-
-            <div style={{ borderTop: `1px solid var(--border-color)`, margin: '1rem 0' }} />
-
-            <div style={{ padding: '0.5rem 1rem', color: 'var(--text-secondary)' }}>
+            <div style={{ padding: '0.5rem 1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               {user.username}
             </div>
 

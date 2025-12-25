@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -15,9 +15,12 @@ interface HamburgerSidebarProps {
   onShowKnowledgeBase: () => void;
   onShowStats: () => void;
   onShowSettings: () => void;
+  onShowDiscordCommands: () => void;
+  onShowPromptsTropes: () => void;
+  onShowHallOfFame: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -513,6 +516,78 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           >
             <Settings size={18} />
             Settings
+          </button>
+        </div>
+
+        {/* Discord Commands Button */}
+        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
+          <button
+            onClick={() => onShowDiscordCommands()}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              borderRadius: '0',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '1rem',
+              textAlign: 'left'
+            }}
+          >
+            <MessageCircle size={18} />
+            Discord Commands
+          </button>
+        </div>
+
+        {/* Prompts & Tropes Button */}
+        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
+          <button
+            onClick={() => onShowPromptsTropes()}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              borderRadius: '0',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '1rem',
+              textAlign: 'left'
+            }}
+          >
+            <Dices size={18} />
+            Prompts & Tropes
+          </button>
+        </div>
+
+        {/* Hall of Fame Button */}
+        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
+          <button
+            onClick={() => onShowHallOfFame()}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              borderRadius: '0',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '1rem',
+              textAlign: 'left'
+            }}
+          >
+            <Trophy size={18} />
+            Hall of Fame
           </button>
         </div>
 
