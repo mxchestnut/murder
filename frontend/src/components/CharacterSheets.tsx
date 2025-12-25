@@ -14,7 +14,6 @@ import {
   Eye,
   MessageCircle,
   Download,
-  RefreshCw,
   ExternalLink,
   User
 } from 'lucide-react';
@@ -395,21 +394,6 @@ export default function CharacterSheets() {
       alert(`Import failed: ${errorMsg}`);
     } finally {
       setImportingPC(false);
-    }
-  };
-
-  const syncPathCompanionCharacter = async (sheetId: number) => {
-    try {
-      const response = await api.post(`/pathcompanion/sync/${sheetId}`);
-      const updatedSheets = sheets.map(s => s.id === sheetId ? response.data : s);
-      setSheets(updatedSheets);
-      if (selectedSheet?.id === sheetId) {
-        setSelectedSheet(response.data);
-      }
-      alert('Character synced successfully!');
-    } catch (error) {
-      console.error('Failed to sync PathCompanion character:', error);
-      alert('Failed to sync character with PathCompanion.');
     }
   };
 

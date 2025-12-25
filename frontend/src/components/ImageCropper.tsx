@@ -1,14 +1,13 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
 
 interface ImageCropperProps {
   image: string;
   onCropComplete: (croppedImage: Blob) => void;
   onCancel: () => void;
-  aspectRatio?: number;
 }
 
-export default function ImageCropper({ image, onCropComplete, onCancel, aspectRatio = 1 }: ImageCropperProps) {
+export default function ImageCropper({ image, onCropComplete, onCancel }: ImageCropperProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 200, height: 200 });
