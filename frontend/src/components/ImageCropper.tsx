@@ -1,7 +1,5 @@
-import { useState, useCallback } from 'react';
-import Cropper from 'react-easy-crop';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
-import 'react-easy-crop/react-easy-crop.css';
 
 interface ImageCropperProps {
   image: string;
@@ -11,29 +9,76 @@ interface ImageCropperProps {
 }
 
 export default function ImageCropper({ image, onCropComplete, onCancel, aspectRatio = 1 }: ImageCropperProps) {
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 200, height: 200 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  const onCropChange = useCallback((crop: any) => {
-    setCrop(crop);
-  }, []);
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      if (imageRef.current) {
+        imageRef.current.src = image;
+        setImageLoaded(true);
+        // Center the crop area
+        const size = Math.min(img.width, img.height) * 0.6;
+        setCropArea({
+          x: (img.width - size) / 2,
+          y: (img.height - size) / 2,
+          width: size,
+          height: size
+        });
+      }
+    };
+    img.src = image;
+  }, [image]);
 
-  const onZoomChange = useCallback((zoom: number) => {
-    setZoom(zoom);
-  }, []);
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - cropArea.x, y: e.clientY - cropArea.y });
+  };
 
-  const onCropAreaChange = useCallback((croppedArea: any, croppedAreaPixels: any) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !imageRef.current) return;
+    const img = imageRef.current;
+    const newX = Math.max(0, Math.min(e.clientX - dragStart.x, img.width - cropArea.width));
+    const newY = Math.max(0, Math.min(e.clientY - dragStart.y, img.height - cropArea.height));
+    setCropArea(prev => ({ ...prev, x: newX, y: newY }));
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   const createCroppedImage = async () => {
-    try {
-      const croppedImage = await getCroppedImg(image, croppedAreaPixels);
-      onCropComplete(croppedImage);
-    } catch (error) {
-      console.error('Error cropping image:', error);
-    }
+    if (!imageRef.current || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = cropArea.width;
+    canvas.height = cropArea.height;
+
+    ctx.drawImage(
+      imageRef.current,
+      cropArea.x,
+      cropArea.y,
+      cropArea.width,
+      cropArea.height,
+      0,
+      0,
+      cropArea.width,
+      cropArea.height
+    );
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        onCropComplete(blob);
+      }
+    }, 'image/jpeg', 0.95);
   };
 
   return (
@@ -53,32 +98,34 @@ export default function ImageCropper({ image, onCropComplete, onCancel, aspectRa
         background: 'rgba(0,0,0,0.5)',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        borderBottom: '1px solid rgba(255,255,255,0.1)'
       }}>
-        <h3 style={{ margin: 0, color: 'white' }}>Crop Avatar</h3>
+        <h3 style={{ margin: 0, color: 'white', fontSize: '1.2rem' }}>Crop Avatar</h3>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button
             onClick={createCroppedImage}
             style={{
-              padding: '0.5rem 1rem',
-              background: 'var(--accent-1)',
+              padding: '0.6rem 1.2rem',
+              background: 'var(--accent-color)',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              fontWeight: 600
             }}
           >
-            <Check size={16} />
+            <Check size={18} />
             Apply
           </button>
           <button
             onClick={onCancel}
             style={{
-              padding: '0.5rem 1rem',
-              background: 'transparent',
+              padding: '0.6rem 1.2rem',
+              background: 'rgba(255,255,255,0.1)',
               color: 'white',
               border: '1px solid rgba(255,255,255,0.3)',
               borderRadius: '4px',
@@ -88,94 +135,87 @@ export default function ImageCropper({ image, onCropComplete, onCancel, aspectRa
               gap: '0.5rem'
             }}
           >
-            <X size={16} />
+            <X size={18} />
             Cancel
           </button>
         </div>
       </div>
 
       <div style={{
-        position: 'relative',
         flex: 1,
-        minHeight: 0
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+        overflow: 'auto'
       }}>
-        <Cropper
-          image={image}
-          crop={crop}
-          zoom={zoom}
-          aspect={aspectRatio}
-          onCropChange={onCropChange}
-          onCropComplete={onCropAreaChange}
-          onZoomChange={onZoomChange}
-        />
+        {imageLoaded && (
+          <div
+            style={{
+              position: 'relative',
+              display: 'inline-block'
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            <img
+              ref={imageRef}
+              src={image}
+              alt="Crop preview"
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '70vh',
+                display: 'block',
+                userSelect: 'none'
+              }}
+              draggable={false}
+            />
+            <div
+              onMouseDown={handleMouseDown}
+              style={{
+                position: 'absolute',
+                left: `${cropArea.x}px`,
+                top: `${cropArea.y}px`,
+                width: `${cropArea.width}px`,
+                height: `${cropArea.height}px`,
+                border: '2px solid var(--accent-color)',
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
+                cursor: isDragging ? 'grabbing' : 'grab',
+                borderRadius: '4px'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                bottom: '-30px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0,0,0,0.8)',
+                color: 'white',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '4px',
+                fontSize: '0.85rem',
+                whiteSpace: 'nowrap'
+              }}>
+                Drag to reposition
+              </div>
+            </div>
+          </div>
+        )}
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
 
       <div style={{
         padding: '1rem',
         background: 'rgba(0,0,0,0.5)',
-        color: 'white'
+        color: 'white',
+        textAlign: 'center',
+        borderTop: '1px solid rgba(255,255,255,0.1)'
       }}>
-        <label style={{ display: 'block', marginBottom: '0.5rem' }}>
-          Zoom
-        </label>
-        <input
-          type="range"
-          min={1}
-          max={3}
-          step={0.1}
-          value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
-          style={{ width: '100%' }}
-        />
+        <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.8 }}>
+          Click and drag the highlighted area to position your avatar
+        </p>
       </div>
     </div>
   );
-}
-
-// Helper function to create cropped image
-async function getCroppedImg(imageSrc: string, pixelCrop: any): Promise<Blob> {
-  const image = await createImage(imageSrc);
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-
-  if (!ctx) {
-    throw new Error('Failed to get canvas context');
-  }
-
-  // Set canvas size to match the crop area
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
-
-  // Draw the cropped image
-  ctx.drawImage(
-    image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    pixelCrop.width,
-    pixelCrop.height
-  );
-
-  // Convert canvas to blob
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        resolve(blob);
-      } else {
-        reject(new Error('Failed to create blob'));
-      }
-    }, 'image/jpeg', 0.95);
-  });
-}
-
-function createImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.addEventListener('load', () => resolve(image));
-    image.addEventListener('error', (error) => reject(error));
-    image.src = url;
-  });
 }
