@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut, HelpCircle, Sun, Moon, Bird } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut, HelpCircle, Sun, Moon, Bird, MoreVertical } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -38,6 +38,10 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
   const [helpMenuExpanded, setHelpMenuExpanded] = useState(false);
   const [userMenuExpanded, setUserMenuExpanded] = useState(false);
+
+  // Menu dropdowns
+  const [showCharactersMenu, setShowCharactersMenu] = useState(false);
+  const [showFileManagerMenu, setShowFileManagerMenu] = useState(false);
 
   useEffect(() => {
     loadCharacters();
@@ -212,77 +216,123 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <Dices size={18} />
               Characters
             </h3>
-            <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCharactersMenu(!showCharactersMenu);
+                setShowFileManagerMenu(false);
+              }}
+              style={{
+                padding: '0.25rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showCharactersMenu ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showCharactersMenu ? 'white' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                position: 'relative',
+                zIndex: 10
+              }}
+              title="Character actions"
+            >
+              <MoreVertical size={14} />
+            </button>
+          </div>
+
+          {/* Characters dropdown menu */}
+          {showCharactersMenu && (
+            <div style={{
+              position: 'absolute',
+              top: '3rem',
+              right: '0.5rem',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+              minWidth: '200px',
+              overflow: 'hidden'
+            }}>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log('Create character button clicked');
+                onClick={() => {
+                  console.log('Create character menu item clicked');
                   onSelectCharacter(null);
                   setCharactersExpanded(true);
+                  setShowCharactersMenu(false);
                 }}
                 style={{
-                  padding: '0.25rem',
-                  borderRadius: '4px',
+                  width: '100%',
+                  padding: '0.75rem 1rem',
                   border: 'none',
-                  background: 'var(--bg-tertiary)',
+                  background: 'transparent',
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
+                  textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
-                  position: 'relative',
-                  zIndex: 10
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
                 }}
-                title="Create new character"
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                <Plus size={14} />
+                <Plus size={16} />
+                Create Character
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log('Import PathCompanion button clicked');
+                onClick={() => {
+                  console.log('Import character(s) menu item clicked');
                   setShowPathCompanionImport(true);
                   loadPathCompanionCharacters();
+                  setShowCharactersMenu(false);
                 }}
                 style={{
-                  padding: '0.25rem',
-                  borderRadius: '4px',
+                  width: '100%',
+                  padding: '0.75rem 1rem',
                   border: 'none',
-                  background: 'var(--bg-tertiary)',
+                  background: 'transparent',
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
+                  textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
-                  position: 'relative',
-                  zIndex: 10
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
                 }}
-                title="Import from PathCompanion"
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                <Download size={14} />
+                <Download size={16} />
+                Import Character(s)
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log('Refresh characters button clicked');
+                onClick={() => {
+                  console.log('Sync characters menu item clicked');
                   loadCharacters();
+                  setShowCharactersMenu(false);
                 }}
                 style={{
-                  padding: '0.25rem',
-                  borderRadius: '4px',
+                  width: '100%',
+                  padding: '0.75rem 1rem',
                   border: 'none',
-                  background: 'var(--bg-tertiary)',
+                  background: 'transparent',
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
+                  textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
-                  position: 'relative',
-                  zIndex: 10
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
                 }}
-                title="Refresh characters"
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                <RefreshCw size={14} />
+                <RefreshCw size={16} />
+                Sync Characters
               </button>
             </div>
-          </div>
+          )}
           {charactersExpanded && (
             <div style={{ padding: '0 1rem 1rem 1rem', maxHeight: '200px', overflow: 'auto' }}>
               {characters.length === 0 ? (
@@ -317,7 +367,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
         </div>
 
         {/* File Manager Section */}
-        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
+        <div style={{ borderBottom: `1px solid var(--border-color)`, position: 'relative' }}>
           <div
             onClick={() => {
               setDocumentsExpanded(!documentsExpanded);
@@ -340,127 +390,182 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <File size={18} />
               File Manager
             </h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFileManagerMenu(!showFileManagerMenu);
+                setShowCharactersMenu(false);
+              }}
+              style={{
+                padding: '0.25rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: showFileManagerMenu ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                color: showFileManagerMenu ? 'white' : 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                position: 'relative',
+                zIndex: 10
+              }}
+              title="File manager actions"
+            >
+              <MoreVertical size={14} />
+            </button>
           </div>
-          {documentsExpanded && (
-            <>
-              <div style={{ padding: '1rem', borderBottom: `1px solid var(--border-color)` }}>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => setShowNewItem('folder')}
-                    style={{
-                      padding: '0.5rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      background: 'var(--accent-2)',
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      fontSize: '0.85rem'
-                    }}
-                  >
-                    <FolderPlus size={16} />
-                    Folder
-                  </button>
 
-                  <button
-                    onClick={() => setShowNewItem('document')}
-                    style={{
-                      padding: '0.5rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      background: 'var(--accent-2)',
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      fontSize: '0.85rem'
-                    }}
-                  >
-                    <Plus size={16} />
-                    Doc
-                  </button>
+          {/* File Manager dropdown menu */}
+          {showFileManagerMenu && (
+            <div style={{
+              position: 'absolute',
+              top: '3rem',
+              right: '0.5rem',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+              minWidth: '200px',
+              overflow: 'hidden'
+            }}>
+              <button
+                onClick={() => {
+                  setShowNewItem('folder');
+                  setDocumentsExpanded(true);
+                  setShowFileManagerMenu(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <FolderPlus size={16} />
+                Create Folder
+              </button>
+              <button
+                onClick={() => {
+                  setShowNewItem('document');
+                  setDocumentsExpanded(true);
+                  setShowFileManagerMenu(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <Plus size={16} />
+                Create Document
+              </button>
+              <label style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.9rem',
+                margin: 0
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <Upload size={16} />
+                Upload File
+                <input
+                  type="file"
+                  onChange={(e) => {
+                    handleFileUpload(e);
+                    setShowFileManagerMenu(false);
+                  }}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          )}
 
-                  <label style={{
+          {documentsExpanded && showNewItem && (
+            <div style={{ padding: '1rem', borderBottom: `1px solid var(--border-color)` }}>
+              <input
+                type="text"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder={`New ${showNewItem} name`}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  borderRadius: '4px',
+                  border: `1px solid var(--border-color)`,
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  marginBottom: '0.5rem'
+                }}
+                autoFocus
+              />
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={showNewItem === 'folder' ? handleCreateFolder : handleCreateDocument}
+                  style={{
+                    flex: 1,
                     padding: '0.5rem',
                     borderRadius: '4px',
-                    background: 'var(--accent-2)',
+                    border: 'none',
+                    background: 'var(--accent-color)',
+                    color: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Create
+                </button>
+                <button
+                  onClick={() => {
+                    setShowNewItem(null);
+                    setNewItemName('');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-color)',
+                    background: 'transparent',
                     color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    fontSize: '0.85rem'
-                  }}>
-                    <Upload size={16} />
-                    Upload
-                    <input
-                      type="file"
-                      onChange={handleFileUpload}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                </div>
-
-                {showNewItem && (
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <input
-                      type="text"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      placeholder={`New ${showNewItem} name`}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        borderRadius: '4px',
-                        border: `1px solid var(--border-color)`,
-                        background: 'var(--bg-primary)',
-                        color: 'var(--text-primary)',
-                        marginBottom: '0.5rem'
-                      }}
-                      autoFocus
-                    />
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={showNewItem === 'folder' ? handleCreateFolder : handleCreateDocument}
-                        style={{
-                          flex: 1,
-                          padding: '0.5rem',
-                          borderRadius: '4px',
-                          border: 'none',
-                          background: 'var(--accent-2)',
-                          color: 'var(--text-primary)',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Create
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowNewItem(null);
-                          setNewItemName('');
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: '0.5rem',
-                          borderRadius: '4px',
-                          border: 'none',
-                          background: 'var(--accent-1)',
-                          color: 'var(--text-primary)',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
+            </div>
+          )}
 
-              <div style={{ flex: 1, overflow: 'auto', padding: '0.5rem' }}>
-                {documents.map((doc) => (
+          {documentsExpanded && (
+            <div style={{ flex: 1, overflow: 'auto', padding: '0.5rem' }}>
+              {documents.map((doc) => (
                   <div
                     key={doc.id}
                     onClick={() => {
@@ -508,7 +613,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                   </div>
                 ))}
               </div>
-            </>
           )}
         </div>
 
