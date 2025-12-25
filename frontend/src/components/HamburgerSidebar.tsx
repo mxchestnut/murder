@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, Download, ExternalLink, X, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -21,20 +21,17 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
-  const [campaigns, setCampaigns] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [showPathCompanionImport, setShowPathCompanionImport] = useState(false);
   const [pathCompanionCharacters, setPathCompanionCharacters] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [loadingCharacters, setLoadingCharacters] = useState(false);
   const [importingPC, setImportingPC] = useState(false);
 
   // Collapsible sections
-  const [campaignsExpanded, setCampaignsExpanded] = useState(true);
   const [charactersExpanded, setCharactersExpanded] = useState(true);
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
 
   useEffect(() => {
     loadCharacters();
-    loadCampaigns();
   }, []);
 
   const loadCharacters = async () => {
@@ -42,25 +39,11 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
       const response = await api.get('/characters');
       setCharacters(response.data);
     } catch (error) {
-      console.error('Error loading characters:', error);
-    }
-  };
-
-  const loadCampaigns = async () => {
-    try {
-      const response = await api.get('/pathcompanion/characters');
-      setCampaigns(response.data.campaigns || []);
-    } catch (error) {
-      // Silently fail - campaigns are optional
-    }
-  };
-
-  const loadPathCompanionCharacters = async () => {
+      coloadPathCompanionCharacters = async () => {
     setLoadingCharacters(true);
     try {
       const response = await api.get('/pathcompanion/characters');
       setPathCompanionCharacters(response.data.characters || []);
-      setCampaigns(response.data.campaigns || []);
     } catch (error: any) {
       console.error('Failed to load PathCompanion characters:', error);
       const errorMsg = error.response?.data?.error || 'Failed to load characters.';
@@ -86,6 +69,10 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
       alert(errorMsg);
     } finally {
       setImportingPC(false);
+    }
+  };
+
+  const nsole.error('Error loading characters:', error);
     }
   };
 
@@ -191,25 +178,66 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <Dices size={18} />
               Characters
             </h3>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                loadCharacters();
-              }}
-              style={{
-                padding: '0.25rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: 'var(--bg-tertiary)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-              title="Refresh characters"
-            >
-              <RefreshCw size={14} />
-            </button>
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNewCharacter();
+                }}
+                style={{
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title="Create new character"
+              >
+                <Plus size={14} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPathCompanionImport(true);
+                  loadPathCompanionCharacters();
+                }}
+                style={{
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title="Import from PathCompanion"
+              >
+                <Download size={14} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  loadCharacters();
+                }}
+                style={{
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title="Refresh characters"
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
           </div>
           {charactersExpanded && (
             <div style={{ padding: '0 1rem 1rem 1rem', maxHeight: '200px', overflow: 'auto' }}>
@@ -519,104 +547,96 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
 
       {/* PathCompanion Import Modal */}
       {showPathCompanionImport && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1002
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowPathCompanionImport(false);
-            }
-          }}
-        >
-          <div
-            style={{
-              background: 'var(--bg-secondary)',
-              padding: '2rem',
-              borderRadius: '8px',
-              maxWidth: '500px',
-              width: '90%',
-              border: '1px solid var(--border-color)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: 'var(--bg-primary)',
+            padding: '2rem',
+            borderRadius: '8px',
+            width: '90%',
+            maxWidth: '600px',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            border: `2px solid var(--border-color)`
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Import from PathCompanion</h3>
+              <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>
+                <ExternalLink size={24} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                Import from PathCompanion
+              </h2>
               <button
-                onClick={() => {
-                  setShowPathCompanionImport(false);
-                  setPathCompanionCharacters([]);
-                }}
+                onClick={() => setShowPathCompanionImport(false)}
                 style={{
-                  padding: '0.25rem',
-                  borderRadius: '4px',
-                  border: 'none',
                   background: 'transparent',
+                  border: 'none',
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center'
+                  padding: '0.5rem'
                 }}
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
 
-            <div>
-              {loadingCharacters ? (
-                <p style={{ color: 'var(--text-primary)' }}>Loading your PathCompanion characters...</p>
-              ) : pathCompanionCharacters.length > 0 ? (
-                <div>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                    Select a character to import:
-                  </p>
-                  <div style={{ maxHeight: '400px', overflow: 'auto' }}>
-                    {pathCompanionCharacters.map(char => (
-                      <div
-                        key={char.id}
-                        onClick={() => {
-                          importPathCompanionCharacter(char.id);
-                          setShowPathCompanionImport(false);
-                          setPathCompanionCharacters([]);
-                        }}
-                        style={{
-                          padding: '1rem',
-                          marginBottom: '0.5rem',
-                          borderRadius: '4px',
-                          border: '1px solid var(--border-color)',
-                          cursor: importingPC ? 'wait' : 'pointer',
-                          background: 'var(--bg-primary)',
-                          color: 'var(--text-primary)'
-                        }}
-                      >
-                        <div style={{ fontWeight: 500 }}>{char.name}</div>
-                        {char.lastModified && (
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                            Last modified: {new Date(char.lastModified).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+            {loadingCharacters ? (
+              <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>Loading characters...</p>
+            ) : pathCompanionCharacters.length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>
+                No PathCompanion characters found. Make sure you've connected your PathCompanion account in Settings.
+              </p>
+            ) : (
+              <div>
+                {pathCompanionCharacters.map((pcChar) => (
+                  <div
+                    key={pcChar.id}
+                    style={{
+                      padding: '1rem',
+                      border: `1px solid var(--border-color)`,
+                      borderRadius: '4px',
+                      marginBottom: '0.5rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'var(--bg-secondary)'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>{pcChar.name}</div>
+                      {pcChar.lastModified && (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          Last modified: {new Date(pcChar.lastModified).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => importPathCompanionCharacter(pcChar.id)}
+                      disabled={importingPC}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: 'var(--accent-1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: importingPC ? 'not-allowed' : 'pointer',
+                        opacity: importingPC ? 0.5 : 1
+                      }}
+                    >
+                      {importingPC ? 'Importing...' : 'Import'}
+                    </button>
                   </div>
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                  <p>No characters found in your PathCompanion account.</p>
-                  <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                    Make sure you're logged into PathCompanion and have characters saved.
-                  </p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
