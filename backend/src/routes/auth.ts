@@ -2,12 +2,31 @@ import { Router } from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 
 const router = Router();
+
+// Rate limiting for login attempts - 5 attempts per 15 minutes
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Too many login attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting for registration - 3 accounts per hour per IP
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: 'Too many accounts created, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Encryption utilities for PathCompanion password
 const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
@@ -34,7 +53,7 @@ function decryptPassword(encryptedPassword: string): string {
 }
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { username, password, email } = req.body;
 
@@ -47,8 +66,20 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Username must be between 3 and 50 characters' });
     }
 
+    // Password strength requirements
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    // Check for password complexity
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+      return res.status(400).json({
+        error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+      });
     }
 
     if (email && typeof email === 'string' && email.length > 0) {
@@ -82,7 +113,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', (req, res, next) => {
+router.post('/login', loginLimiter, (req, res, next) => {
   passport.authenticate('local', (err: any, user: any, info: any) => {
     if (err) {
       console.error('Login error:', err);

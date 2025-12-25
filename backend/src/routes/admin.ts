@@ -4,12 +4,14 @@ import { users, characterSheets, documents } from '../db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 import { isAdmin } from '../middleware/admin';
+import { requireTailscale } from '../middleware/tailscale';
 
 const router = Router();
 
-// All admin routes require authentication AND admin privileges
-router.use(isAuthenticated);
-router.use(isAdmin);
+// SECURITY: Admin routes require Tailscale connection + authentication + admin role
+router.use(requireTailscale); // First check: Must be on Tailscale network
+router.use(isAuthenticated);  // Second check: Must be logged in
+router.use(isAdmin);           // Third check: Must have admin role
 
 // Get all users with stats
 router.get('/users', async (req, res) => {
