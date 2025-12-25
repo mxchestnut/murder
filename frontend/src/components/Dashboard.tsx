@@ -13,7 +13,7 @@ import HallOfFameGallery from './HallOfFameGallery';
 import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
-import { FileText, Sun, Moon, X, Dices } from 'lucide-react';
+import { FileText, X, Dices } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -227,44 +227,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setCurrentCharacter(null);
         }}
         onLogout={handleLogout}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginLeft: '300px' }}>
-        {/* Header */}
-        <header style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '1rem',
-          borderBottom: `1px solid var(--border-color)`,
-          background: 'var(--bg-secondary)'
-        }}>
-          <h2 style={{ color: 'var(--text-primary)' }}>
-            {currentCharacter?.name || currentDocument?.name || ''}
-          </h2>
-
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <button
-              onClick={toggleTheme}
-              style={{
-                padding: '0.5rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: 'var(--bg-tertiary)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
-          </div>
-        </header>
-
         {/* Password Rotation Banner */}
         <PasswordRotationBanner />
 

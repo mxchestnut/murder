@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut, HelpCircle } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut, HelpCircle, Sun, Moon } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -19,9 +19,11 @@ interface HamburgerSidebarProps {
   onShowPromptsTropes: () => void;
   onShowHallOfFame: () => void;
   onLogout: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onLogout }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onLogout, theme, toggleTheme }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -670,6 +672,27 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               >
                 <Settings size={18} />
                 Settings
+              </button>
+              <button
+                onClick={toggleTheme}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1rem',
+                  marginBottom: '0.5rem',
+                  textAlign: 'left'
+                }}
+              >
+                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
               </button>
               <button
                 onClick={onLogout}
