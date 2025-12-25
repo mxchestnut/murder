@@ -217,14 +217,10 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
     setMessage(null);
 
     try {
-      console.log('Syncing PathCompanion character:', character.id);
       const response = await api.post(`/pathcompanion/sync/${character.id}`);
-      console.log('Sync response:', response.data);
       setMessage({ type: 'success', text: 'Combat stats synced from PathCompanion!' });
       setTimeout(() => setMessage(null), 3000);
-      console.log('Calling onUpdate to reload character...');
       await onUpdate();
-      console.log('Character reloaded after sync');
     } catch (error: any) {
       console.error('Error syncing PathCompanion:', error);
       const errorMsg = error.response?.data?.error || 'Failed to sync character';

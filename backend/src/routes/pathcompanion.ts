@@ -32,10 +32,6 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
   }
 
   if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
-    console.log(`User ${userId} missing PathCompanion credentials:`, {
-      hasUsername: !!user.pathCompanionUsername,
-      hasPassword: !!user.pathCompanionPassword
-    });
     throw new Error('No PathCompanion account connected. Please connect your PathCompanion account in Settings first.');
   }
 
@@ -44,10 +40,9 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
     try {
       // Test if session is still valid
       await PlayFabService.getUserData(user.pathCompanionSessionTicket);
-      console.log(`User ${userId} session ticket is valid`);
       return user.pathCompanionSessionTicket;
     } catch (error) {
-      console.log(`User ${userId} session ticket expired, refreshing...`);
+      // Session expired, continue to refresh
     }
   }
 
@@ -61,7 +56,6 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
       .set({ pathCompanionSessionTicket: auth.sessionTicket })
       .where(eq(users.id, userId));
 
-    console.log(`User ${userId} session refreshed successfully`);
     return auth.sessionTicket;
   } catch (error) {
     console.error(`Failed to refresh session for user ${userId}:`, error);
@@ -123,8 +117,6 @@ router.get('/characters', isAuthenticated, async (req, res) => {
       )
       .slice(0, 50); // Limit to 50 characters to avoid performance issues
 
-    console.log(`Found ${characterKeys.length} character keys:`, characterKeys);
-
     const allItems = await Promise.all(
       characterKeys.map(async (key) => {
         try {
@@ -159,8 +151,6 @@ router.get('/characters', isAuthenticated, async (req, res) => {
       name: item!.name,
       lastModified: item!.lastModified
     }));
-
-    console.log(`Separated into ${characterList.length} characters and ${campaignList.length} campaigns`);
 
     res.json({
       characters: characterList,
@@ -235,16 +225,6 @@ router.post('/import', isAuthenticated, async (req, res) => {
     const weapons = PlayFabService.extractWeapons(character.data);
     const armor = PlayFabService.extractArmor(character.data);
     const spells = PlayFabService.extractSpells(character.data);
-
-    console.log(`Extracted data for ${character.characterName}:`, {
-      abilities,
-      level,
-      combatStats,
-      saves,
-      skillsCount: Object.keys(skills).length,
-      featsCount: feats.length,
-      weaponsCount: weapons.length
-    });
 
     // Check if this character is already imported
     const existing = await db.select().from(characterSheets).where(
@@ -697,8 +677,6 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
       .filter(key => /^character\d+$/.test(key))  // Only character1, character2, etc.
       .slice(0, 50); // Limit to 50 characters
 
-    console.log(`Importing ${characterKeys.length} characters from PathCompanion`);
-
     const results: {
       success: Array<{ id: string; name: string; action: string }>;
       failed: Array<{ id: string; reason: string }>;
@@ -836,8 +814,6 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
         });
       }
     }
-
-    console.log(`Import all complete: ${results.success.length} succeeded, ${results.failed.length} failed`);
 
     res.json({
       message: `Imported ${results.success.length} characters`,

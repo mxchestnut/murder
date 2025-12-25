@@ -310,7 +310,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             }}>
               <button
                 onClick={async () => {
-                  console.log('Create character menu item clicked');
                   const characterName = prompt('Enter character name:');
                   if (!characterName || !characterName.trim()) {
                     return; // User cancelled or entered empty name
@@ -361,7 +360,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               </button>
               <button
                 onClick={() => {
-                  console.log('Bulk create clicked');
                   setShowBulkCreate(true);
                   setShowCharactersMenu(false);
                 }}

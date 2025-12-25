@@ -1,12 +1,11 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, sceneMessages, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
-import { eq, and, or, sql, desc } from 'drizzle-orm';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
 import { learnFromUrl } from './gemini';
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import node_crypto from 'node:crypto';
 import axios from 'axios';
 import wiki from 'wikipedia';
 
@@ -17,7 +16,7 @@ const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
 function normalizeString(str: string): string {
   return str
     .normalize('NFD') // Decompose combined characters
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+    .replaceAll(/[\u0300-\u036f]/g, '') // Remove diacritical marks
     .toLowerCase()
     .trim();
 }
@@ -371,7 +370,7 @@ async function handleProfile(message: Message, args: string[]) {
   // Helper to strip HTML tags
   const stripHtml = (text: string): string => {
     if (!text) return text;
-    return text.replace(/<[^>]*>/g, '').trim();
+    return text.replaceAll(/<[^>]*>/g, '').trim();
   };
 
   // Helper to parse race field
@@ -831,9 +830,14 @@ async function handleRoll(message: Message, args: string[]) {
   const diceRoll = Math.floor(Math.random() * 20) + 1;
   const total = diceRoll + modifier;
 
+  // Determine embed color based on roll
+  let embedColor = 0x0099ff; // Default blue
+  if (diceRoll === 20) embedColor = 0x00ff00; // Green for nat 20
+  else if (diceRoll === 1) embedColor = 0xff0000; // Red for nat 1
+
   // Create embed
   const embed = new EmbedBuilder()
-    .setColor(diceRoll === 20 ? 0x00ff00 : diceRoll === 1 ? 0xff0000 : 0x0099ff)
+    .setColor(embedColor)
     .setTitle(`🎲 ${character.name} - ${rollDescription}`)
     .setDescription(`**${diceRoll}** ${modifier >= 0 ? '+' : ''}${modifier} = **${total}**`)
     .setFooter({ text: `Rolled by ${message.author.username}` })
@@ -859,13 +863,13 @@ async function handleRoll(message: Message, args: string[]) {
 }
 
 // Encryption utilities for PathCompanion password
-const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || node_crypto.randomBytes(32).toString('hex');
 const ALGORITHM = 'aes-256-cbc';
 
 function encryptPassword(password: string): string {
-  const iv = crypto.randomBytes(16);
+  const iv = node_crypto.randomBytes(16);
   const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  const cipher = node_crypto.createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(password, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
@@ -879,7 +883,7 @@ function decryptPassword(encryptedPassword: string): string {
   const iv = Buffer.from(parts[0], 'hex');
   const encrypted = parts[1];
   const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  const decipher = node_crypto.createDecipheriv(ALGORITHM, key, iv);
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
@@ -1079,13 +1083,13 @@ async function handleProxy(message: Message, characterName: string, messageText:
     if (!webhook) {
       // Check if a webhook already exists
       const webhooks = await channel.fetchWebhooks();
-      webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Write Pretend Proxy');
+      webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
       if (!webhook) {
         // Create new webhook
         webhook = await channel.createWebhook({
-          name: 'Write Pretend Proxy',
-          reason: 'Character proxying for Write Pretend Portal'
+          name: 'Murder Proxy',
+          reason: 'Character proxying for Murder Tech Portal'
         });
       }
 
@@ -1097,17 +1101,14 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
     // Convert relative avatar URL to absolute URL
     let avatarUrl = character.avatarUrl;
-    console.log('Original avatarUrl from character:', avatarUrl);
 
     if (avatarUrl && avatarUrl.startsWith('/')) {
       // Relative URL, make it absolute
       const baseUrl = process.env.FRONTEND_URL || 'http://54.242.214.56';
       avatarUrl = baseUrl + avatarUrl;
-      console.log('Converted to absolute URL:', avatarUrl);
     } else if (!avatarUrl) {
       // No avatar, use default
       avatarUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(character.name) + '&size=256&background=random';
-      console.log('Using default avatar URL:', avatarUrl);
     }
 
     try {
@@ -1131,12 +1132,12 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
         // Recreate webhook
         const webhooks = await channel.fetchWebhooks();
-        webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Write Pretend Proxy');
+        webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
         if (!webhook) {
           webhook = await channel.createWebhook({
-            name: 'Write Pretend Proxy',
-            reason: 'Character proxying for Write Pretend Portal'
+            name: 'Murder Proxy',
+            reason: 'Character proxying for Murder Tech Portal'
           });
         }
 
@@ -1255,9 +1256,14 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     const diceRoll = Math.floor(Math.random() * 20) + 1;
     const total = diceRoll + modifier;
 
+    // Determine embed color
+    let embedColor = 0x0099ff;
+    if (diceRoll === 20) embedColor = 0x00ff00;
+    else if (diceRoll === 1) embedColor = 0xff0000;
+
     // Create embed
     const embed = new EmbedBuilder()
-      .setColor(diceRoll === 20 ? 0x00ff00 : diceRoll === 1 ? 0xff0000 : 0x0099ff)
+      .setColor(embedColor)
       .setTitle(`🎲 ${character.name} - ${rollDescription}`)
       .setDescription(`**${diceRoll}** ${modifier >= 0 ? '+' : ''}${modifier} = **${total}**`)
       .setFooter({ text: `Rolled by ${message.author.username}` })
@@ -1322,11 +1328,16 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
     try {
       const channel = await botClient.channels.fetch(mapping.channel_character_mappings.channelId);
       if (channel && channel.isTextBased() && 'send' in channel) {
+        // Determine embed color
+        let embedColor = 0x0099ff;
+        if (rollData.diceRoll === 20) embedColor = 0x00ff00;
+        else if (rollData.diceRoll === 1) embedColor = 0xff0000;
+
         const embed = new EmbedBuilder()
-          .setColor(rollData.diceRoll === 20 ? 0x00ff00 : rollData.diceRoll === 1 ? 0xff0000 : 0x0099ff)
+          .setColor(embedColor)
           .setTitle(`🎲 ${character.name} - ${rollData.rollDescription}`)
           .setDescription(`**${rollData.diceRoll}** ${rollData.modifier >= 0 ? '+' : ''}${rollData.modifier} = **${rollData.total}**`)
-          .setFooter({ text: 'Rolled from Write Pretend Portal' })
+          .setFooter({ text: 'Rolled from Murder Tech Portal' })
           .setTimestamp();
 
         if (rollData.diceRoll === 20) {
