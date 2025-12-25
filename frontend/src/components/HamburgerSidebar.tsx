@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut, HelpCircle, Sun, Moon } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut, HelpCircle, Sun, Moon, Bird } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -160,7 +160,10 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
         overflowY: 'auto'
       }}>
         <div style={{ padding: '1.5rem 1rem', borderBottom: `1px solid var(--border-color)` }}>
-          <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.5rem' }}>Murder</h2>
+          <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Bird size={24} style={{ color: 'var(--accent-1)' }} />
+            Murder
+          </h2>
         </div>
 
         {/* Characters Section */}
