@@ -217,6 +217,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectCharacter(null);
+                  setCharactersExpanded(true);
                 }}
                 style={{
                   padding: '0.25rem',
