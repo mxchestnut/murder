@@ -1757,7 +1757,9 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
 
         collector.on('collect', async () => {
           try {
+            const guildId = message.guild?.id || 'dm';
             await db.insert(knowledgeBase).values({
+              guildId,
               question: searchTerm,
               answer: wikiSummary.extract,
               category,
@@ -1766,7 +1768,7 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
               createdAt: new Date(),
               updatedAt: new Date()
             });
-            await message.reply('✅ Saved Wikipedia article to knowledge base!');
+            await message.reply('✅ Saved Wikipedia article to this server\'s knowledge base!');
           } catch (error) {
             console.error('Error saving to knowledge base:', error);
           }
@@ -1828,7 +1830,9 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
 
     collector.on('collect', async () => {
       try {
+        const guildId = message.guild?.id || 'dm';
         await db.insert(knowledgeBase).values({
+          guildId,
           question: searchTerm,
           answer,
           category,
@@ -1836,7 +1840,7 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
           createdAt: new Date(),
           updatedAt: new Date()
         });
-        await message.reply('✅ Saved to knowledge base!');
+        await message.reply('✅ Saved to this server\'s knowledge base!');
       } catch (error) {
         console.error('Error saving to knowledge base:', error);
       }

@@ -132,6 +132,7 @@ router.post('/', isAuthenticated, async (req, res) => {
     const [entry] = await db
       .insert(knowledgeBase)
       .values({
+        guildId: 'web', // Web UI entries use special 'web' guildId
         question,
         answer,
         answerHtml: answerHtml || null,
