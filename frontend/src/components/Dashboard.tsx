@@ -13,7 +13,7 @@ import HallOfFameGallery from './HallOfFameGallery';
 import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
-import { FileText, LogOut, Sun, Moon, X, Bird } from 'lucide-react';
+import { FileText, LogOut, Sun, Moon, X, Bird, Dices } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
