@@ -599,7 +599,7 @@ api.post('/endpoint', data); // Automatically includes token
 
 ### CORS Origins
 ```typescript
-origin: process.env.NODE_ENV === 'production' 
+origin: process.env.NODE_ENV === 'production'
   ? ['https://cyarika.com', 'https://www.cyarika.com']
   : 'http://localhost:5173'
 ```
@@ -755,7 +755,7 @@ origin: process.env.NODE_ENV === 'production'
 **Solution:** Check nginx is serving built files from `frontend/dist`
 
 ### Discord bot not responding
-**Solution:** 
+**Solution:**
 1. Check bot is logged in: `pm2 logs cyarika-backend | grep "Discord bot logged in"`
 2. Verify MESSAGE_CONTENT intent enabled
 3. Check bot has permissions in server

@@ -72,7 +72,7 @@ export function initializeDiscordBot(token: string) {
     if (nameRollMatch) {
       const potentialName = nameRollMatch[1].trim();
       const potentialStat = nameRollMatch[2].trim();
-      
+
       // Check if this is a known command first
       const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'learnurl', 'kink', 'feat', 'spell', 'stats', 'leaderboard', 'prompt', 'trope', 'session', 'scene', 'time', 'note', 'npc', 'music', 'recap', 'hall', 'botset', 'hc', 'memory'];
       const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
@@ -187,7 +187,7 @@ export function initializeDiscordBot(token: string) {
   // Hall of Fame - Star Reaction Handler
   botClient.on('messageReactionAdd', async (reaction, user) => {
     if (user.bot) return;
-    
+
     // Fetch partial reactions
     if (reaction.partial) {
       try {
@@ -206,7 +206,7 @@ export function initializeDiscordBot(token: string) {
 
   botClient.on('messageReactionRemove', async (reaction, user) => {
     if (user.bot) return;
-    
+
     if (reaction.partial) {
       try {
         await reaction.fetch();
@@ -323,12 +323,12 @@ async function handleProfile(message: Message, args: string[]) {
     // Profile for a specific character by name (fuzzy matching)
     const characterName = args.join(' ');
     const normalizedInput = normalizeString(characterName);
-    
+
     const allCharacters = await db
       .select()
       .from(characterSheets);
-    
-    const matchedCharacters = allCharacters.filter(char => 
+
+    const matchedCharacters = allCharacters.filter(char =>
       normalizeString(char.name) === normalizedInput
     );
 
@@ -396,8 +396,8 @@ async function handleProfile(message: Message, args: string[]) {
 
     if (character.avatarUrl) {
       // Convert relative URL to absolute URL for Discord
-      const avatarUrl = character.avatarUrl.startsWith('http') 
-        ? character.avatarUrl 
+      const avatarUrl = character.avatarUrl.startsWith('http')
+        ? character.avatarUrl
         : `https://murder.tech${character.avatarUrl}`;
       embed.setThumbnail(avatarUrl);
     }
@@ -476,7 +476,7 @@ async function handleProfile(message: Message, args: string[]) {
         if (character.personalityOneSentence) {
           embed.addFields({ name: '💬 In a Nutshell', value: `*"${stripHtml(character.personalityOneSentence)}"*`, inline: false });
         }
-        
+
         const personalityInfo = [];
         if (character.keyVirtues) personalityInfo.push(`**Virtues:** ${stripHtml(character.keyVirtues)}`);
         if (character.keyFlaws) personalityInfo.push(`**Flaws:** ${stripHtml(character.keyFlaws)}`);
@@ -529,7 +529,7 @@ async function handleProfile(message: Message, args: string[]) {
         if (character.origin) {
           embed.addFields({ name: '📖 Origin', value: truncate(stripHtml(character.origin), 1024), inline: false });
         }
-        
+
         const backstoryNotes = [];
         if (character.greatestSuccess) backstoryNotes.push(`**Greatest Success:** ${stripHtml(character.greatestSuccess)}`);
         if (character.greatestFailure) backstoryNotes.push(`**Greatest Failure:** ${stripHtml(character.greatestFailure)}`);
@@ -702,13 +702,13 @@ async function handleProfile(message: Message, args: string[]) {
 
   // Send initial message
   let currentTab = 'identity';
-  const reply = await message.reply({ 
-    embeds: [await buildEmbed(currentTab)], 
+  const reply = await message.reply({
+    embeds: [await buildEmbed(currentTab)],
     components: [createButtons1(currentTab), createButtons2(currentTab), createButtons3(currentTab)]
   });
 
   // Create collector for button interactions
-  const collector = reply.createMessageComponentCollector({ 
+  const collector = reply.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 300000 // 5 minutes
   });
@@ -777,7 +777,7 @@ async function handleRoll(message: Message, args: string[]) {
     modifier = Math.floor(((character as any)[stat] - 10) / 2);
     rollDescription = `${stat.charAt(0).toUpperCase() + stat.slice(1)} Check`;
     statName = stat;
-  } 
+  }
   // Check if it's a save
   else if (rollParam.includes('fortitude') || rollParam === 'fort') {
     rollType = 'save';
@@ -799,7 +799,7 @@ async function handleRoll(message: Message, args: string[]) {
   else {
     rollType = 'skill';
     let skills = character.skills as any;
-    
+
     // Parse skills if they're stored as a JSON string
     if (typeof skills === 'string') {
       try {
@@ -810,7 +810,7 @@ async function handleRoll(message: Message, args: string[]) {
         return;
       }
     }
-    
+
     if (skills && typeof skills === 'object') {
       const skillKey = Object.keys(skills).find(k => k.toLowerCase().includes(rollParam));
       if (skillKey && skills[skillKey]) {
@@ -960,14 +960,14 @@ async function handleConnect(message: Message, args: string[]) {
 
   } catch (error: any) {
     console.error('Discord Write Pretend connect error:', error);
-    
+
     let errorMsg = 'Unknown error occurred';
     if (error.response?.data?.error) {
       errorMsg = error.response.data.error;
     } else if (error.message) {
       errorMsg = error.message;
     }
-    
+
     await message.author.send('❌ **Failed to connect to Write Pretend.**\n\n' +
       `Error: ${errorMsg}\n\n` +
       'Please check your username and password and try again.\n\n' +
@@ -1008,7 +1008,7 @@ async function handleSyncAll(message: Message) {
     }
 
     // Build response with character list
-    const charList = characters.map(c => 
+    const charList = characters.map(c =>
       `• **${c.name}** - Level ${c.level} ${c.characterClass || 'Character'}${c.isPathCompanion ? ' (PathCompanion)' : ''}`
     ).join('\n');
 
@@ -1050,13 +1050,13 @@ async function handleProxy(message: Message, characterName: string, messageText:
   try {
     // Find character by name (fuzzy matching - normalize accents)
     const normalizedInput = normalizeString(characterName);
-    
+
     // Get all characters and filter in JavaScript for fuzzy matching
     const allCharacters = await db
       .select()
       .from(characterSheets);
-    
-    const matchedCharacters = allCharacters.filter(char => 
+
+    const matchedCharacters = allCharacters.filter(char =>
       normalizeString(char.name) === normalizedInput
     );
 
@@ -1075,12 +1075,12 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
     // Get or create webhook for this channel
     let webhook = webhookCache.get(channel.id);
-    
+
     if (!webhook) {
       // Check if a webhook already exists
       const webhooks = await channel.fetchWebhooks();
       webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Write Pretend Proxy');
-      
+
       if (!webhook) {
         // Create new webhook
         webhook = await channel.createWebhook({
@@ -1088,7 +1088,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
           reason: 'Character proxying for Write Pretend Portal'
         });
       }
-      
+
       webhookCache.set(channel.id, webhook);
     }
 
@@ -1098,7 +1098,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
     // Convert relative avatar URL to absolute URL
     let avatarUrl = character.avatarUrl;
     console.log('Original avatarUrl from character:', avatarUrl);
-    
+
     if (avatarUrl && avatarUrl.startsWith('/')) {
       // Relative URL, make it absolute
       const baseUrl = process.env.FRONTEND_URL || 'http://54.242.214.56';
@@ -1109,7 +1109,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
       avatarUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(character.name) + '&size=256&background=random';
       console.log('Using default avatar URL:', avatarUrl);
     }
-    
+
     try {
       await webhook.send({
         content: messageText,
@@ -1128,20 +1128,20 @@ async function handleProxy(message: Message, characterName: string, messageText:
       if (webhookError.code === 10015) {
         console.log('Webhook became invalid, clearing cache and retrying...');
         webhookCache.delete(channel.id);
-        
+
         // Recreate webhook
         const webhooks = await channel.fetchWebhooks();
         webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Write Pretend Proxy');
-        
+
         if (!webhook) {
           webhook = await channel.createWebhook({
             name: 'Write Pretend Proxy',
             reason: 'Character proxying for Write Pretend Portal'
           });
         }
-        
+
         webhookCache.set(channel.id, webhook);
-        
+
         // Retry send
         await webhook.send({
           content: messageText,
@@ -1162,13 +1162,13 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
   try {
     // Find character by name (fuzzy matching - normalize accents)
     const normalizedInput = normalizeString(characterName);
-    
+
     // Get all characters and filter in JavaScript for fuzzy matching
     const allCharacters = await db
       .select()
       .from(characterSheets);
-    
-    const matchedCharacters = allCharacters.filter(char => 
+
+    const matchedCharacters = allCharacters.filter(char =>
       normalizeString(char.name) === normalizedInput
     );
 
@@ -1187,11 +1187,11 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     // Check if it's an ability score
     const abilityScores = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
     const matchedAbility = abilityScores.find(stat => statName.includes(stat));
-    
+
     if (matchedAbility) {
       modifier = Math.floor(((character as any)[matchedAbility] - 10) / 2);
       rollDescription = `${matchedAbility.charAt(0).toUpperCase() + matchedAbility.slice(1)} Check`;
-    } 
+    }
     // Check if it's a save
     else if (statName.includes('fortitude') || statName === 'fort') {
       rollType = 'save';
@@ -1210,7 +1210,7 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     else {
       rollType = 'skill';
       let skills = character.skills as any;
-      
+
       // Parse skills if they're stored as a JSON string
       if (typeof skills === 'string') {
         try {
@@ -1221,9 +1221,9 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
           return true;
         }
       }
-      
+
       console.log(`[handleNameRoll] Character: ${character.name}, Skills type: ${typeof skills}, Skills:`, skills);
-      
+
       if (skills && typeof skills === 'object' && Object.keys(skills).length > 0) {
         // Try exact match first, then partial match
         let skillKey = Object.keys(skills).find(k => k.toLowerCase() === statName);
@@ -1235,9 +1235,9 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
           // Try reverse - check if skill name starts with search term
           skillKey = Object.keys(skills).find(k => statName.includes(k.toLowerCase()));
         }
-        
+
         console.log(`[handleNameRoll] Skill search for "${statName}", found: ${skillKey}`);
-        
+
         if (skillKey && skills[skillKey]) {
           modifier = skills[skillKey].total || 0;
           rollDescription = `${skillKey} Check`;
@@ -1270,11 +1270,11 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     }
 
     await message.reply({ embeds: [embed] });
-    
+
     // Track the roll in character stats
     await trackCharacterActivity(
-      character.id, 
-      'roll', 
+      character.id,
+      'roll',
       `Rolled ${rollDescription} in #${message.channel && 'name' in message.channel ? message.channel.name : 'unknown'}`,
       {
         type: rollType,
@@ -1287,7 +1287,7 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
         channelId: message.channelId
       }
     );
-    
+
     return true;
 
   } catch (error) {
@@ -1352,7 +1352,7 @@ async function handleRelationship(message: Message, content: string) {
   try {
     // Parse: !Character1 is Character2's descriptor | notes
     const match = content.match(/^!([\p{L}\p{N}\s]+)\s+is\s+([\p{L}\p{N}\s]+)'s\s+(.+?)(?:\s*\|\s*(.+))?$/ui);
-    
+
     if (!match) {
       await message.reply('❌ Invalid relationship format. Use: `!Character1 is Character2\'s descriptor | notes`\nExample: `!Ogun is Rig\'s best friend | They admire each other.`');
       return;
@@ -1430,7 +1430,7 @@ async function handleAsk(message: Message, args: string[]) {
   }
 
   const question = args.join(' ');
-  
+
   try {
     // First, search knowledge base
     const searchResults = await db.select()
@@ -1440,12 +1440,12 @@ async function handleAsk(message: Message, args: string[]) {
 
     if (searchResults.length > 0) {
       const kb = searchResults[0];
-      
+
       // Truncate if too long for Discord embed
-      const truncatedAnswer = kb.answer.length > 4000 
-        ? kb.answer.substring(0, 3997) + '...' 
+      const truncatedAnswer = kb.answer.length > 4000
+        ? kb.answer.substring(0, 3997) + '...'
         : kb.answer;
-      
+
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
         .setTitle('📚 Knowledge Base')
@@ -1468,8 +1468,8 @@ async function handleAsk(message: Message, args: string[]) {
     const answer = await GeminiService.askGemini(question);
 
     // Truncate if too long for Discord embed (max 4096 chars)
-    const truncatedAnswer = answer.length > 4000 
-      ? answer.substring(0, 3997) + '...' 
+    const truncatedAnswer = answer.length > 4000
+      ? answer.substring(0, 3997) + '...'
       : answer;
 
     const embed = new EmbedBuilder()
@@ -1491,7 +1491,7 @@ async function handleAsk(message: Message, args: string[]) {
     };
 
     const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
-    
+
     collector.on('collect', async () => {
       try {
         await db.insert(knowledgeBase).values({
@@ -1559,7 +1559,7 @@ async function handleLearnUrl(message: Message, args: string[]) {
     await message.reply('❌ Only administrators can use this command.');
     return;
   }
-  
+
   if (args.length === 0) {
     await message.reply(
       'Usage: `!learnurl <url> [category]`\n' +
@@ -1575,7 +1575,7 @@ async function handleLearnUrl(message: Message, args: string[]) {
   if (url && url.startsWith('<') && url.endsWith('>')) {
     url = url.slice(1, -1);
   }
-  
+
   const category = args[1] || null;
 
   // Validate URL
@@ -1630,7 +1630,7 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
   }
 
   const searchTerm = args.join(' ');
-  
+
   try {
     // First, search knowledge base for this category
     const searchResults = await db.select()
@@ -1643,12 +1643,12 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
 
     if (searchResults.length > 0) {
       const kb = searchResults[0];
-      
+
       // Truncate if too long for Discord embed
-      const truncatedAnswer = kb.answer.length > 4000 
-        ? kb.answer.substring(0, 3997) + '...' 
+      const truncatedAnswer = kb.answer.length > 4000
+        ? kb.answer.substring(0, 3997) + '...'
         : kb.answer;
-      
+
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
         .setTitle(`${emoji} ${kb.question}`)
@@ -1668,11 +1668,11 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
-    
+
     try {
       let wikiPage: any = null;
       let wikiSummary: any = null;
-      
+
       try {
         // Try exact match first
         wikiPage = await wiki.page(searchTerm);
@@ -1686,13 +1686,13 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
           wikiSummary = await wikiPage.summary();
         }
       }
-      
+
       if (wikiPage && wikiSummary && wikiSummary.extract && wikiSummary.extract.length > 50) {
         // Truncate if too long for Discord embed
-        const truncatedSummary = wikiSummary.extract.length > 4000 
-          ? wikiSummary.extract.substring(0, 3997) + '...' 
+        const truncatedSummary = wikiSummary.extract.length > 4000
+          ? wikiSummary.extract.substring(0, 3997) + '...'
           : wikiSummary.extract;
-        
+
         const embed = new EmbedBuilder()
           .setColor(0xf39c12)
           .setTitle(`${emoji} ${wikiSummary.title}`)
@@ -1703,7 +1703,7 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
           )
           .setFooter({ text: `React ⭐ to save this to knowledge base • ${wikiPage.canonicalurl}` })
           .setTimestamp();
-        
+
         if (wikiSummary.thumbnail?.source) {
           embed.setThumbnail(wikiSummary.thumbnail.source);
         }
@@ -1719,7 +1719,7 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
         };
 
         const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
-        
+
         collector.on('collect', async () => {
           try {
             await db.insert(knowledgeBase).values({
@@ -1748,10 +1748,10 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
-    
+
     // Add game system context if specified
     const systemContext = gameSystem ? ` from ${gameSystem}` : '';
-    
+
     // Adjust prompt based on category
     let aiQuestion = '';
     if (category === 'kink') {
@@ -1763,12 +1763,12 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     } else {
       aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}"${systemContext}. Be specific and comprehensive.${gameSystem ? ` Only use information from ${gameSystem}. Do not include information from other game systems.` : ''}`;
     }
-    
+
     const answer = await GeminiService.askGemini(aiQuestion);
 
     // Truncate if too long for Discord embed (max 4096 chars)
-    const truncatedAnswer = answer.length > 4000 
-      ? answer.substring(0, 3997) + '...' 
+    const truncatedAnswer = answer.length > 4000
+      ? answer.substring(0, 3997) + '...'
       : answer;
 
     const embed = new EmbedBuilder()
@@ -1790,7 +1790,7 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     };
 
     const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
-    
+
     collector.on('collect', async () => {
       try {
         await db.insert(knowledgeBase).values({
@@ -1975,7 +1975,7 @@ async function handleLeaderboard(message: Message, args: string[]) {
     stats.forEach((entry, index) => {
       const rank = ['🥇', '🥈', '🥉'][index] || `${index + 1}.`;
       let value;
-      
+
       switch (category) {
         case 'messages':
         case 'msg':
@@ -2015,12 +2015,12 @@ async function handleLeaderboard(message: Message, args: string[]) {
 async function handlePrompt(message: Message, args: string[]) {
   try {
     const subcmd = args[0]?.toLowerCase();
-    
+
     if (subcmd === 'random' && args.length > 1) {
       // !prompt random <category>
       const category = args.slice(1).join(' ').toLowerCase();
       const validCategories = ['character', 'world', 'combat', 'social', 'plot'];
-      
+
       if (!validCategories.includes(category)) {
         await message.reply(`❌ Invalid category. Valid categories: ${validCategories.join(', ')}`);
         return;
@@ -2037,10 +2037,10 @@ async function handlePrompt(message: Message, args: string[]) {
       }
 
       const randomPrompt = categoryPrompts[Math.floor(Math.random() * categoryPrompts.length)];
-      
+
       // Update use count
       await db.update(prompts)
-        .set({ 
+        .set({
           useCount: (randomPrompt.useCount || 0) + 1,
           lastUsed: new Date()
         })
@@ -2056,17 +2056,17 @@ async function handlePrompt(message: Message, args: string[]) {
     } else {
       // !prompt - Random from any category
       const allPrompts = await db.select().from(prompts);
-      
+
       if (allPrompts.length === 0) {
         await message.reply('❌ No prompts available. Add some prompts to the database!');
         return;
       }
 
       const randomPrompt = allPrompts[Math.floor(Math.random() * allPrompts.length)];
-      
+
       // Update use count
       await db.update(prompts)
-        .set({ 
+        .set({
           useCount: (randomPrompt.useCount || 0) + 1,
           lastUsed: new Date()
         })
@@ -2112,7 +2112,7 @@ async function handleTrope(message: Message, args: string[]) {
     }
 
     const randomTrope = tropeList[Math.floor(Math.random() * tropeList.length)];
-    
+
     // Update use count
     await db.update(tropes)
       .set({ useCount: (randomTrope.useCount || 0) + 1 })
@@ -2423,7 +2423,7 @@ async function handleScene(message: Message, args: string[]) {
 async function handleTime(message: Message, args: string[]) {
   try {
     const guildId = message.guild?.id || '';
-    
+
     if (args.length === 0) {
       // Show current time
       const [time] = await db.select()
@@ -2443,7 +2443,7 @@ async function handleTime(message: Message, args: string[]) {
           { name: 'Time of Day', value: time.currentTime || 'Not set', inline: true },
           { name: 'Calendar System', value: time.calendar || 'Standard', inline: true }
         );
-      
+
       if (time.notes) {
         embed.addFields({ name: 'Notes', value: time.notes });
       }
@@ -2488,7 +2488,7 @@ async function handleTime(message: Message, args: string[]) {
 async function handleNote(message: Message, args: string[]) {
   try {
     const subcmd = args[0]?.toLowerCase();
-    
+
     // Find user by Discord ID
     const [user] = await db.select()
       .from(users)
@@ -2538,7 +2538,7 @@ async function handleNote(message: Message, args: string[]) {
         const embed = new EmbedBuilder()
           .setColor('#95a5a6')
           .setTitle('📝 Your Notes')
-          .setDescription(notes.map((n, i) => 
+          .setDescription(notes.map((n, i) =>
             `**${i + 1}.** ${n.title}\n${n.content.substring(0, 100)}${n.content.length > 100 ? '...' : ''}`
           ).join('\n\n'));
 
@@ -2579,7 +2579,7 @@ async function handleHC(message: Message, args: string[]) {
       const embed = new EmbedBuilder()
         .setColor('#3498db')
         .setTitle('📋 Your HC List')
-        .setDescription(entries.map((e, i) => 
+        .setDescription(entries.map((e, i) =>
           `**${i + 1}.** ${e.content}`
         ).join('\n'));
 
@@ -2666,11 +2666,11 @@ async function handleMemory(message: Message, args: string[]) {
   try {
     const guildId = message.guild?.id || '';
     const userId = message.author.id;
-    
+
     // Parse: !Memory <Character> | <Memory>
     const fullText = args.join(' ');
     const parts = fullText.split('|').map(p => p.trim());
-    
+
     if (parts.length < 2) {
       await message.reply(
         'Usage: `!Memory <Character> | <Memory>`\n\n' +
@@ -2842,7 +2842,7 @@ async function handleMusic(message: Message) {
 async function handleRecap(message: Message) {
   try {
     const channelId = message.channel.id;
-    
+
     // Find active session
     const [session] = await db.select()
       .from(sessions)
@@ -2888,7 +2888,7 @@ async function handleStarReaction(reaction: any) {
     const starCount = reaction.count || 0;
     const STAR_THRESHOLD = 10; // Changed to 10 based on user preference
     const guildId = message.guild?.id || '';
-    
+
     // Check if message is already in hall of fame
     const [existing] = await db.select()
       .from(hallOfFame)
@@ -2897,7 +2897,7 @@ async function handleStarReaction(reaction: any) {
     if (starCount >= STAR_THRESHOLD) {
       // Add or update in Hall of Fame
       const contextMessages: any[] = [];
-      
+
       // Fetch context messages (2 before and 2 after)
       try {
         const messages = await message.channel.messages.fetch({ limit: 5, around: message.id });
@@ -2951,7 +2951,7 @@ async function handleStarReaction(reaction: any) {
                 .setTimestamp(message.createdTimestamp);
 
               const hallMessage = await hallChannel.send({ embeds: [embed] });
-              
+
               // Store hall message ID
               await db.update(hallOfFame)
                 .set({ hallMessageId: hallMessage.id })
@@ -2966,7 +2966,7 @@ async function handleStarReaction(reaction: any) {
       // Remove from hall of fame if stars drop below threshold
       await db.delete(hallOfFame)
         .where(eq(hallOfFame.id, existing.id));
-      
+
       // Try to delete from hall channel
       if (existing.hallMessageId) {
         try {
@@ -2975,7 +2975,7 @@ async function handleStarReaction(reaction: any) {
             const hallChannel = guild.channels.cache.find(
               (ch: any) => ch.name === 'hall-of-fame'
             ) as TextChannel;
-            
+
             if (hallChannel) {
               const hallMsg = await hallChannel.messages.fetch(existing.hallMessageId);
               await hallMsg.delete();
@@ -3069,7 +3069,7 @@ async function handleBotSet(message: Message, args: string[]) {
 
     if (existing) {
       await db.update(botSettings)
-        .set({ 
+        .set({
           announcementChannelId: channelId,
           updatedAt: new Date()
         })
@@ -3090,8 +3090,8 @@ async function handleBotSet(message: Message, args: string[]) {
 
 // Helper function to track character activity and update stats
 async function trackCharacterActivity(
-  characterId: number, 
-  activityType: string, 
+  characterId: number,
+  activityType: string,
   description: string,
   metadata?: any
 ) {

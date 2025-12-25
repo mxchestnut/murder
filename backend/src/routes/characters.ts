@@ -32,7 +32,7 @@ const upload = multer({
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (extname && mimetype) {
       cb(null, true);
     } else {
@@ -45,7 +45,7 @@ const upload = multer({
 router.get('/avatars/:filename', (req, res) => {
   const filename = req.params.filename;
   const filepath = path.join(__dirname, '../../uploads/avatars', filename);
-  
+
   if (fs.existsSync(filepath)) {
     res.sendFile(filepath);
   } else {
@@ -67,7 +67,7 @@ router.post('/upload-avatar', upload.single('avatar'), async (req, res) => {
     console.log('Avatar upload request received');
     console.log('req.file:', req.file);
     console.log('req.body:', req.body);
-    
+
     if (!req.file) {
       console.log('No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
@@ -164,13 +164,13 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const { 
-      name, 
-      strength = 10, 
-      dexterity = 10, 
-      constitution = 10, 
-      intelligence = 10, 
-      wisdom = 10, 
+    const {
+      name,
+      strength = 10,
+      dexterity = 10,
+      constitution = 10,
+      intelligence = 10,
+      wisdom = 10,
       charisma = 10,
       characterClass,
       level = 1,
@@ -287,13 +287,13 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Character sheet not found' });
     }
 
-    const { 
-      name, 
-      strength, 
-      dexterity, 
-      constitution, 
-      intelligence, 
-      wisdom, 
+    const {
+      name,
+      strength,
+      dexterity,
+      constitution,
+      intelligence,
+      wisdom,
       charisma,
       characterClass,
       level,
@@ -548,7 +548,7 @@ router.post('/:id/roll', async (req, res) => {
     const userId = (req.user as any).id;
     const username = (req.user as any).username;
     const sheetId = parseInt(req.params.id);
-    const { stat, rollType, skillName } = req.body; 
+    const { stat, rollType, skillName } = req.body;
     // stat: 'strength', 'dexterity', etc.
     // rollType: 'ability', 'save', 'skill', 'attack', 'advantage', 'disadvantage'
     // skillName: for skill checks
@@ -583,7 +583,7 @@ router.post('/:id/roll', async (req, res) => {
       const roll1 = Math.floor(Math.random() * 20) + 1;
       const roll2 = Math.floor(Math.random() * 20) + 1;
       diceRoll = rollType === 'advantage' ? Math.max(roll1, roll2) : Math.min(roll1, roll2);
-      
+
       if (stat) {
         const validStats = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
         if (!validStats.includes(stat)) {
@@ -592,7 +592,7 @@ router.post('/:id/roll', async (req, res) => {
         const statValue = sheet[stat as keyof typeof sheet] as number;
         modifier = calculateModifier(statValue);
       }
-      
+
       total = diceRoll + modifier;
       rollDescription = `${rollType === 'advantage' ? 'Advantage' : 'Disadvantage'} (${roll1}, ${roll2})`;
     } else if (rollType === 'skill' && skillName) {
@@ -618,7 +618,7 @@ router.post('/:id/roll', async (req, res) => {
     } else {
       // Standard ability check or attack
       diceRoll = Math.floor(Math.random() * 20) + 1;
-      
+
       if (stat) {
         const validStats = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
         if (!validStats.includes(stat)) {
@@ -627,7 +627,7 @@ router.post('/:id/roll', async (req, res) => {
         const statValue = sheet[stat as keyof typeof sheet] as number;
         modifier = calculateModifier(statValue);
       }
-      
+
       total = diceRoll + modifier;
       rollDescription = stat ? `${stat.toUpperCase()} check` : 'Check';
     }
@@ -691,8 +691,8 @@ router.post('/:id/link-pathcompanion', async (req, res) => {
     // Get user's PathCompanion session
     const userRecords = await db.select().from(users).where(eq(users.id, userId));
     if (userRecords.length === 0 || !userRecords[0].pathCompanionSessionTicket) {
-      return res.status(400).json({ 
-        error: 'PathCompanion session not found. Please log in to PathCompanion first.' 
+      return res.status(400).json({
+        error: 'PathCompanion session not found. Please log in to PathCompanion first.'
       });
     }
 

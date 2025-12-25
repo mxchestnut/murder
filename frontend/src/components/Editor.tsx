@@ -13,8 +13,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
-import { 
-  Bold, Italic, Strikethrough, Code, List, ListOrdered, 
+import {
+  Bold, Italic, Strikethrough, Code, List, ListOrdered,
   Quote, Undo, Redo, Heading1, Heading2, Heading3,
   CheckSquare, Highlighter, AlignLeft, AlignCenter, AlignRight
 } from 'lucide-react';
@@ -98,7 +98,7 @@ export default function Editor({ document, onSave }: EditorProps) {
         >
           <Bold size={18} />
         </MenuButton>
-        
+
         <MenuButton
           onClick={() => editor.chain().focus().toggleItalic().run()}
           active={editor.isActive('italic')}

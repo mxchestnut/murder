@@ -65,7 +65,7 @@ export default function AdminPanel() {
     if (!confirm(`Are you sure you want to delete user "${username}"? This cannot be undone.`)) {
       return;
     }
-    
+
     try {
       await api.delete(`/admin/users/${userId}`);
       setMessage({ type: 'success', text: `User "${username}" deleted` });
@@ -77,10 +77,10 @@ export default function AdminPanel() {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
         background: 'var(--bg-primary)'
       }}>
@@ -99,8 +99,8 @@ export default function AdminPanel() {
       margin: '0 auto'
     }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ 
-          fontSize: '2rem', 
+        <h1 style={{
+          fontSize: '2rem',
           marginBottom: '0.5rem',
           display: 'flex',
           alignItems: 'center',
@@ -173,9 +173,9 @@ export default function AdminPanel() {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr 
+                <tr
                   key={user.id}
-                  style={{ 
+                  style={{
                     borderBottom: '1px solid var(--border-color)',
                     background: user.isAdmin ? 'var(--accent-light)' : 'transparent'
                   }}

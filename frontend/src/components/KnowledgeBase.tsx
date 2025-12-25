@@ -56,12 +56,12 @@ export default function KnowledgeBase() {
     try {
       setLoading(true);
       const params: any = {};
-      
+
       if (searchTerm) params.search = searchTerm;
       if (selectedCategory) params.category = selectedCategory;
       if (showAiOnly) params.aiGenerated = 'true';
       if (showManualOnly) params.aiGenerated = 'false';
-      
+
       const response = await api.get('/knowledge-base', { params });
       setEntries(response.data.entries);
     } catch (error) {
@@ -82,11 +82,11 @@ export default function KnowledgeBase() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Convert HTML to markdown for Discord
       const markdown = turndownService.turndown(formData.answerHtml);
-      
+
       const payload = {
         question: formData.question,
         answer: markdown,
@@ -94,13 +94,13 @@ export default function KnowledgeBase() {
         sourceUrl: formData.sourceUrl,
         category: formData.category
       };
-      
+
       if (editingEntry) {
         await api.put(`/knowledge-base/${editingEntry.id}`, payload);
       } else {
         await api.post('/knowledge-base', payload);
       }
-      
+
       setShowModal(false);
       setEditingEntry(null);
       setFormData({ question: '', answerHtml: '', sourceUrl: '', category: '' });
@@ -125,7 +125,7 @@ export default function KnowledgeBase() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this entry?')) return;
-    
+
     try {
       await api.delete(`/knowledge-base/${id}`);
       loadEntries();
@@ -145,8 +145,8 @@ export default function KnowledgeBase() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)' }}>
       {/* Header */}
-      <div style={{ 
-        padding: '1.5rem', 
+      <div style={{
+        padding: '1.5rem',
         borderBottom: '1px solid var(--border-color)',
         background: 'var(--bg-secondary)'
       }}>
@@ -177,15 +177,15 @@ export default function KnowledgeBase() {
 
         {/* Stats */}
         {stats && (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
-            <div style={{ 
-              padding: '1rem', 
-              background: 'var(--bg-primary)', 
+            <div style={{
+              padding: '1rem',
+              background: 'var(--bg-primary)',
               borderRadius: '8px',
               border: '1px solid var(--border-color)'
             }}>
@@ -197,9 +197,9 @@ export default function KnowledgeBase() {
                 {stats.total}
               </div>
             </div>
-            <div style={{ 
-              padding: '1rem', 
-              background: 'var(--bg-primary)', 
+            <div style={{
+              padding: '1rem',
+              background: 'var(--bg-primary)',
               borderRadius: '8px',
               border: '1px solid var(--border-color)'
             }}>
@@ -211,9 +211,9 @@ export default function KnowledgeBase() {
                 {stats.aiGenerated}
               </div>
             </div>
-            <div style={{ 
-              padding: '1rem', 
-              background: 'var(--bg-primary)', 
+            <div style={{
+              padding: '1rem',
+              background: 'var(--bg-primary)',
               borderRadius: '8px',
               border: '1px solid var(--border-color)'
             }}>
@@ -231,15 +231,15 @@ export default function KnowledgeBase() {
         {/* Search and Filters */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 300px', position: 'relative' }}>
-            <Search 
-              size={18} 
-              style={{ 
-                position: 'absolute', 
-                left: '0.75rem', 
-                top: '50%', 
+            <Search
+              size={18}
+              style={{
+                position: 'absolute',
+                left: '0.75rem',
+                top: '50%',
                 transform: 'translateY(-50%)',
                 color: 'var(--text-secondary)'
-              }} 
+              }}
             />
             <input
               type="text"
@@ -256,7 +256,7 @@ export default function KnowledgeBase() {
               }}
             />
           </div>
-          
+
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -399,10 +399,10 @@ export default function KnowledgeBase() {
                     </button>
                   </div>
                 </div>
-                
-                <div 
-                  style={{ 
-                    margin: '0 0 0.75rem 0', 
+
+                <div
+                  style={{
+                    margin: '0 0 0.75rem 0',
                     color: 'var(--text-primary)',
                     lineHeight: '1.6'
                   }}
@@ -410,12 +410,12 @@ export default function KnowledgeBase() {
                 />
 
                 {entry.sourceUrl && (
-                  <a 
-                    href={entry.sourceUrl} 
-                    target="_blank" 
+                  <a
+                    href={entry.sourceUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    style={{ 
-                      color: 'var(--accent-primary)', 
+                    style={{
+                      color: 'var(--accent-primary)',
                       fontSize: '0.875rem',
                       textDecoration: 'none'
                     }}
@@ -424,9 +424,9 @@ export default function KnowledgeBase() {
                   </a>
                 )}
 
-                <div style={{ 
-                  marginTop: '0.75rem', 
-                  paddingTop: '0.75rem', 
+                <div style={{
+                  marginTop: '0.75rem',
+                  paddingTop: '0.75rem',
                   borderTop: '1px solid var(--border-color)',
                   fontSize: '0.75rem',
                   color: 'var(--text-secondary)'

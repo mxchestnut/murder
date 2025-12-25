@@ -91,26 +91,26 @@ router.post('/login', (req, res, next) => {
     if (!user) {
       return res.status(401).json({ error: info?.message || 'Invalid credentials' });
     }
-    
+
     // Log the user in with session
     req.logIn(user, (err) => {
       if (err) {
         console.error('Session login error:', err);
         return res.status(500).json({ error: 'Login failed' });
       }
-      
+
       // Save session explicitly to ensure persistence
       req.session.save((err) => {
         if (err) {
           console.error('Session save error:', err);
           return res.status(500).json({ error: 'Session save failed' });
         }
-        
+
         console.log('Login successful for user:', user.username);
         console.log('Session ID:', req.sessionID);
         console.log('Session:', req.session);
         console.log('Cookies being sent:', res.getHeader('Set-Cookie'));
-        
+
         // Auto-refresh PathCompanion session if connected
         if (user.pathCompanionUsername && user.pathCompanionPassword) {
           (async () => {
@@ -118,7 +118,7 @@ router.post('/login', (req, res, next) => {
               const PlayFabService = await import('../services/playfab');
               const decryptedPassword = decryptPassword(user.pathCompanionPassword);
               const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, decryptedPassword);
-              
+
               // Update session ticket silently
               await db.update(users)
                 .set({
@@ -126,7 +126,7 @@ router.post('/login', (req, res, next) => {
                   pathCompanionConnectedAt: new Date()
                 })
                 .where(eq(users.id, user.id));
-              
+
               console.log('Auto-refreshed PathCompanion session for user:', user.username);
             } catch (error) {
               console.error('Failed to auto-refresh PathCompanion session:', error);
@@ -134,12 +134,12 @@ router.post('/login', (req, res, next) => {
             }
           })();
         }
-        
-        res.json({ 
-          message: 'Login successful', 
-          user: { 
-            id: user.id, 
-            username: user.username 
+
+        res.json({
+          message: 'Login successful',
+          user: {
+            id: user.id,
+            username: user.username
           },
           sessionId: req.sessionID // Send session ID to frontend for debugging
         });
@@ -163,16 +163,16 @@ router.post('/logout-all-devices', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const redisClient = (req.sessionStore as any).client;
-    
+
     if (!redisClient) {
       return res.status(500).json({ error: 'Session store not available' });
     }
 
     // Get all session keys
     const sessionKeys = await redisClient.keys('murder:sess:*');
-    
+
     let deletedCount = 0;
-    
+
     // Check each session to see if it belongs to this user
     for (const key of sessionKeys) {
       try {
@@ -189,10 +189,10 @@ router.post('/logout-all-devices', isAuthenticated, async (req, res) => {
         console.error('Error processing session key:', key, err);
       }
     }
-    
+
     console.log(`Logged out ${deletedCount} devices for user ${user.username}`);
-    
-    res.json({ 
+
+    res.json({
       message: 'All devices logged out successfully',
       devicesLoggedOut: deletedCount
     });
@@ -209,17 +209,17 @@ router.get('/me', (req, res) => {
   console.log('GET /me - Session:', req.session);
   console.log('GET /me - User:', req.user);
   console.log('GET /me - isAuthenticated:', req.isAuthenticated());
-  
+
   if (req.isAuthenticated()) {
     const user = req.user as any;
-    res.json({ 
-      user: { 
-        id: user.id, 
+    res.json({
+      user: {
+        id: user.id,
         username: user.username,
         isAdmin: user.isAdmin || false,
         pathCompanionConnected: !!user.pathCompanionSessionTicket,
         pathCompanionUsername: user.pathCompanionUsername
-      } 
+      }
     });
   } else {
     res.status(401).json({ error: 'Not authenticated' });
@@ -238,13 +238,13 @@ router.post('/pathcompanion/connect', isAuthenticated, async (req, res) => {
 
     // Import PlayFab service
     const PlayFabService = await import('../services/playfab');
-    
+
     // Login to PathCompanion to get session ticket
     const auth = await PlayFabService.loginToPlayFab(username, password);
 
     // Encrypt password for secure storage
     const encryptedPassword = encryptPassword(password);
-    
+
     const [updatedUser] = await db.update(users)
       .set({
         pathCompanionUsername: username,
@@ -300,8 +300,8 @@ router.post('/pathcompanion/disconnect', isAuthenticated, async (req, res) => {
 router.get('/discord-settings', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const [user] = await db.select({ 
-      botToken: users.discordBotToken 
+    const [user] = await db.select({
+      botToken: users.discordBotToken
     })
     .from(users)
     .where(eq(users.id, userId));

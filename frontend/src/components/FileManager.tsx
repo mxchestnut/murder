@@ -51,19 +51,19 @@ export default function FileManager() {
         }
       });
 
-      setMessage({ 
-        type: 'success', 
-        text: `File "${file.name}" uploaded successfully!` 
+      setMessage({
+        type: 'success',
+        text: `File "${file.name}" uploaded successfully!`
       });
-      
+
       await loadFiles();
-      
+
       // Clear file input
       event.target.value = '';
     } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || 'Failed to upload file' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to upload file'
       });
     } finally {
       setUploading(false);
@@ -75,7 +75,7 @@ export default function FileManager() {
     try {
       const response = await api.get(`/files/${file.id}/download`);
       const { downloadUrl, fileName } = response.data;
-      
+
       // Open download URL in new tab
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -114,15 +114,15 @@ export default function FileManager() {
     try {
       const response = await api.post(`/files/${file.id}/learn`);
       const { entriesAdded } = response.data;
-      
-      setMessage({ 
-        type: 'success', 
-        text: `✅ Added ${entriesAdded} entries from "${file.originalFileName}" to knowledge base!` 
+
+      setMessage({
+        type: 'success',
+        text: `✅ Added ${entriesAdded} entries from "${file.originalFileName}" to knowledge base!`
       });
     } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || 'Failed to learn from PDF' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to learn from PDF'
       });
     } finally {
       setLearning(null);
@@ -209,7 +209,7 @@ export default function FileManager() {
                   </td>
                   <td className="actions">
                     {file.originalFileName.toLowerCase().endsWith('.pdf') && (
-                      <button 
+                      <button
                         onClick={() => handleLearnFromPDF(file)}
                         className="action-button learn"
                         title="Learn from PDF"
@@ -222,14 +222,14 @@ export default function FileManager() {
                         )}
                       </button>
                     )}
-                    <button 
+                    <button
                       onClick={() => handleDownload(file)}
                       className="action-button download"
                       title="Download"
                     >
                       <Download size={18} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(file)}
                       className="action-button delete"
                       title="Delete"

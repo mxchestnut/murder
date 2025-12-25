@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('PathCompanion login error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to connect to PathCompanion',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -41,8 +41,8 @@ router.get('/characters', isAuthenticated, async (req, res) => {
     const user = req.user as any;
 
     if (!user.pathCompanionSessionTicket) {
-      return res.status(400).json({ 
-        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.' 
+      return res.status(400).json({
+        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.'
       });
     }
 
@@ -51,24 +51,24 @@ router.get('/characters', isAuthenticated, async (req, res) => {
 
     // Filter to character entries (character1-99, gm1-99, shared1-99, portraits, etc.)
     const characterKeys = Object.keys(userData)
-      .filter(key => 
+      .filter(key =>
         /^character\d+$/.test(key) ||  // character1, character2, etc.
         /^gm\d+$/.test(key) ||          // gm1, gm2, etc.
         /^shared\d+$/.test(key)         // shared1, shared2, etc.
       )
       .slice(0, 50); // Limit to 50 characters to avoid performance issues
-    
+
     console.log(`Found ${characterKeys.length} character keys:`, characterKeys);
-    
+
     const allItems = await Promise.all(
       characterKeys.map(async (key) => {
         try {
           const char = await PlayFabService.getCharacter(user.pathCompanionSessionTicket, key);
-          
+
           // GM characters and shared characters are campaigns
           // character1, character2, etc. are player characters
           const isCampaign = /^(gm|shared)\d+$/i.test(key);
-          
+
           return {
             id: key,
             name: char?.characterName || key,
@@ -81,29 +81,29 @@ router.get('/characters', isAuthenticated, async (req, res) => {
         }
       })
     );
-    
+
     // Separate characters and campaigns
     const characterList = allItems.filter(item => item && !item.isCampaign).map(item => ({
       id: item!.id,
       name: item!.name,
       lastModified: item!.lastModified
     }));
-    
+
     const campaignList = allItems.filter(item => item && item.isCampaign).map(item => ({
       id: item!.id,
       name: item!.name,
       lastModified: item!.lastModified
     }));
-    
+
     console.log(`Separated into ${characterList.length} characters and ${campaignList.length} campaigns`);
 
-    res.json({ 
+    res.json({
       characters: characterList,
       campaigns: campaignList
     });
   } catch (error) {
     console.error('Failed to fetch PathCompanion characters:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch characters',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -118,7 +118,7 @@ router.get('/characters', isAuthenticated, async (req, res) => {
 router.post('/character/share', async (req, res) => {
   try {
     const { shareKey } = req.body;
-    
+
     if (!shareKey) {
       return res.status(400).json({ error: 'Share key required' });
     }
@@ -149,8 +149,8 @@ router.post('/import', isAuthenticated, async (req, res) => {
 
     // Check if user has connected PathCompanion account
     if (!user.pathCompanionSessionTicket) {
-      return res.status(400).json({ 
-        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.' 
+      return res.status(400).json({
+        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.'
       });
     }
 
@@ -304,7 +304,7 @@ router.post('/import', isAuthenticated, async (req, res) => {
     res.status(201).json(sheetWithModifiers);
   } catch (error) {
     console.error('Failed to import PathCompanion character:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to import character',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -425,7 +425,7 @@ router.post('/sync/:id', async (req, res) => {
     res.json(updatedWithModifiers);
   } catch (error) {
     console.error('Failed to sync PathCompanion character:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to sync character',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -444,8 +444,8 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
 
     // Check if user has connected PathCompanion account
     if (!user.pathCompanionSessionTicket) {
-      return res.status(400).json({ 
-        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.' 
+      return res.status(400).json({
+        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.'
       });
     }
 
@@ -590,9 +590,9 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
         }
       } catch (error) {
         console.error(`Failed to import character ${characterId}:`, error);
-        results.failed.push({ 
-          id: characterId, 
-          reason: error instanceof Error ? error.message : 'Unknown error' 
+        results.failed.push({
+          id: characterId,
+          reason: error instanceof Error ? error.message : 'Unknown error'
         });
       }
     }
@@ -606,7 +606,7 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to import all characters:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to import characters',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -624,8 +624,8 @@ router.post('/export/:id', isAuthenticated, async (req, res) => {
     const user = req.user as any;
 
     if (!user.pathCompanionSessionTicket) {
-      return res.status(400).json({ 
-        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.' 
+      return res.status(400).json({
+        error: 'No PathCompanion account connected. Please connect your PathCompanion account in Settings first.'
       });
     }
 
@@ -700,7 +700,7 @@ router.post('/export/:id', isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to export character to PathCompanion:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to export character to PathCompanion',
       details: error instanceof Error ? error.message : 'Unknown error'
     });

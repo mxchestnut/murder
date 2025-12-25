@@ -415,7 +415,7 @@ Current bucket references:
 - [ ] Check for deprecated packages:
   - `matrix-js-sdk` - Is this being used? If not, remove
   - All `@types/*` packages - ensure matching versions
-  
+
 **Frontend Dependencies:**
 - [ ] Tiptap packages are version 3.14.0 - check for updates
 - [ ] React 18.2.0 - update to latest 18.x

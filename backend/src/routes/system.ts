@@ -25,9 +25,9 @@ router.get('/password-rotation-status', isAuthenticated, async (req, res) => {
 router.post('/record-password-rotation', isAuthenticated, async (req, res) => {
   try {
     await recordPasswordRotation();
-    res.json({ 
-      success: true, 
-      message: 'Password rotation date recorded. Next rotation due in 90 days.' 
+    res.json({
+      success: true,
+      message: 'Password rotation date recorded. Next rotation due in 90 days.'
     });
   } catch (error) {
     console.error('Error recording password rotation:', error);

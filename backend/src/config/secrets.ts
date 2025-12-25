@@ -15,11 +15,11 @@ async function getSecret(secretName: string): Promise<string> {
   try {
     const command = new GetSecretValueCommand({ SecretId: secretName });
     const response = await client.send(command);
-    
+
     if (response.SecretString) {
       return response.SecretString;
     }
-    
+
     throw new Error(`Secret ${secretName} not found or is binary`);
   } catch (error) {
     console.error(`Error fetching secret ${secretName}:`, error);

@@ -16,7 +16,7 @@ interface RichTextPanelProps {
   maxLength?: number;
 }
 
-export default function RichTextPanel({ 
+export default function RichTextPanel({
   isOpen,
   onClose,
   onSave,
@@ -148,8 +148,8 @@ export default function RichTextPanel({
           <button className="cancel-button" onClick={onClose}>
             Cancel
           </button>
-          <button 
-            className="save-button" 
+          <button
+            className="save-button"
             onClick={handleSave}
             disabled={isOverLimit}
           >

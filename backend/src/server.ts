@@ -38,7 +38,7 @@ import { initializePasswordRotationTracking } from './db/passwordRotation';
 async function startServer() {
   // Load secrets from AWS Secrets Manager (or .env in development)
   const secrets = await getSecretsWithFallback();
-  
+
   // Reinitialize database connection with secret from AWS (in production)
   if (process.env.NODE_ENV === 'production') {
     await reinitializeDatabase(secrets.DATABASE_URL);
@@ -54,7 +54,7 @@ async function startServer() {
 
   redisClient.on('error', (err) => console.error('Redis Client Error', err));
   redisClient.on('connect', () => console.log('✓ Connected to Redis for session storage'));
-  
+
   await redisClient.connect();
 
   const app = express();
@@ -93,7 +93,7 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? ['https://murder.tech', 'https://www.murder.tech']
     : 'http://localhost:5173',
   credentials: true
@@ -115,7 +115,7 @@ app.use(express.urlencoded({ extended: true }));
 
   // Session configuration with Redis
   app.use(session({
-    store: new RedisStore({ 
+    store: new RedisStore({
       client: redisClient,
       prefix: 'murder:sess:',
       ttl: 86400 * 30 // 30 days absolute maximum in seconds
@@ -218,10 +218,10 @@ app.get('*', (req, res) => {
   app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Secrets loaded from: ${process.env.NODE_ENV === 'production' ? 'AWS Secrets Manager' : '.env file'}`);
-    
+
     // Initialize password rotation tracking
     await initializePasswordRotationTracking();
-    
+
     // Ensure Discord bot tables exist
     try {
       // HC list table
@@ -249,7 +249,7 @@ app.get('*', (req, res) => {
         CREATE INDEX IF NOT EXISTS idx_character_memories_char ON character_memories(character_id);
         CREATE INDEX IF NOT EXISTS idx_character_memories_guild ON character_memories(guild_id);
       `);
-      
+
       // Prompts table
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS prompts (
@@ -262,7 +262,7 @@ app.get('*', (req, res) => {
           created_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
       `);
-      
+
       // Tropes table
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS tropes (
@@ -274,7 +274,7 @@ app.get('*', (req, res) => {
           created_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
       `);
-      
+
       // Sessions table
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS sessions (
@@ -293,7 +293,7 @@ app.get('*', (req, res) => {
           created_by INTEGER
         );
       `);
-      
+
       // Scenes table
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS scenes (
@@ -309,7 +309,7 @@ app.get('*', (req, res) => {
           tags TEXT
         );
       `);
-      
+
       // Hall of Fame table
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS hall_of_fame (
@@ -326,7 +326,7 @@ app.get('*', (req, res) => {
           added_to_hall_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
       `);
-      
+
       // Bot Settings table
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS bot_settings (
@@ -337,7 +337,7 @@ app.get('*', (req, res) => {
           updated_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
       `);
-      
+
       console.log('✓ Discord bot tables verified');
     } catch (error) {
       console.error('Error creating Discord bot tables:', error);

@@ -70,7 +70,7 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
 
   const handleCreateFolder = async () => {
     if (!newItemName) return;
-    
+
     try {
       await api.post('/documents/folder', { name: newItemName });
       setNewItemName('');
@@ -83,11 +83,11 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
 
   const handleCreateDocument = async () => {
     if (!newItemName) return;
-    
+
     try {
-      await api.post('/documents/document', { 
+      await api.post('/documents/document', {
         name: newItemName,
-        content: '' 
+        content: ''
       });
       setNewItemName('');
       setShowNewItem(null);
@@ -116,7 +116,7 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
 
   const handleDelete = async (docId: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
@@ -142,7 +142,7 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
     }}>
       <div style={{ padding: '1rem', borderBottom: `1px solid var(--border-color)` }}>
         <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Documents</h3>
-        
+
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setShowNewItem('folder')}
@@ -259,14 +259,14 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
       </div>
 
       {/* Characters Section */}
-      <div style={{ 
-        padding: '1rem', 
+      <div style={{
+        padding: '1rem',
         borderTop: `1px solid var(--border-color)`,
-        borderBottom: `1px solid var(--border-color)` 
+        borderBottom: `1px solid var(--border-color)`
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '0.75rem'
         }}>
@@ -311,7 +311,7 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
                 gap: '0.5rem'
               }}
             >
-              <div 
+              <div
                 onClick={() => onSelectCharacter(char)}
                 style={{ flex: 1, cursor: 'pointer' }}
               >
@@ -365,14 +365,14 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
 
       {/* Campaigns Section */}
       {campaigns.length > 0 && (
-        <div style={{ 
-          padding: '1rem', 
+        <div style={{
+          padding: '1rem',
           borderTop: `1px solid var(--border-color)`,
-          borderBottom: `1px solid var(--border-color)` 
+          borderBottom: `1px solid var(--border-color)`
         }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '0.75rem'
           }}>
@@ -426,10 +426,10 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
               {doc.isFolder ? <Folder size={16} /> : <File size={16} />}
-              <span style={{ 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                whiteSpace: 'nowrap' 
+              <span style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
               }}>
                 {doc.name}
               </span>
@@ -455,7 +455,7 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
 
       {/* PathCompanion Import Modal */}
       {showPathCompanionImport && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             top: 0,
@@ -474,7 +474,7 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
             }
           }}
         >
-          <div 
+          <div
             style={{
               background: 'var(--bg-secondary)',
               padding: '2rem',
@@ -487,7 +487,7 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Import from PathCompanion</h3>
-              <button 
+              <button
                 onClick={() => {
                   setShowPathCompanionImport(false);
                   setPathCompanionCharacters([]);

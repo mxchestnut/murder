@@ -10,7 +10,7 @@ interface PathCompanionConnectionStatus {
 
 export default function Settings() {
   const { theme, setThemeMode, setAccentColor } = useTheme();
-  
+
   const [pathCompanion, setPathCompanion] = useState<PathCompanionConnectionStatus>({
     connected: false
   });
@@ -47,9 +47,9 @@ export default function Settings() {
       setConnectForm({ username: '', password: '' });
       setMessage({ type: 'success', text: 'Successfully connected to PathCompanion! You can now import your characters from the Character Sheets tab.' });
     } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || 'Failed to connect. Check your credentials.' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to connect. Check your credentials.'
       });
     } finally {
       setIsConnecting(false);
@@ -58,7 +58,7 @@ export default function Settings() {
 
   const handleDisconnect = async () => {
     if (!confirm('Are you sure you want to disconnect your PathCompanion account?')) return;
-    
+
     setIsDisconnecting(true);
     setMessage(null);
 
@@ -83,19 +83,19 @@ export default function Settings() {
 
     try {
       const response = await api.post('/auth/logout-all-devices');
-      setMessage({ 
-        type: 'success', 
-        text: `Successfully logged out ${response.data.devicesLoggedOut} device(s). Redirecting to login...` 
+      setMessage({
+        type: 'success',
+        text: `Successfully logged out ${response.data.devicesLoggedOut} device(s). Redirecting to login...`
       });
-      
+
       // Redirect to login after 2 seconds
       setTimeout(() => {
         window.location.href = '/';
       }, 2000);
     } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || 'Failed to logout all devices' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to logout all devices'
       });
       setIsLoggingOutAllDevices(false);
     }
@@ -224,7 +224,7 @@ export default function Settings() {
                 <div className="status-label">Connected</div>
                 <div className="status-value">{pathCompanion.username}</div>
               </div>
-              <button 
+              <button
                 className="button danger"
                 onClick={handleDisconnect}
                 disabled={isDisconnecting}
@@ -267,8 +267,8 @@ export default function Settings() {
                     required
                   />
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="button primary"
                   disabled={isConnecting || !connectForm.username || !connectForm.password}
                 >
@@ -314,7 +314,7 @@ export default function Settings() {
                 End all active sessions on all devices. You'll need to log in again on each device.
               </p>
             </div>
-            <button 
+            <button
               className="button danger"
               onClick={handleLogoutAllDevices}
               disabled={isLoggingOutAllDevices}

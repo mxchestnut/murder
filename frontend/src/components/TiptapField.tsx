@@ -14,10 +14,10 @@ interface TiptapFieldProps {
   rows?: number;
 }
 
-export default function TiptapField({ 
-  value, 
-  onChange, 
-  placeholder = 'Start typing...', 
+export default function TiptapField({
+  value,
+  onChange,
+  placeholder = 'Start typing...',
   maxLength = 1024,
   label,
   rows = 4
@@ -69,7 +69,7 @@ export default function TiptapField({
   return (
     <div className="tiptap-field">
       {label && <label className="tiptap-label">{label}</label>}
-      
+
       <div className="tiptap-toolbar">
         <button
           type="button"

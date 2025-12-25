@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS files (
   virus_scan_details TEXT,
   uploaded_at TIMESTAMP DEFAULT NOW() NOT NULL,
   deleted_at TIMESTAMP,
-  
+
   -- New fields for categories and optimization
   category TEXT DEFAULT 'document',
   thumbnail_s3_key TEXT,

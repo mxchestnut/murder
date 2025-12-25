@@ -19,8 +19,8 @@ export async function getPasswordRotationStatus(): Promise<PasswordRotationStatu
   try {
     // Check if settings table exists and has rotation date
     const result = await db.execute(sql`
-      SELECT value 
-      FROM system_settings 
+      SELECT value
+      FROM system_settings
       WHERE key = 'db_password_last_rotated'
       LIMIT 1
     `);
@@ -68,12 +68,12 @@ export async function getPasswordRotationStatus(): Promise<PasswordRotationStatu
 export async function recordPasswordRotation(): Promise<void> {
   try {
     const now = new Date().toISOString();
-    
+
     // Upsert the rotation date
     await db.execute(sql`
       INSERT INTO system_settings (key, value, updated_at)
       VALUES ('db_password_last_rotated', ${now}, ${now})
-      ON CONFLICT (key) 
+      ON CONFLICT (key)
       DO UPDATE SET value = ${now}, updated_at = ${now}
     `);
 

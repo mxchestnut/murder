@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Dices, 
-  Save, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Dices,
+  Save,
   X,
   Sword,
   Zap,
@@ -186,7 +186,7 @@ export default function CharacterSheets() {
   const handleCreate = async () => {
     try {
       let avatarUrl = formData.avatarUrl;
-      
+
       // Upload avatar if a file was selected
       if (avatarFile) {
         const formDataFile = new FormData();
@@ -196,7 +196,7 @@ export default function CharacterSheets() {
         });
         avatarUrl = uploadResponse.data.url;
       }
-      
+
       const response = await api.post('/characters', { ...formData, avatarUrl });
       setSheets([...sheets, response.data]);
       setSelectedSheet(response.data);
@@ -213,7 +213,7 @@ export default function CharacterSheets() {
     if (!selectedSheet) return;
     try {
       let avatarUrl = formData.avatarUrl;
-      
+
       // Upload avatar if a file was selected
       if (avatarFile) {
         const formDataFile = new FormData();
@@ -223,7 +223,7 @@ export default function CharacterSheets() {
         });
         avatarUrl = uploadResponse.data.url;
       }
-      
+
       const response = await api.put(`/characters/${selectedSheet.id}`, { ...formData, avatarUrl });
       const updatedSheets = sheets.map(s => s.id === selectedSheet.id ? response.data : s);
       setSheets(updatedSheets);
@@ -253,10 +253,10 @@ export default function CharacterSheets() {
   const handleRoll = async (stat: string, rollType: string = 'ability', skillName?: string) => {
     if (!selectedSheet) return;
     try {
-      const response = await api.post(`/characters/${selectedSheet.id}/roll`, { 
-        stat, 
+      const response = await api.post(`/characters/${selectedSheet.id}/roll`, {
+        stat,
         rollType,
-        skillName 
+        skillName
       });
       setRollResult(response.data);
       setTimeout(() => setRollResult(null), 5000);
@@ -350,19 +350,19 @@ export default function CharacterSheets() {
     setLoadingCharacters(true);
     setPathCompanionCharacters([]);
     setPathCompanionCampaigns([]);
-    
+
     try {
       const response = await api.get('/pathcompanion/characters');
       setPathCompanionCharacters(response.data.characters || []);
       setPathCompanionCampaigns(response.data.campaigns || []);
-      
+
       // If no characters or campaigns found, show a message
       if ((response.data.characters || []).length === 0 && (response.data.campaigns || []).length === 0) {
         console.log('No characters or campaigns found in PathCompanion account');
       }
     } catch (error: any) {
       console.error('Failed to load PathCompanion characters:', error);
-      
+
       // Don't show alert during loading, we'll show the error in the modal
       setPathCompanionCharacters([]);
       setPathCompanionCampaigns([]);
@@ -380,7 +380,7 @@ export default function CharacterSheets() {
       const response = await api.post('/pathcompanion/import', {
         characterId: idToImport
       });
-      
+
       // Reload all sheets to get the imported character
       await loadSheets();
       setSelectedSheet(response.data);
@@ -426,23 +426,23 @@ export default function CharacterSheets() {
     setImportingPC(true);
     try {
       const response = await api.post('/pathcompanion/import-all');
-      
+
       // Reload all sheets to show the imported characters
       await loadSheets();
-      
+
       setShowPathCompanionImport(false);
       setPathCompanionCharacters([]);
       setPathCompanionCampaigns([]);
-      
+
       const { success, failed } = response.data;
       const successCount = success.length;
       const failedCount = failed.length;
-      
+
       let message = `Successfully imported ${successCount} character${successCount !== 1 ? 's' : ''}`;
       if (failedCount > 0) {
         message += `\n${failedCount} character${failedCount !== 1 ? 's' : ''} failed to import`;
       }
-      
+
       alert(message);
     } catch (error: any) {
       console.error('Failed to import all characters:', error);
@@ -458,17 +458,17 @@ export default function CharacterSheets() {
       const response = await api.post(`/characters/${sheetId}/link-pathcompanion`, {
         pathCompanionCharacterId
       });
-      
+
       const updatedSheets = sheets.map(s => s.id === sheetId ? response.data : s);
       setSheets(updatedSheets);
       if (selectedSheet?.id === sheetId) {
         setSelectedSheet(response.data);
       }
-      
+
       setLinkingCharacter(null);
       setPathCompanionCharacters([]);
       setPathCompanionCampaigns([]);
-      
+
       alert('Character successfully linked to PathCompanion!');
     } catch (error: any) {
       console.error('Failed to link character to PathCompanion:', error);
@@ -480,9 +480,9 @@ export default function CharacterSheets() {
   const StatBlock = ({ stat, value, modifier }: { stat: string; value: number; modifier: number }) => {
     const Icon = statIcons[stat as keyof typeof statIcons];
     const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
-    
+
     return (
-      <div 
+      <div
         className="stat-block clickable"
         onClick={() => handleRoll(stat, 'ability')}
         style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
@@ -505,7 +505,7 @@ export default function CharacterSheets() {
         <div className="character-list-header">
           <h2>Characters</h2>
           <div className="character-list-actions">
-            <button 
+            <button
               className="icon-button secondary"
               onClick={() => {
                 setShowPathCompanionImport(true);
@@ -515,7 +515,7 @@ export default function CharacterSheets() {
             >
               <Download size={20} />
             </button>
-            <button 
+            <button
               className="icon-button primary"
               onClick={() => {
                 resetForm();
@@ -527,10 +527,10 @@ export default function CharacterSheets() {
             </button>
           </div>
         </div>
-        
+
         <div className="character-items">
           {sheets.map(sheet => (
-            <div 
+            <div
               key={sheet.id}
               className={`character-item ${selectedSheet?.id === sheet.id ? 'active' : ''}`}
               onClick={() => setSelectedSheet(sheet)}
@@ -551,7 +551,7 @@ export default function CharacterSheets() {
               </div>
               <div className="character-item-actions">
                 {sheet.isPathCompanion && (
-                  <button 
+                  <button
                     className="icon-button secondary"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -562,7 +562,7 @@ export default function CharacterSheets() {
                     <RefreshCw size={16} />
                   </button>
                 )}
-                <button 
+                <button
                   className="icon-button danger"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -577,7 +577,7 @@ export default function CharacterSheets() {
         </div>
       </div>
 
-      <div 
+      <div
         className="character-sheet-view"
         style={{
           flex: '1',
@@ -590,7 +590,7 @@ export default function CharacterSheets() {
         {(isCreating || isEditing) ? (
           <div className="character-form">
             <h2>{isCreating ? 'Create Character' : 'Edit Character'}</h2>
-            
+
             <div className="form-group">
               <label>Character Name</label>
               <input
@@ -659,16 +659,16 @@ export default function CharacterSheets() {
               />
               {(avatarPreview || formData.avatarUrl) && (
                 <div style={{ marginTop: '1rem' }}>
-                  <img 
-                    src={avatarPreview || formData.avatarUrl} 
-                    alt="Avatar preview" 
-                    style={{ 
-                      width: '100px', 
-                      height: '100px', 
-                      borderRadius: '50%', 
+                  <img
+                    src={avatarPreview || formData.avatarUrl}
+                    alt="Avatar preview"
+                    style={{
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
                       objectFit: 'cover',
                       border: '2px solid var(--border-color)'
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -676,7 +676,7 @@ export default function CharacterSheets() {
             </div>
 
             <div className="form-actions">
-              <button 
+              <button
                 className="button secondary"
                 onClick={() => {
                   setIsCreating(false);
@@ -687,7 +687,7 @@ export default function CharacterSheets() {
                 <X size={18} />
                 Cancel
               </button>
-              <button 
+              <button
                 className="button primary"
                 onClick={isCreating ? handleCreate : handleUpdate}
               >
@@ -701,8 +701,8 @@ export default function CharacterSheets() {
             <div className="character-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 {selectedSheet.avatarUrl && (
-                  <img 
-                    src={selectedSheet.avatarUrl} 
+                  <img
+                    src={selectedSheet.avatarUrl}
                     alt={selectedSheet.name}
                     style={{
                       width: '120px',
@@ -724,8 +724,8 @@ export default function CharacterSheets() {
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 {!selectedSheet.isPathCompanion && (
-                  <button 
-                    className="icon-button secondary" 
+                  <button
+                    className="icon-button secondary"
                     onClick={() => {
                       setLinkingCharacter(selectedSheet.id);
                       loadPathCompanionCharacters();
@@ -757,9 +757,9 @@ export default function CharacterSheets() {
             )}
 
             {/* Tabs */}
-            <div style={{ 
-              display: 'flex', 
-              gap: '0.5rem', 
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
               borderBottom: '2px solid var(--border-color)',
               marginBottom: '1.5rem'
             }}>
@@ -807,7 +807,7 @@ export default function CharacterSheets() {
               <>
             <div className="stats-grid">
               {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
-                <StatBlock 
+                <StatBlock
                   key={stat}
                   stat={stat}
                   value={selectedSheet[stat]}
@@ -853,7 +853,7 @@ export default function CharacterSheets() {
             <div className="sheet-section">
               <h3>Saving Throws</h3>
               <div className="saves-grid">
-                <div 
+                <div
                   className="save-box clickable"
                   onClick={() => handleRoll('fortitude', 'save')}
                   style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
@@ -865,7 +865,7 @@ export default function CharacterSheets() {
                     {(selectedSheet.fortitudeSave || 0) >= 0 ? '+' : ''}{selectedSheet.fortitudeSave || 0}
                   </div>
                 </div>
-                <div 
+                <div
                   className="save-box clickable"
                   onClick={() => handleRoll('reflex', 'save')}
                   style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
@@ -877,7 +877,7 @@ export default function CharacterSheets() {
                     {(selectedSheet.reflexSave || 0) >= 0 ? '+' : ''}{selectedSheet.reflexSave || 0}
                   </div>
                 </div>
-                <div 
+                <div
                   className="save-box clickable"
                   onClick={() => handleRoll('will', 'save')}
                   style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
@@ -897,7 +897,7 @@ export default function CharacterSheets() {
               try {
                 const pcData = JSON.parse(selectedSheet.pathCompanionData);
                 const defense = pcData.defense || {};
-                
+
                 const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
                 // SR can be: number, object with .total, or object with .bonuses array
                 const hasSR = defense.sr && (
@@ -906,7 +906,7 @@ export default function CharacterSheets() {
                 );
                 const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
                 const hasImmunities = defense.immunities && defense.immunities.length > 0;
-                
+
                 if (hasDR || hasSR || hasResistances || hasImmunities) {
                   return (
                     <div className="sheet-section">
@@ -916,10 +916,10 @@ export default function CharacterSheets() {
                           <div className="stat-inline">
                             <span className="label">SR:</span>
                             <span className="value">
-                              {typeof defense.sr === 'number' 
-                                ? defense.sr 
-                                : defense.sr.total || (defense.sr.bonuses && defense.sr.bonuses.length > 0 
-                                  ? `${11 + selectedSheet.level}` 
+                              {typeof defense.sr === 'number'
+                                ? defense.sr
+                                : defense.sr.total || (defense.sr.bonuses && defense.sr.bonuses.length > 0
+                                  ? `${11 + selectedSheet.level}`
                                   : 'Yes')}
                             </span>
                           </div>
@@ -1010,7 +1010,7 @@ export default function CharacterSheets() {
             </div>
 
             {/* Feats & Abilities */}
-            {((selectedSheet.feats && selectedSheet.feats.length > 0) || 
+            {((selectedSheet.feats && selectedSheet.feats.length > 0) ||
               (selectedSheet.specialAbilities && selectedSheet.specialAbilities.length > 0)) && (
               <div className="sheet-section">
                 <h3>Feats & Special Abilities</h3>
@@ -1041,8 +1041,8 @@ export default function CharacterSheets() {
                 <h3>Skills</h3>
                 <div className="skills-grid">
                   {Object.entries(selectedSheet.skills).map(([skillName, skillData]: [string, any]) => (
-                    <div 
-                      key={skillName} 
+                    <div
+                      key={skillName}
                       className="skill-item clickable"
                       onClick={() => handleRoll('', 'skill', skillName)}
                       style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
@@ -1060,8 +1060,8 @@ export default function CharacterSheets() {
             )}
               </>
             ) : (
-              <CharacterBio 
-                character={selectedSheet} 
+              <CharacterBio
+                character={selectedSheet}
                 onUpdate={loadSheets}
               />
             )}
@@ -1071,7 +1071,7 @@ export default function CharacterSheets() {
             <Dices size={64} />
             <h2>No Characters Yet</h2>
             <p>Create your first character to get started</p>
-            <button 
+            <button
               className="button primary"
               onClick={() => {
                 resetForm();
@@ -1087,8 +1087,8 @@ export default function CharacterSheets() {
 
       {/* PathCompanion Import Modal */}
       {showPathCompanionImport && (
-        <div 
-          className="pathcompanion-modal" 
+        <div
+          className="pathcompanion-modal"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowPathCompanionImport(false);
@@ -1098,7 +1098,7 @@ export default function CharacterSheets() {
           <div className="pathcompanion-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="pathcompanion-modal-header">
               <h3>{linkingCharacter ? 'Link to PathCompanion' : 'Import from PathCompanion'}</h3>
-              <button 
+              <button
                 className="icon-button"
                 onClick={() => {
                   setShowPathCompanionImport(false);
@@ -1122,7 +1122,7 @@ export default function CharacterSheets() {
                       Click a character or campaign to import it:
                     </p>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button 
+                      <button
                         className="button primary"
                         onClick={importAllCharacters}
                         disabled={loadingCharacters || importingPC || pathCompanionCharacters.length === 0}
@@ -1130,7 +1130,7 @@ export default function CharacterSheets() {
                       >
                         Import All Characters
                       </button>
-                      <button 
+                      <button
                         className="button secondary"
                         onClick={loadPathCompanionCharacters}
                         disabled={loadingCharacters}
@@ -1140,7 +1140,7 @@ export default function CharacterSheets() {
                       </button>
                     </div>
                   </div>
-                  
+
                   {pathCompanionCharacters.length > 0 && (
                     <>
                       <h4>Characters</h4>
@@ -1161,7 +1161,7 @@ export default function CharacterSheets() {
                       </div>
                     </>
                   )}
-                  
+
                   {pathCompanionCampaigns.length > 0 && (
                     <>
                       <h4 style={{ marginTop: pathCompanionCharacters.length > 0 ? '1.5rem' : 0 }}>Campaigns (GM Mode)</h4>
@@ -1191,7 +1191,7 @@ export default function CharacterSheets() {
                   <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem' }}>
                     Make sure you've connected your PathCompanion account in Settings.
                   </p>
-                  <button 
+                  <button
                     className="button secondary"
                     onClick={loadPathCompanionCharacters}
                     disabled={loadingCharacters}
@@ -1199,9 +1199,9 @@ export default function CharacterSheets() {
                   >
                     {loadingCharacters ? 'Loading...' : 'Try Loading Again'}
                   </button>
-                  
+
                   <hr style={{ margin: '1.5rem 0', borderColor: '#ddd' }} />
-                  
+
                   <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Or enter a character ID manually:</p>
                   <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1rem' }}>
                     Examples: character1, character2, gm1, gm2, etc.
@@ -1216,7 +1216,7 @@ export default function CharacterSheets() {
                       placeholder="e.g., character4"
                     />
                   </div>
-                  <button 
+                  <button
                     className="button primary"
                     onClick={() => importPathCompanionCharacter()}
                     disabled={!characterId || importingPC}

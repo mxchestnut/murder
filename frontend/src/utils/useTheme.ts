@@ -36,17 +36,17 @@ export function useTheme() {
     // Apply accent color
     const root = document.documentElement;
     const preset = PRESET_COLORS.find(c => c.value === theme.accentColor);
-    
+
     root.style.setProperty('--accent-color', theme.accentColor);
     root.style.setProperty('--accent-hover', preset?.hover || adjustColorBrightness(theme.accentColor, -20));
-    
+
     // Create light version for backgrounds
     const rgb = hexToRgb(theme.accentColor);
     if (rgb) {
       const alpha = theme.mode === 'dark' ? 0.15 : 0.1;
       root.style.setProperty('--accent-light', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`);
     }
-    
+
     localStorage.setItem('theme-accent', theme.accentColor);
   }, [theme]);
 

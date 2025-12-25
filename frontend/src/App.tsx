@@ -42,13 +42,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route 
-          path="/login" 
-          element={user ? <Navigate to="/" /> : <Login onLogin={checkAuth} />} 
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/" /> : <Login onLogin={checkAuth} />}
         />
-        <Route 
-          path="/*" 
-          element={user ? <Dashboard user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" />} 
+        <Route
+          path="/*"
+          element={user ? <Dashboard user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" />}
         />
       </Routes>
     </BrowserRouter>

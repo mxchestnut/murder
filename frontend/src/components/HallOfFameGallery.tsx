@@ -34,7 +34,7 @@ export default function HallOfFameGallery() {
   const [characters, setCharacters] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'gallery' | 'stats'>('gallery');
-  
+
   // Filters
   const [selectedCharacter, setSelectedCharacter] = useState<string>('');
   const [minStars, setMinStars] = useState<number>(10);
@@ -60,7 +60,7 @@ export default function HallOfFameGallery() {
         limit: limit.toString(),
         offset: offset.toString()
       });
-      
+
       if (selectedCharacter) params.append('character', selectedCharacter);
       if (minStars > 0) params.append('minStars', minStars.toString());
       if (startDate) params.append('startDate', startDate);
@@ -164,9 +164,9 @@ export default function HallOfFameGallery() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -224,10 +224,10 @@ export default function HallOfFameGallery() {
       {view === 'gallery' ? (
         <>
           {/* Filters */}
-          <div style={{ 
-            background: 'var(--bg-secondary)', 
-            padding: '1.5rem', 
-            borderRadius: '8px', 
+          <div style={{
+            background: 'var(--bg-secondary)',
+            padding: '1.5rem',
+            borderRadius: '8px',
             marginBottom: '2rem',
             border: '1px solid var(--border-color)'
           }}>
@@ -422,7 +422,7 @@ export default function HallOfFameGallery() {
                     {randomGem.starCount} stars
                   </div>
                 </div>
-                
+
                 <div style={{
                   background: 'var(--bg-secondary)',
                   padding: '1.5rem',

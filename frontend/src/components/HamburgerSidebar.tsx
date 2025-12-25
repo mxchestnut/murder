@@ -23,7 +23,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   const [pathCompanionCharacters, setPathCompanionCharacters] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [loadingCharacters, setLoadingCharacters] = useState(false);
   const [importingPC, setImportingPC] = useState(false);
-  
+
   // Collapsible sections
   const [campaignsExpanded, setCampaignsExpanded] = useState(true);
   const [charactersExpanded, setCharactersExpanded] = useState(true);
@@ -88,7 +88,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
 
   const handleCreateFolder = async () => {
     if (!newItemName) return;
-    
+
     try {
       await api.post('/documents/folder', { name: newItemName });
       setNewItemName('');
@@ -101,11 +101,11 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
 
   const handleCreateDocument = async () => {
     if (!newItemName) return;
-    
+
     try {
-      await api.post('/documents/document', { 
+      await api.post('/documents/document', {
         name: newItemName,
-        content: '' 
+        content: ''
       });
       setNewItemName('');
       setShowNewItem(null);
@@ -134,7 +134,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
 
   const handleDelete = async (docId: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
@@ -537,10 +537,10 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
                       {doc.isFolder ? <Folder size={16} /> : <File size={16} />}
-                      <span style={{ 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis', 
-                        whiteSpace: 'nowrap' 
+                      <span style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                       }}>
                         {doc.name}
                       </span>
@@ -599,7 +599,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
 
       {/* PathCompanion Import Modal */}
       {showPathCompanionImport && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             top: 0,
@@ -618,7 +618,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             }
           }}
         >
-          <div 
+          <div
             style={{
               background: 'var(--bg-secondary)',
               padding: '2rem',
@@ -631,7 +631,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Import from PathCompanion</h3>
-              <button 
+              <button
                 onClick={() => {
                   setShowPathCompanionImport(false);
                   setPathCompanionCharacters([]);

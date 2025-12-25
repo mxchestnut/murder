@@ -67,7 +67,7 @@ router.post('/document', async (req, res) => {
         .set({ name, content, updatedAt: new Date() })
         .where(and(eq(documents.id, id), eq(documents.userId, userId)))
         .returning();
-      
+
       res.json(updated);
     } else {
       // Create new document
@@ -97,7 +97,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const userId = (req.user as any).id;
     const { parentId } = req.body;
     const file = req.file;
-    
+
     // Generate unique key for S3
     const key = `${userId}/${randomBytes(16).toString('hex')}-${file.originalname}`;
 

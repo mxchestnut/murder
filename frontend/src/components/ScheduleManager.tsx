@@ -84,7 +84,7 @@ export default function ScheduleManager({ type }: ScheduleManagerProps) {
 
   const handleDelete = async (channelId: string) => {
     if (!confirm('Are you sure you want to delete this schedule?')) return;
-    
+
     try {
       const endpoint = type === 'prompts' ? `/prompts/schedule/${channelId}` : `/tropes/schedule/${channelId}`;
       await api.delete(endpoint);
@@ -94,7 +94,7 @@ export default function ScheduleManager({ type }: ScheduleManagerProps) {
     }
   };
 
-  const categories = type === 'prompts' 
+  const categories = type === 'prompts'
     ? ['character', 'world', 'combat', 'social', 'plot']
     : ['archetype', 'dynamic', 'situation', 'plot'];
 
@@ -229,8 +229,8 @@ export default function ScheduleManager({ type }: ScheduleManagerProps) {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      schedule.enabled 
-                        ? 'bg-green-100 text-green-800' 
+                      schedule.enabled
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-gray-100 text-gray-600'
                     }`}>
                       {schedule.enabled ? 'Active' : 'Paused'}
@@ -241,7 +241,7 @@ export default function ScheduleManager({ type }: ScheduleManagerProps) {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500">Channel ID:</span>

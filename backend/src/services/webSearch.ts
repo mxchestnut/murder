@@ -23,7 +23,7 @@ export async function searchGoogle(query: string): Promise<{ title: string; snip
     });
 
     const $ = cheerio.load(response.data);
-    
+
     // Try multiple selectors for search results
     let firstResult = $('.g').first();
     if (firstResult.length === 0) {
@@ -32,14 +32,14 @@ export async function searchGoogle(query: string): Promise<{ title: string; snip
     if (firstResult.length === 0) {
       firstResult = $('[class*="result"]').first();
     }
-    
+
     if (firstResult.length > 0) {
       const title = firstResult.find('h3').first().text() || firstResult.find('[class*="title"]').first().text();
       const snippet = firstResult.find('.VwiC3b, .IsZvec, [class*="snippet"], .st').first().text();
       const url = firstResult.find('a').first().attr('href') || '';
-      
+
       console.log(`Google search result found - Title: ${title.substring(0, 50)}, Snippet length: ${snippet.length}`);
-      
+
       if (title && snippet && snippet.length > 30) {
         return { title, snippet, url };
       } else {
@@ -48,7 +48,7 @@ export async function searchGoogle(query: string): Promise<{ title: string; snip
     } else {
       console.log('No Google search results found in page');
     }
-    
+
     return null;
   } catch (error: any) {
     console.error('Google search error:', error.message);

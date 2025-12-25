@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  User, Target, Brain, Smile, Palette, Sword, BookOpen, 
-  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save 
+import {
+  User, Target, Brain, Smile, Palette, Sword, BookOpen,
+  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save
 } from 'lucide-react';
 import { api } from '../utils/api';
 import TiptapField from './TiptapField';
@@ -181,12 +181,12 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
 
   const renderInput = (field: string, label: string, placeholder: string) => (
     <div style={{ marginBottom: '1rem' }}>
-      <label style={{ 
-        display: 'block', 
-        color: 'var(--text-primary)', 
-        fontSize: '0.85rem', 
-        marginBottom: '0.5rem', 
-        fontWeight: 500 
+      <label style={{
+        display: 'block',
+        color: 'var(--text-primary)',
+        fontSize: '0.85rem',
+        marginBottom: '0.5rem',
+        fontWeight: 500
       }}>
         {label}
       </label>
@@ -254,10 +254,10 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
         >
           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           <Icon size={18} style={{ color: 'var(--accent-color)' }} />
-          <span style={{ 
-            color: 'var(--text-primary)', 
-            fontWeight: 600, 
-            fontSize: '0.95rem' 
+          <span style={{
+            color: 'var(--text-primary)',
+            fontWeight: 600,
+            fontSize: '0.95rem'
           }}>
             {title}
           </span>
@@ -284,8 +284,8 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       {/* Avatar Section */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem', gap: '0.75rem' }}>
         {character.avatarUrl ? (
-          <img 
-            src={character.avatarUrl} 
+          <img
+            src={character.avatarUrl}
             alt={character.name}
             style={{
               width: '200px',
@@ -327,14 +327,14 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
               try {
                 const formData = new FormData();
                 formData.append('avatar', file);
-                
+
                 const uploadResponse = await api.post('/characters/upload-avatar', formData, {
                   headers: {
                     'Content-Type': 'multipart/form-data'
                   }
                 });
                 const avatarUrl = uploadResponse.data.url;
-                
+
                 await api.put(`/characters/${character.id}`, { avatarUrl });
                 onUpdate();
                 setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });

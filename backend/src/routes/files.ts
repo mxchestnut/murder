@@ -8,12 +8,12 @@ import { db } from '../db';
 import { files, users } from '../db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { uploadToS3, deleteFromS3, getSignedUrl } from '../config/s3';
-import { 
-  optimizeImage, 
-  createThumbnail, 
+import {
+  optimizeImage,
+  createThumbnail,
   createAvatar,
   isImageMimeType,
-  validateMimeTypeForCategory 
+  validateMimeTypeForCategory
 } from '../utils/imageOptimization';
 
 const router = Router();
@@ -30,7 +30,7 @@ const upload = multer({
 async function scanFileForVirus(filePath: string): Promise<{ isInfected: boolean; details: string }> {
   try {
     const NodeClam = require('clamscan');
-    
+
     const clamscan = await new NodeClam().init({
       removeInfected: false,
       quarantineInfected: false,
@@ -46,7 +46,7 @@ async function scanFileForVirus(filePath: string): Promise<{ isInfected: boolean
     });
 
     const { isInfected, viruses } = await clamscan.isInfected(filePath);
-    
+
     return {
       isInfected,
       details: isInfected ? JSON.stringify({ viruses }) : 'File is clean'
@@ -109,10 +109,10 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
     // Scan for viruses
     console.log('Scanning file for viruses...');
     const scanResult = await scanFileForVirus(uploadedFile.path);
-    
+
     if (scanResult.isInfected) {
       fs.unlinkSync(uploadedFile.path);
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'File contains malware and has been rejected',
         details: scanResult.details
       });
@@ -128,7 +128,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
     // Optimize images
     if (isImageMimeType(uploadedFile.mimetype)) {
       console.log('Optimizing image...');
-      
+
       if (category === 'avatar') {
         // Create optimized avatar
         const optimized = await createAvatar(fileBuffer, 512);
@@ -153,7 +153,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
         const thumb = await createThumbnail(fileBuffer, 300);
         const thumbFileName = `thumb-${crypto.randomBytes(8).toString('hex')}.webp`;
         const thumbS3Key = `thumbnails/${user.id}/${Date.now()}-${thumbFileName}`;
-        
+
         await uploadToS3(thumb.buffer, thumbS3Key, 'image/webp');
         thumbnailS3Key = thumbS3Key;
       }
@@ -214,12 +214,12 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
     });
   } catch (error: any) {
     console.error('File upload error:', error);
-    
+
     // Clean up temp file if it exists
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    
+
     res.status(500).json({ error: 'Failed to upload file', details: error.message });
   }
 });
@@ -229,7 +229,7 @@ router.get('/', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const category = req.query.category as string | undefined;
-    
+
     let query = db
       .select()
       .from(files)
@@ -255,7 +255,7 @@ router.get('/', isAuthenticated, async (req, res) => {
       .from(users)
       .where(eq(users.id, user.id));
 
-    res.json({ 
+    res.json({
       files: userFiles,
       quota: {
         used: userData.storageUsedBytes || 0,
@@ -295,8 +295,8 @@ router.get('/:id/download', isAuthenticated, async (req, res) => {
     }
 
     // Get thumbnail or full file
-    const s3Key = (thumbnail && fileRecord.thumbnailS3Key) 
-      ? fileRecord.thumbnailS3Key 
+    const s3Key = (thumbnail && fileRecord.thumbnailS3Key)
+      ? fileRecord.thumbnailS3Key
       : fileRecord.s3Key;
 
     // Generate pre-signed URL (valid for 1 hour)
@@ -337,7 +337,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
 
     // Delete from S3
     await deleteFromS3(fileRecord.s3Key);
-    
+
     // Delete thumbnail if exists
     if (fileRecord.thumbnailS3Key) {
       await deleteFromS3(fileRecord.thumbnailS3Key);
@@ -356,7 +356,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
       .where(eq(users.id, user.id));
 
     const newUsedBytes = Math.max(0, (userData.storageUsedBytes || 0) - fileRecord.fileSize);
-    
+
     await db
       .update(users)
       .set({ storageUsedBytes: newUsedBytes })

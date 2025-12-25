@@ -162,15 +162,15 @@ router.get('/compare', isAuthenticated, async (req, res) => {
         nat1Count: characterStats.nat1Count,
         totalDamage: characterStats.totalDamageDealt,
         // Calculate crit rate
-        critRate: sql<number>`CASE 
-          WHEN ${characterStats.totalDiceRolls} > 0 
+        critRate: sql<number>`CASE
+          WHEN ${characterStats.totalDiceRolls} > 0
           THEN ROUND((${characterStats.nat20Count}::numeric / ${characterStats.totalDiceRolls}) * 100, 2)
-          ELSE 0 
+          ELSE 0
         END`,
-        failRate: sql<number>`CASE 
-          WHEN ${characterStats.totalDiceRolls} > 0 
+        failRate: sql<number>`CASE
+          WHEN ${characterStats.totalDiceRolls} > 0
           THEN ROUND((${characterStats.nat1Count}::numeric / ${characterStats.totalDiceRolls}) * 100, 2)
-          ELSE 0 
+          ELSE 0
         END`
       })
       .from(characterSheets)
@@ -198,10 +198,10 @@ router.get('/damage-distribution', isAuthenticated, async (req, res) => {
         characterId: characterSheets.id,
         characterName: characterSheets.name,
         totalDamage: characterStats.totalDamageDealt,
-        avgDamagePerRoll: sql<number>`CASE 
-          WHEN ${characterStats.totalDiceRolls} > 0 
+        avgDamagePerRoll: sql<number>`CASE
+          WHEN ${characterStats.totalDiceRolls} > 0
           THEN ROUND(${characterStats.totalDamageDealt}::numeric / ${characterStats.totalDiceRolls}, 2)
-          ELSE 0 
+          ELSE 0
         END`
       })
       .from(characterSheets)

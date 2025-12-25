@@ -14,13 +14,13 @@
   --text-tertiary: #6c757d;
   --border-color: #dee2e6;
   --hover-bg: #f1f3f5;
-  
+
   /* User-customizable accent color (default: blue) */
   --accent-color: #0066cc;
   --accent-hover: #0052a3;
   --accent-light: rgba(0, 102, 204, 0.1);
   --accent-text: #ffffff;
-  
+
   /* Subtle shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -37,13 +37,13 @@
   --text-tertiary: #adb5bd;
   --border-color: #495057;
   --hover-bg: #404040;
-  
+
   /* User-customizable accent color (default: blue) */
   --accent-color: #3399ff;
   --accent-hover: #5cadff;
   --accent-light: rgba(51, 153, 255, 0.15);
   --accent-text: #ffffff;
-  
+
   /* Subtle shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.7);

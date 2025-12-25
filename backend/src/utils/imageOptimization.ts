@@ -80,7 +80,7 @@ export async function createThumbnail(
   size: number = 300
 ): Promise<OptimizedImage> {
   const image = sharp(inputBuffer);
-  
+
   const buffer = await image
     .resize(size, size, {
       fit: 'cover',
@@ -169,10 +169,10 @@ export function getAllowedMimeTypes(category: string): string[] {
  */
 export function validateMimeTypeForCategory(mimeType: string, category: string): boolean {
   const allowed = getAllowedMimeTypes(category);
-  
+
   if (allowed.includes('*/*')) {
     return true;
   }
-  
+
   return allowed.includes(mimeType);
 }

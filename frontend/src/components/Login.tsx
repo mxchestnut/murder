@@ -18,15 +18,15 @@ export default function Login({ onLogin }: LoginProps) {
     try {
       const endpoint = isRegister ? '/auth/register' : '/auth/login';
       await api.post(endpoint, { username, password });
-      
+
       if (isRegister) {
         // After registration, log in
         await api.post('/auth/login', { username, password });
       }
-      
+
       // Fetch new CSRF token after login (session ID changed)
       await fetchCsrfToken();
-      
+
       onLogin();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Authentication failed');
@@ -52,7 +52,7 @@ export default function Login({ onLogin }: LoginProps) {
         <h1 style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--text-primary)' }}>
           {isRegister ? 'Register' : 'Login'} to Murder Tech
         </h1>
-        
+
         {error && (
           <div style={{
             background: '#c74444',

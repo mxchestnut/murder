@@ -84,7 +84,7 @@ export default function PasswordRotationBanner() {
           </div>
         </div>
       </div>
-      
+
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
         <button
           onClick={handleConfirmRotation}
@@ -102,7 +102,7 @@ export default function PasswordRotationBanner() {
         >
           {confirming ? 'Recording...' : 'I Rotated It'}
         </button>
-        
+
         <a
           href="https://console.neon.tech"
           target="_blank"

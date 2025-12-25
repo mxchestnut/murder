@@ -13,7 +13,7 @@ router.post('/import', isAuthenticated, async (req, res) => {
     if (existingPrompts.length > 0) {
       return res.status(400).json({ error: 'Defaults already imported' });
     }
-    
+
     // Insert prompts
     const promptData = [
       { category: 'character', promptText: 'What does your character do when they think no one is watching?' },
@@ -21,39 +21,39 @@ router.post('/import', isAuthenticated, async (req, res) => {
       { category: 'character', promptText: 'What is your character\'s greatest fear, and how do they hide it?' },
       { category: 'character', promptText: 'What lie does your character tell themselves?' },
       { category: 'character', promptText: 'What would your character sacrifice everything for?' },
-      
+
       { category: 'world', promptText: 'What is the most sacred tradition in your world?' },
       { category: 'world', promptText: 'Describe the scent and sounds of your world\'s marketplace.' },
       { category: 'world', promptText: 'What is forbidden in your world, and why?' },
       { category: 'world', promptText: 'How do people in your world celebrate coming of age?' },
       { category: 'world', promptText: 'What natural phenomenon is unique to your world?' },
-      
+
       { category: 'combat', promptText: 'Your character is outmatched. What unconventional tactic do they try?' },
       { category: 'combat', promptText: 'Describe the moment before your character strikes.' },
       { category: 'combat', promptText: 'What does your character notice about their opponent that others miss?' },
       { category: 'combat', promptText: 'How does your character\'s fighting style reflect their personality?' },
       { category: 'combat', promptText: 'What goes through your character\'s mind after their first kill?' },
-      
+
       { category: 'social', promptText: 'Your character walks into a room full of strangers. What happens?' },
       { category: 'social', promptText: 'How does your character comfort someone who is crying?' },
       { category: 'social', promptText: 'What social rule does your character break without realizing?' },
       { category: 'social', promptText: 'Describe how your character flirts (or fails to).' },
       { category: 'social', promptText: 'What does your character do when they disagree with someone they respect?' },
-      
+
       { category: 'plot', promptText: 'A stranger offers your character exactly what they want. What\'s the catch?' },
       { category: 'plot', promptText: 'Your character discovers a secret that could destroy someone they care about.' },
       { category: 'plot', promptText: 'Everything is going according to plan. What goes wrong?' },
       { category: 'plot', promptText: 'Your character must choose between two people they love.' },
       { category: 'plot', promptText: 'The truth has been revealed. Now what?' }
     ];
-    
+
     for (const p of promptData) {
       await db.insert(prompts).values({
         category: p.category,
         promptText: p.promptText
       });
     }
-    
+
     // Insert tropes
     const tropeData = [
       // Archetypes
@@ -62,7 +62,7 @@ router.post('/import', isAuthenticated, async (req, res) => {
       { category: 'archetype', name: 'The Mentor', description: 'An experienced guide who trains and advises the protagonist.', useCount: 0 },
       { category: 'archetype', name: 'The Trickster', description: 'A cunning character who uses wit and deception to achieve their goals.', useCount: 0 },
       { category: 'archetype', name: 'The Tragic Villain', description: 'An antagonist with understandable motivations and a sympathetic backstory.', useCount: 0 },
-      
+
       // Dynamics (relationship tropes)
       { category: 'dynamic', name: 'Jock x Cheerleader', description: 'The classic popular athlete paired with the spirited cheerleader, often navigating social pressures.', useCount: 0 },
       { category: 'dynamic', name: 'Princess x Bodyguard', description: 'A royal or high-status individual falls for their sworn protector, creating forbidden romance tension.', useCount: 0 },
@@ -74,14 +74,14 @@ router.post('/import', isAuthenticated, async (req, res) => {
       { category: 'dynamic', name: 'Arranged Marriage', description: 'Characters forced into marriage who may or may not develop genuine feelings.', useCount: 0 },
       { category: 'dynamic', name: 'Fake Dating', description: 'Characters pretend to be in a relationship, leading to real feelings.', useCount: 0 },
       { category: 'dynamic', name: 'Grumpy x Sunshine', description: 'A pessimistic character paired with an optimistic one, balancing each other.', useCount: 0 },
-      
+
       // Situations
       { category: 'situation', name: 'Trapped Together', description: 'Characters forced into close proximity (elevator, cave, safe house) leading to bonding or conflict.', useCount: 0 },
       { category: 'situation', name: 'Amnesia', description: 'A character loses their memory, creating identity crisis and relationship complications.', useCount: 0 },
       { category: 'situation', name: 'Identity Reveal', description: 'A character\'s secret identity or past is exposed, changing everything.', useCount: 0 },
       { category: 'situation', name: 'Mistaken Identity', description: 'One character is confused for someone else, leading to comedy or drama.', useCount: 0 },
       { category: 'situation', name: 'Fish Out of Water', description: 'A character in an unfamiliar environment must adapt to new rules and culture.', useCount: 0 },
-      
+
       // Plot tropes
       { category: 'plot', name: 'The Prophecy', description: 'An ancient prediction drives the story forward, with characters trying to fulfill or prevent it.', useCount: 0 },
       { category: 'plot', name: 'Betrayal', description: 'A trusted ally reveals their true colors, shattering relationships and plans.', useCount: 0 },
@@ -92,7 +92,7 @@ router.post('/import', isAuthenticated, async (req, res) => {
       { category: 'plot', name: 'The Sacrifice', description: 'A character must give up something precious for the greater good.', useCount: 0 },
       { category: 'plot', name: 'Race Against Time', description: 'Characters must accomplish their goal before a deadline or disaster strikes.', useCount: 0 }
     ];
-    
+
     for (const t of tropeData) {
       await db.insert(tropes).values({
         category: t.category,
@@ -101,10 +101,10 @@ router.post('/import', isAuthenticated, async (req, res) => {
         useCount: t.useCount
       });
     }
-    
+
     const promptCount = await db.select().from(prompts);
     const tropeCount = await db.select().from(tropes);
-    
+
     res.json({
       success: true,
       imported: {

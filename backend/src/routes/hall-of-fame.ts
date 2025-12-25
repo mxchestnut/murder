@@ -9,10 +9,10 @@ const router = express.Router();
 // Get Hall of Fame messages with filters
 router.get('/list', isAuthenticated, async (req, res) => {
   try {
-    const { 
-      character, 
-      minStars, 
-      startDate, 
+    const {
+      character,
+      minStars,
+      startDate,
       endDate,
       limit = '50',
       offset = '0'
@@ -57,7 +57,7 @@ router.get('/list', isAuthenticated, async (req, res) => {
     const countQuery = conditions.length > 0
       ? db.select({ count: sql<number>`count(*)` }).from(hallOfFame).where(and(...conditions))
       : db.select({ count: sql<number>`count(*)` }).from(hallOfFame);
-    
+
     const [{ count }] = await countQuery as any;
 
     res.json({
@@ -81,7 +81,7 @@ router.get('/random', isAuthenticated, async (req, res) => {
     const { minStars } = req.query;
 
     let query = db.select().from(hallOfFame);
-    
+
     if (minStars && typeof minStars === 'string') {
       const minStarsNum = parseInt(minStars);
       if (!isNaN(minStarsNum)) {

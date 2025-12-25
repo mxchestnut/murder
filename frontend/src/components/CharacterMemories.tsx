@@ -94,9 +94,9 @@ export default function CharacterMemories({ characterId, characterName, guildId 
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -287,9 +287,9 @@ export default function CharacterMemories({ characterId, characterName, guildId 
                     <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '0.75rem' }}>
                       {memory.memory}
                     </p>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       paddingTop: '0.75rem',
                       borderTop: '1px solid var(--border-color)'

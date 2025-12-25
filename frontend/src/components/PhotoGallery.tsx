@@ -40,12 +40,12 @@ export default function PhotoGallery() {
       const category = filter === 'all' ? undefined : filter;
       const params = category ? `?category=${category}` : '';
       const response = await api.get(`/files${params}`);
-      
+
       // Filter only images
-      const imageFiles = response.data.files.filter((f: PhotoFile) => 
+      const imageFiles = response.data.files.filter((f: PhotoFile) =>
         f.category === 'avatar' || f.category === 'image'
       );
-      
+
       setPhotos(imageFiles);
       setQuota(response.data.quota);
 
@@ -83,17 +83,17 @@ export default function PhotoGallery() {
         }
       });
 
-      setMessage({ 
-        type: 'success', 
-        text: `${category === 'avatar' ? 'Avatar' : 'Photo'} uploaded successfully!` 
+      setMessage({
+        type: 'success',
+        text: `${category === 'avatar' ? 'Avatar' : 'Photo'} uploaded successfully!`
       });
-      
+
       await loadPhotos();
       event.target.value = '';
     } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || 'Failed to upload photo' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to upload photo'
       });
     } finally {
       setUploading(false);
@@ -117,7 +117,7 @@ export default function PhotoGallery() {
     try {
       const response = await api.get(`/files/${photo.id}/download`);
       const { downloadUrl, fileName } = response.data;
-      
+
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = fileName;
@@ -153,7 +153,7 @@ export default function PhotoGallery() {
             </span>
           </div>
           <div className="w-full bg-dark-900 rounded-full h-2">
-            <div 
+            <div
               className={`h-2 rounded-full transition-all ${
                 quota.percentUsed > 90 ? 'bg-red-500' :
                 quota.percentUsed > 75 ? 'bg-yellow-500' :
@@ -168,7 +168,7 @@ export default function PhotoGallery() {
       {/* Message */}
       {message && (
         <div className={`p-4 rounded-lg mb-6 ${
-          message.type === 'success' 
+          message.type === 'success'
             ? 'bg-green-500/20 border border-green-500/50 text-green-200'
             : 'bg-red-500/20 border border-red-500/50 text-red-200'
         }`}>
@@ -259,7 +259,7 @@ export default function PhotoGallery() {
                     <Loader className="w-8 h-8 text-lavender-400 animate-spin" />
                   </div>
                 )}
-                
+
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -292,7 +292,7 @@ export default function PhotoGallery() {
 
       {/* Lightbox Modal */}
       {selectedPhoto && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedPhoto(null)}
         >
@@ -327,7 +327,7 @@ export default function PhotoGallery() {
                   </>
                 )}
               </div>
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={(e) => {

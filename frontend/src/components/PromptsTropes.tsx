@@ -40,7 +40,7 @@ export default function PromptsTropes() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const [popularItems, setPopularItems] = useState<(Prompt | Trope)[]>([]);
-  
+
   // Edit/Add modal state
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -185,8 +185,8 @@ export default function PromptsTropes() {
             {viewMode === 'prompts' ? '💭 RP Prompts' : '🎭 Tropes'}
           </h1>
           <p className="text-gray-400">
-            {viewMode === 'prompts' 
-              ? 'Manage roleplay prompts for creative inspiration' 
+            {viewMode === 'prompts'
+              ? 'Manage roleplay prompts for creative inspiration'
               : 'Browse and manage storytelling tropes'}
           </p>
         </div>

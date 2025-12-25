@@ -16,7 +16,7 @@ interface RichTextModalProps {
   maxLength?: number;
 }
 
-export default function RichTextModal({ 
+export default function RichTextModal({
   isOpen,
   onClose,
   onSave,
@@ -154,8 +154,8 @@ export default function RichTextModal({
             <button className="cancel-button" onClick={handleClose}>
               Cancel
             </button>
-            <button 
-              className="save-button" 
+            <button
+              className="save-button"
               onClick={handleSave}
               disabled={isOverLimit}
             >

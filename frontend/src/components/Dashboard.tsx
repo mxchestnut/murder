@@ -43,10 +43,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const handleRoll = async (stat: string, rollType: string = 'ability', skillName?: string) => {
     if (!currentCharacter) return;
     try {
-      const response = await api.post(`/characters/${currentCharacter.id}/roll`, { 
-        stat, 
-        rollType, 
-        skillName 
+      const response = await api.post(`/characters/${currentCharacter.id}/roll`, {
+        stat,
+        rollType,
+        skillName
       });
       setRollResult(response.data);
       setTimeout(() => setRollResult(null), 5000);
@@ -159,7 +159,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           <h2 style={{ color: 'var(--text-primary)' }}>
             {currentCharacter?.name || currentDocument?.name || 'Cyar\'ika'}
           </h2>
-          
+
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <button
               onClick={toggleTheme}
@@ -367,7 +367,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </button>
 
             <span style={{ color: 'var(--text-primary)' }}>{user.username}</span>
-            
+
             <button
               onClick={handleLogout}
               style={{
@@ -428,7 +428,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           ) : (
             <>
               {currentCharacter && (
-                <div style={{ 
+                <div style={{
                   flex: characterPanelCollapsed ? '0 0 auto' : '1',
                   width: characterPanelCollapsed ? 'auto' : 'auto',
                   minWidth: characterPanelCollapsed ? 'auto' : 0,
@@ -526,8 +526,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       {characterTab === 'bio' ? (
                         <CharacterBio character={currentCharacter} onUpdate={reloadCurrentCharacter} />
                       ) : (
-                        <CharacterMemories 
-                          characterId={currentCharacter.id} 
+                        <CharacterMemories
+                          characterId={currentCharacter.id}
                           characterName={currentCharacter.name}
                           guildId={currentCharacter.guildId}
                         />
@@ -558,15 +558,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       )}
 
                       {/* Ability Scores */}
-                      <div style={{ 
-                        display: 'grid', 
+                      <div style={{
+                        display: 'grid',
                         gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: '0.75rem',
                         marginBottom: '1.5rem'
                       }}>
                         {(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).map(stat => (
-                          <div 
-                            key={stat} 
+                          <div
+                            key={stat}
                             onClick={() => handleRoll(stat, 'ability')}
                             style={{
                               padding: '0.75rem',
@@ -587,22 +587,22 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                             }}
                             title="Click to roll"
                           >
-                            <div style={{ 
-                              fontSize: '0.65rem', 
-                              textTransform: 'uppercase', 
+                            <div style={{
+                              fontSize: '0.65rem',
+                              textTransform: 'uppercase',
                               color: 'var(--text-secondary)',
                               marginBottom: '0.25rem'
                             }}>
                               {stat.substring(0, 3)}
                             </div>
-                            <div style={{ 
-                              fontSize: '1.5rem', 
+                            <div style={{
+                              fontSize: '1.5rem',
                               fontWeight: 'bold',
                               color: 'var(--text-primary)'
                             }}>
                               {currentCharacter[stat]}
                             </div>
-                            <div style={{ 
+                            <div style={{
                               fontSize: '0.75rem',
                               color: 'var(--text-secondary)',
                               marginTop: '0.15rem'
@@ -654,13 +654,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       <div style={{ marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Saving Throws</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                          <div 
+                          <div
                             onClick={() => handleRoll('fortitude', 'save')}
-                            style={{ 
-                              padding: '0.75rem', 
-                              background: 'var(--bg-secondary)', 
-                              borderRadius: '6px', 
-                              border: '1px solid var(--border-color)', 
+                            style={{
+                              padding: '0.75rem',
+                              background: 'var(--bg-secondary)',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color)',
                               textAlign: 'center',
                               cursor: 'pointer',
                               transition: 'all 0.2s'
@@ -680,13 +680,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                               {(currentCharacter.fortitudeSave || 0) >= 0 ? '+' : ''}{currentCharacter.fortitudeSave || 0}
                             </div>
                           </div>
-                          <div 
+                          <div
                             onClick={() => handleRoll('reflex', 'save')}
-                            style={{ 
-                              padding: '0.75rem', 
-                              background: 'var(--bg-secondary)', 
-                              borderRadius: '6px', 
-                              border: '1px solid var(--border-color)', 
+                            style={{
+                              padding: '0.75rem',
+                              background: 'var(--bg-secondary)',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color)',
                               textAlign: 'center',
                               cursor: 'pointer',
                               transition: 'all 0.2s'
@@ -706,13 +706,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                               {(currentCharacter.reflexSave || 0) >= 0 ? '+' : ''}{currentCharacter.reflexSave || 0}
                             </div>
                           </div>
-                          <div 
+                          <div
                             onClick={() => handleRoll('will', 'save')}
-                            style={{ 
-                              padding: '0.75rem', 
-                              background: 'var(--bg-secondary)', 
-                              borderRadius: '6px', 
-                              border: '1px solid var(--border-color)', 
+                            style={{
+                              padding: '0.75rem',
+                              background: 'var(--bg-secondary)',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color)',
                               textAlign: 'center',
                               cursor: 'pointer',
                               transition: 'all 0.2s'
@@ -740,7 +740,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         try {
                           const pcData = JSON.parse(currentCharacter.pathCompanionData);
                           const defense = pcData.defense || {};
-                          
+
                           const hasDR = defense.dr && Object.keys(defense.dr).length > 0;
                           const hasSR = defense.sr && (
                             (typeof defense.sr === 'number' && defense.sr > 0) ||
@@ -748,7 +748,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                           );
                           const hasResistances = defense.resistances && Object.keys(defense.resistances).length > 0;
                           const hasImmunities = defense.immunities && defense.immunities.length > 0;
-                          
+
                           if (hasDR || hasSR || hasResistances || hasImmunities) {
                             return (
                               <div style={{ marginBottom: '1.5rem' }}>
@@ -758,10 +758,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                     <div style={{ marginBottom: '0.5rem' }}>
                                       <strong style={{ color: 'var(--text-primary)' }}>SR:</strong>{' '}
                                       <span style={{ color: 'var(--text-secondary)' }}>
-                                        {typeof defense.sr === 'number' 
-                                          ? defense.sr 
-                                          : defense.sr.total || (defense.sr.bonuses && defense.sr.bonuses.length > 0 
-                                            ? `${11 + currentCharacter.level}` 
+                                        {typeof defense.sr === 'number'
+                                          ? defense.sr
+                                          : defense.sr.total || (defense.sr.bonuses && defense.sr.bonuses.length > 0
+                                            ? `${11 + currentCharacter.level}`
                                             : 'Yes')}
                                       </span>
                                     </div>
@@ -848,7 +848,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       </div>
 
                       {/* Feats & Abilities */}
-                      {((currentCharacter.feats && currentCharacter.feats.length > 0) || 
+                      {((currentCharacter.feats && currentCharacter.feats.length > 0) ||
                         (currentCharacter.specialAbilities && currentCharacter.specialAbilities.length > 0)) && (
                         <div style={{ marginBottom: '1.5rem' }}>
                           <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Feats & Special Abilities</h3>
@@ -858,9 +858,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                 <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>Feats</strong>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
                                   {currentCharacter.feats.map((feat: string, idx: number) => (
-                                    <span key={idx} style={{ 
-                                      padding: '0.25rem 0.5rem', 
-                                      background: 'var(--bg-primary)', 
+                                    <span key={idx} style={{
+                                      padding: '0.25rem 0.5rem',
+                                      background: 'var(--bg-primary)',
                                       borderRadius: '4px',
                                       fontSize: '0.75rem',
                                       color: 'var(--text-secondary)'
@@ -875,8 +875,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                               <div>
                                 <strong style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>Special Abilities</strong>
                                 {currentCharacter.specialAbilities.map((ability: string, idx: number) => (
-                                  <div key={idx} style={{ 
-                                    marginTop: '0.5rem', 
+                                  <div key={idx} style={{
+                                    marginTop: '0.5rem',
                                     padding: '0.5rem',
                                     background: 'var(--bg-primary)',
                                     borderRadius: '4px',
@@ -907,8 +907,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                     cursor: 'pointer'
                                   }}
                                 >
-                                  <div 
-                                    style={{ 
+                                  <div
+                                    style={{
                                       color: 'var(--text-primary)',
                                       padding: '0.25rem',
                                       borderRadius: '4px',
@@ -919,9 +919,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                   >
                                     {skillName}
                                   </div>
-                                  <div 
-                                    style={{ 
-                                      color: 'var(--text-secondary)', 
+                                  <div
+                                    style={{
+                                      color: 'var(--text-secondary)',
                                       fontWeight: 'bold',
                                       padding: '0.25rem',
                                       borderRadius: '4px',
@@ -945,8 +945,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
               {currentDocument && !currentDocument.isFolder ? (
                 <div style={{ flex: 1, overflow: 'auto' }}>
-                  <Editor 
-                    document={currentDocument} 
+                  <Editor
+                    document={currentDocument}
                     onSave={(content) => {
                       api.post('/documents/document', {
                         id: currentDocument.id,

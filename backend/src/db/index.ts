@@ -24,13 +24,13 @@ export async function reinitializeDatabase(databaseUrl: string) {
   });
 
   const newDb = drizzle(newPool, { schema });
-  
+
   // Replace the pool and db (close old connection)
   await pool.end();
   Object.assign(pool, newPool);
   Object.assign(db, newDb);
-  
+
   console.log('✓ Database connection reinitialized with AWS secrets');
-  
+
   return db;
 }

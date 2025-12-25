@@ -39,20 +39,20 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     // If we get 403 and haven't retried yet, fetch new token and retry
     if (error.response?.status === 403 && !originalRequest._retry) {
       originalRequest._retry = true;
       await fetchCsrfToken();
-      
+
       // Add new token to the original request
       if (csrfToken && originalRequest.method && ['post', 'put', 'delete', 'patch'].includes(originalRequest.method.toLowerCase())) {
         originalRequest.headers['x-csrf-token'] = csrfToken;
       }
-      
+
       return api(originalRequest);
     }
-    
+
     return Promise.reject(error);
   }
 );

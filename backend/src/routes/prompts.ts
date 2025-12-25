@@ -10,17 +10,17 @@ const router = Router();
 router.get('/prompts', isAuthenticated, async (req, res) => {
   try {
     const { category } = req.query;
-    
+
     let query;
-    
+
     if (category && category !== 'all') {
       query = db.select().from(prompts).where(eq(prompts.category, category as string)).orderBy(desc(prompts.createdAt));
     } else {
       query = db.select().from(prompts).orderBy(desc(prompts.createdAt));
     }
-    
+
     const allPrompts = await query;
-    
+
     res.json(allPrompts);
   } catch (error) {
     console.error('Error fetching prompts:', error);
@@ -39,7 +39,7 @@ router.get('/prompts/categories', isAuthenticated, async (req, res) => {
       })
       .from(prompts)
       .groupBy(prompts.category);
-    
+
     res.json(categories);
   } catch (error) {
     console.error('Error fetching prompt categories:', error);
@@ -51,13 +51,13 @@ router.get('/prompts/categories', isAuthenticated, async (req, res) => {
 router.get('/prompts/popular', isAuthenticated, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
-    
+
     const popular = await db
       .select()
       .from(prompts)
       .orderBy(desc(prompts.useCount))
       .limit(limit);
-    
+
     res.json(popular);
   } catch (error) {
     console.error('Error fetching popular prompts:', error);
@@ -69,22 +69,22 @@ router.get('/prompts/popular', isAuthenticated, async (req, res) => {
 router.post('/prompts', isAuthenticated, async (req, res) => {
   try {
     const { category, promptText } = req.body;
-    
+
     if (!category || !promptText) {
       return res.status(400).json({ error: 'Category and prompt text required' });
     }
-    
+
     const validCategories = ['character', 'world', 'combat', 'social', 'plot'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
-    
+
     const [newPrompt] = await db.insert(prompts).values({
       category,
       promptText,
       createdBy: (req.user as any)?.id || null
     }).returning();
-    
+
     res.json(newPrompt);
   } catch (error) {
     console.error('Error creating prompt:', error);
@@ -97,25 +97,25 @@ router.put('/prompts/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const { category, promptText } = req.body;
-    
+
     if (!category || !promptText) {
       return res.status(400).json({ error: 'Category and prompt text required' });
     }
-    
+
     const validCategories = ['character', 'world', 'combat', 'social', 'plot'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
-    
+
     const [updated] = await db.update(prompts)
       .set({ category, promptText })
       .where(eq(prompts.id, parseInt(id)))
       .returning();
-    
+
     if (!updated) {
       return res.status(404).json({ error: 'Prompt not found' });
     }
-    
+
     res.json(updated);
   } catch (error) {
     console.error('Error updating prompt:', error);
@@ -127,10 +127,10 @@ router.put('/prompts/:id', isAuthenticated, async (req, res) => {
 router.delete('/prompts/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     await db.delete(prompts)
       .where(eq(prompts.id, parseInt(id)));
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting prompt:', error);
@@ -144,17 +144,17 @@ router.delete('/prompts/:id', isAuthenticated, async (req, res) => {
 router.get('/tropes', isAuthenticated, async (req, res) => {
   try {
     const { category } = req.query;
-    
+
     let query;
-    
+
     if (category && category !== 'all') {
       query = db.select().from(tropes).where(eq(tropes.category, category as string)).orderBy(desc(tropes.createdAt));
     } else {
       query = db.select().from(tropes).orderBy(desc(tropes.createdAt));
     }
-    
+
     const allTropes = await query;
-    
+
     res.json(allTropes);
   } catch (error) {
     console.error('Error fetching tropes:', error);
@@ -173,7 +173,7 @@ router.get('/tropes/categories', isAuthenticated, async (req, res) => {
       })
       .from(tropes)
       .groupBy(tropes.category);
-    
+
     res.json(categories);
   } catch (error) {
     console.error('Error fetching trope categories:', error);
@@ -185,13 +185,13 @@ router.get('/tropes/categories', isAuthenticated, async (req, res) => {
 router.get('/tropes/popular', isAuthenticated, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
-    
+
     const popular = await db
       .select()
       .from(tropes)
       .orderBy(desc(tropes.useCount))
       .limit(limit);
-    
+
     res.json(popular);
   } catch (error) {
     console.error('Error fetching popular tropes:', error);
@@ -203,22 +203,22 @@ router.get('/tropes/popular', isAuthenticated, async (req, res) => {
 router.post('/tropes', isAuthenticated, async (req, res) => {
   try {
     const { category, name, description } = req.body;
-    
+
     if (!category || !name || !description) {
       return res.status(400).json({ error: 'Category, name, and description required' });
     }
-    
+
     const validCategories = ['archetype', 'dynamic', 'situation', 'plot'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
-    
+
     const [newTrope] = await db.insert(tropes).values({
       category,
       name,
       description
     }).returning();
-    
+
     res.json(newTrope);
   } catch (error) {
     console.error('Error creating trope:', error);
@@ -231,25 +231,25 @@ router.put('/tropes/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const { category, name, description } = req.body;
-    
+
     if (!category || !name || !description) {
       return res.status(400).json({ error: 'Category, name, and description required' });
     }
-    
+
     const validCategories = ['archetype', 'dynamic', 'situation', 'plot'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
-    
+
     const [updated] = await db.update(tropes)
       .set({ category, name, description })
       .where(eq(tropes.id, parseInt(id)))
       .returning();
-    
+
     if (!updated) {
       return res.status(404).json({ error: 'Trope not found' });
     }
-    
+
     res.json(updated);
   } catch (error) {
     console.error('Error updating trope:', error);
@@ -261,10 +261,10 @@ router.put('/tropes/:id', isAuthenticated, async (req, res) => {
 router.delete('/tropes/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     await db.delete(tropes)
       .where(eq(tropes.id, parseInt(id)));
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting trope:', error);
@@ -289,11 +289,11 @@ router.get('/prompts/schedule', isAuthenticated, async (req, res) => {
 router.post('/prompts/schedule', isAuthenticated, async (req, res) => {
   try {
     const { channelId, guildId, scheduleTime, category, enabled } = req.body;
-    
+
     if (!channelId || !guildId || !scheduleTime) {
       return res.status(400).json({ error: 'Channel ID, guild ID, and schedule time required' });
     }
-    
+
     // Upsert schedule
     const [schedule] = await db.insert(promptSchedule).values({
       channelId,
@@ -309,7 +309,7 @@ router.post('/prompts/schedule', isAuthenticated, async (req, res) => {
         enabled: enabled !== undefined ? enabled : true
       }
     }).returning();
-    
+
     res.json(schedule);
   } catch (error) {
     console.error('Error creating/updating schedule:', error);
@@ -321,10 +321,10 @@ router.post('/prompts/schedule', isAuthenticated, async (req, res) => {
 router.delete('/prompts/schedule/:channelId', isAuthenticated, async (req, res) => {
   try {
     const { channelId } = req.params;
-    
+
     await db.delete(promptSchedule)
       .where(eq(promptSchedule.channelId, channelId));
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting schedule:', error);
@@ -349,11 +349,11 @@ router.get('/tropes/schedule', isAuthenticated, async (req, res) => {
 router.post('/tropes/schedule', isAuthenticated, async (req, res) => {
   try {
     const { channelId, guildId, scheduleTime, category, enabled } = req.body;
-    
+
     if (!channelId || !guildId || !scheduleTime) {
       return res.status(400).json({ error: 'Channel ID, guild ID, and schedule time required' });
     }
-    
+
     // Upsert schedule
     const [schedule] = await db.insert(promptSchedule).values({
       channelId,
@@ -369,7 +369,7 @@ router.post('/tropes/schedule', isAuthenticated, async (req, res) => {
         enabled: enabled !== undefined ? enabled : true
       }
     }).returning();
-    
+
     res.json(schedule);
   } catch (error) {
     console.error('Error creating/updating trope schedule:', error);
@@ -381,10 +381,10 @@ router.post('/tropes/schedule', isAuthenticated, async (req, res) => {
 router.delete('/tropes/schedule/:channelId', isAuthenticated, async (req, res) => {
   try {
     const { channelId } = req.params;
-    
+
     await db.delete(promptSchedule)
       .where(eq(promptSchedule.channelId, channelId));
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting trope schedule:', error);

@@ -21,7 +21,7 @@ export default function DiscordCommands() {
           <p className="section-description">
             Link Discord channels to characters so portal rolls automatically post there
           </p>
-          
+
           <div className="command-card">
             <div className="command-syntax">
               <code>!setchar &lt;character_name&gt;</code>
@@ -298,7 +298,7 @@ export default function DiscordCommands() {
             <Clock size={24} />
             <h2>Utility Commands</h2>
           </div>
-          
+
           <div className="command-card">
             <div className="command-syntax">
               <code>!time [set &lt;date&gt;]</code>
@@ -394,7 +394,7 @@ export default function DiscordCommands() {
           <li>Use <code>!botset</code> (admin) to set announcement channel for daily prompts</li>
           <li>Start rolling, tracking sessions, and roleplaying!</li>
         </ol>
-        
+
         <div className="feature-highlight">
           <h3>🌟 New Features!</h3>
           <ul>

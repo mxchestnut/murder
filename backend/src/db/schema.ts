@@ -310,7 +310,7 @@ export const files = pgTable('files', {
   virusScanDetails: text('virus_scan_details'), // JSON string with scan results
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'), // Soft delete
-  
+
   // File categories and optimization
   category: text('category').default('document'), // 'avatar', 'image', 'document', 'other'
   thumbnailS3Key: text('thumbnail_s3_key'),

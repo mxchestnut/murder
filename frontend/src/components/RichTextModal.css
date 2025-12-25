@@ -260,7 +260,7 @@ body.dark-theme .rich-text-modal-toolbar button.is-active {
     max-height: 100vh;
     border-radius: 0;
   }
-  
+
   .rich-text-modal-toolbar {
     overflow-x: auto;
   }

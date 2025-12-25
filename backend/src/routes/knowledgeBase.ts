@@ -10,12 +10,12 @@ const router = Router();
 router.get('/', isAuthenticated, async (req, res) => {
   try {
     const { search, category, aiGenerated, limit = '100', offset = '0' } = req.query;
-    
+
     let query = db.select().from(knowledgeBase);
-    
+
     // Build filters
     const filters = [];
-    
+
     if (search) {
       const searchTerm = String(search);
       filters.push(
@@ -25,33 +25,33 @@ router.get('/', isAuthenticated, async (req, res) => {
         )
       );
     }
-    
+
     if (category) {
       filters.push(eq(knowledgeBase.category, String(category)));
     }
-    
+
     if (aiGenerated !== undefined) {
       filters.push(eq(knowledgeBase.aiGenerated, aiGenerated === 'true'));
     }
-    
+
     // Apply filters if any exist
     if (filters.length > 0) {
       query = query.where(filters.length === 1 ? filters[0] : and(...filters)) as any;
     }
-    
+
     // Add ordering and pagination
     const entries = await query
       .orderBy(desc(knowledgeBase.createdAt))
       .limit(Number(limit))
       .offset(Number(offset));
-    
+
     // Get total count for pagination
     const countQuery = db.select({ count: sql<number>`count(*)` }).from(knowledgeBase);
     if (filters.length > 0) {
       countQuery.where(filters.length === 1 ? filters[0] : and(...filters)) as any;
     }
     const [{ count }] = await countQuery;
-    
+
     res.json({
       entries,
       total: Number(count),
@@ -69,23 +69,23 @@ router.get('/stats', isAuthenticated, async (req, res) => {
   try {
     // Get all entries to calculate stats
     const entries = await db.select().from(knowledgeBase);
-    
+
     // Calculate category counts
     const categoryCounts: Record<string, number> = {};
     let aiGeneratedCount = 0;
     let manualCount = 0;
-    
+
     entries.forEach(entry => {
       const cat = entry.category || 'Uncategorized';
       categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-      
+
       if (entry.aiGenerated) {
         aiGeneratedCount++;
       } else {
         manualCount++;
       }
     });
-    
+
     res.json({
       total: entries.length,
       aiGenerated: aiGeneratedCount,
@@ -108,11 +108,11 @@ router.get('/:id', isAuthenticated, async (req, res) => {
       .select()
       .from(knowledgeBase)
       .where(eq(knowledgeBase.id, Number(req.params.id)));
-    
+
     if (!entry) {
       return res.status(404).json({ error: 'Entry not found' });
     }
-    
+
     res.json(entry);
   } catch (error) {
     console.error('Error fetching entry:', error);
@@ -124,11 +124,11 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 router.post('/', isAuthenticated, async (req, res) => {
   try {
     const { question, answer, answerHtml, sourceUrl, category } = req.body;
-    
+
     if (!question || !answer) {
       return res.status(400).json({ error: 'Question and answer are required' });
     }
-    
+
     const [entry] = await db
       .insert(knowledgeBase)
       .values({
@@ -142,7 +142,7 @@ router.post('/', isAuthenticated, async (req, res) => {
         upvotes: 0
       })
       .returning();
-    
+
     res.status(201).json(entry);
   } catch (error) {
     console.error('Error creating entry:', error);
@@ -154,7 +154,7 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.put('/:id', isAuthenticated, async (req, res) => {
   try {
     const { question, answer, answerHtml, sourceUrl, category } = req.body;
-    
+
     const [updated] = await db
       .update(knowledgeBase)
       .set({
@@ -167,11 +167,11 @@ router.put('/:id', isAuthenticated, async (req, res) => {
       })
       .where(eq(knowledgeBase.id, Number(req.params.id)))
       .returning();
-    
+
     if (!updated) {
       return res.status(404).json({ error: 'Entry not found' });
     }
-    
+
     res.json(updated);
   } catch (error) {
     console.error('Error updating entry:', error);
@@ -186,11 +186,11 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
       .delete(knowledgeBase)
       .where(eq(knowledgeBase.id, Number(req.params.id)))
       .returning();
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'Entry not found' });
     }
-    
+
     res.json({ message: 'Entry deleted successfully' });
   } catch (error) {
     console.error('Error deleting entry:', error);
