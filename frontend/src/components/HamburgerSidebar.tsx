@@ -39,7 +39,11 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
       const response = await api.get('/characters');
       setCharacters(response.data);
     } catch (error) {
-      coloadPathCompanionCharacters = async () => {
+      console.error('Error loading characters:', error);
+    }
+  };
+
+  const loadPathCompanionCharacters = async () => {
     setLoadingCharacters(true);
     try {
       const response = await api.get('/pathcompanion/characters');
@@ -69,10 +73,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
       alert(errorMsg);
     } finally {
       setImportingPC(false);
-    }
-  };
-
-  const nsole.error('Error loading characters:', error);
     }
   };
 
