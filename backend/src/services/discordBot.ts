@@ -332,21 +332,40 @@ async function handleProfile(message: Message, args: string[]) {
   }
 
   if (args.length > 0) {
-    // Profile for a specific character by name (fuzzy matching, user's characters only)
+    // Profile for a specific character by name (search server's characters)
     const characterName = args.join(' ');
     const normalizedInput = normalizeString(characterName);
+    const guildId = message.guild?.id || '';
 
+    // Get all characters that are mapped to this server
+    const serverCharacters = await db
+      .select({
+        character: characterSheets
+      })
+      .from(channelCharacterMappings)
+      .innerJoin(characterSheets, eq(channelCharacterMappings.characterId, characterSheets.id))
+      .where(eq(channelCharacterMappings.guildId, guildId));
+
+    // Also include the requesting user's unmapped characters
     const userCharacters = await db
       .select()
       .from(characterSheets)
       .where(eq(characterSheets.userId, user.id));
 
-    const matchedCharacters = userCharacters.filter(char =>
+    // Combine and deduplicate
+    const allAvailableCharacters = [
+      ...serverCharacters.map(sc => sc.character),
+      ...userCharacters
+    ].filter((char, index, self) =>
+      index === self.findIndex(c => c.id === char.id)
+    );
+
+    const matchedCharacters = allAvailableCharacters.filter(char =>
       normalizeString(char.name) === normalizedInput
     );
 
     if (matchedCharacters.length === 0) {
-      await message.reply(`❌ Character "${characterName}" not found in your account.`);
+      await message.reply(`❌ Character "${characterName}" not found in this server or your account.`);
       return;
     }
 
