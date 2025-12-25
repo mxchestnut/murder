@@ -637,13 +637,13 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               background: 'var(--bg-primary)'
             }}
           >
-            <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '1rem' }}>
-              {user.username}
-            </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Settings size={18} style={{ color: 'var(--text-primary)' }} />
-              {userMenuExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+              <Settings size={18} />
+              <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '1rem' }}>
+                {user.username}
+              </span>
             </div>
+            {userMenuExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </div>
           {userMenuExpanded && (
             <div style={{ padding: '0.5rem 1rem 1rem 1rem' }}>
