@@ -795,4 +795,79 @@ router.post('/:id/link-pathcompanion', async (req, res) => {
   }
 });
 
+// Import characters from Tupperbox JSON export
+router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const { tuppers } = req.body;
+
+    if (!tuppers || !Array.isArray(tuppers)) {
+      return res.status(400).json({ error: 'Invalid Tupperbox data. Expected "tuppers" array.' });
+    }
+
+    const imported = [];
+    const errors = [];
+
+    for (const tupper of tuppers) {
+      try {
+        // Tupperbox format: { name, avatar_url, description, birthday, brackets, etc }
+        const characterData: any = {
+          userId,
+          name: tupper.name || 'Unnamed Character',
+          // Use description for bio if available
+          bio: tupper.description || null,
+          avatarUrl: tupper.avatar_url || null,
+          // Default stats
+          strength: 10,
+          dexterity: 10,
+          constitution: 10,
+          intelligence: 10,
+          wisdom: 10,
+          charisma: 10,
+          level: 1,
+          currentHp: 0,
+          maxHp: 0,
+          armorClass: 10,
+          touchAc: 10,
+          flatFootedAc: 10,
+          speed: 30,
+          baseAttackBonus: 0,
+          cmb: 0,
+          cmd: 10,
+          fortitudeSave: 0,
+          reflexSave: 0,
+          willSave: 0
+        };
+
+        // Parse birthday for age if present
+        if (tupper.birthday) {
+          characterData.age = tupper.birthday;
+        }
+
+        const [newChar] = await db.insert(characterSheets)
+          .values(characterData)
+          .returning();
+
+        imported.push(newChar);
+      } catch (err: any) {
+        errors.push({
+          name: tupper.name || 'Unknown',
+          error: err.message
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      imported: imported.length,
+      failed: errors.length,
+      characters: imported,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error importing Tupperbox data:', error);
+    res.status(500).json({ error: 'Failed to import Tupperbox characters' });
+  }
+});
+
 export default router;

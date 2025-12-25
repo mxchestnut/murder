@@ -36,6 +36,9 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   const [showBulkCreate, setShowBulkCreate] = useState(false);
   const [bulkCharacterNames, setBulkCharacterNames] = useState('');
   const [bulkCreating, setBulkCreating] = useState(false);
+  const [showTupperboxImport, setShowTupperboxImport] = useState(false);
+  const [tupperboxJson, setTupperboxJson] = useState('');
+  const [importingTupperbox, setImportingTupperbox] = useState(false);
 
   // Collapsible sections
   const [charactersExpanded, setCharactersExpanded] = useState(true);
@@ -163,6 +166,44 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
     await loadCharacters();
 
     alert(`Created ${created} character${created !== 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}!`);
+  };
+
+  const handleTupperboxImport = async () => {
+    if (!tupperboxJson.trim()) {
+      alert('Please paste your Tupperbox JSON data');
+      return;
+    }
+
+    try {
+      setImportingTupperbox(true);
+      const data = JSON.parse(tupperboxJson);
+
+      // Tupperbox exports are either { tuppers: [...] } or just [...]
+      const tuppers = Array.isArray(data) ? data : data.tuppers;
+
+      if (!tuppers || !Array.isArray(tuppers)) {
+        alert('Invalid Tupperbox JSON format. Expected an array of tuppers.');
+        return;
+      }
+
+      const response = await api.post('/characters/import-tupperbox', { tuppers });
+
+      if (response.data.success) {
+        alert(`Successfully imported ${response.data.imported} character(s)!${response.data.failed > 0 ? `\n${response.data.failed} failed.` : ''}`);
+        setTupperboxJson('');
+        setShowTupperboxImport(false);
+        loadCharacters();
+      }
+    } catch (error: any) {
+      console.error('Failed to import Tupperbox data:', error);
+      if (error.message?.includes('JSON')) {
+        alert('Invalid JSON format. Please make sure you copied the entire Tupperbox export.');
+      } else {
+        alert(error.response?.data?.error || 'Failed to import Tupperbox characters');
+      }
+    } finally {
+      setImportingTupperbox(false);
+    }
   };
 
   const handleCreateFolder = async () => {
@@ -407,6 +448,30 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               >
                 <Download size={16} />
                 Import Character(s)
+              </button>
+              <button
+                onClick={() => {
+                  setShowTupperboxImport(true);
+                  setShowCharactersMenu(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <Upload size={16} />
+                Import from Tupperbox
               </button>
               <button
                 onClick={() => {
@@ -1240,6 +1305,124 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                 }}
               >
                 {bulkCreating ? 'Creating...' : 'Create Characters'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tupperbox Import Modal */}
+      {showTupperboxImport && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'var(--bg-primary)',
+            borderRadius: '12px',
+            padding: '2rem',
+            width: '90%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.5rem' }}>
+                Import from Tupperbox
+              </h2>
+              <button
+                onClick={() => {
+                  setShowTupperboxImport(false);
+                  setTupperboxJson('');
+                }}
+                disabled={importingTupperbox}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: importingTupperbox ? 'not-allowed' : 'pointer',
+                  padding: '0.25rem',
+                  opacity: importingTupperbox ? 0.5 : 1
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
+              <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)', fontWeight: 500 }}>
+                How to export from Tupperbox:
+              </p>
+              <ol style={{ margin: 0, paddingLeft: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                <li>In Discord, use the command <code style={{ background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '3px' }}>tul!export</code></li>
+                <li>Tupperbox will send you a JSON file</li>
+                <li>Open the file and copy all the contents</li>
+                <li>Paste the JSON data below</li>
+              </ol>
+            </div>
+
+            <textarea
+              value={tupperboxJson}
+              onChange={(e) => setTupperboxJson(e.target.value)}
+              placeholder='Paste Tupperbox JSON here, e.g.:&#10;{&#10;  "tuppers": [&#10;    {&#10;      "name": "Character Name",&#10;      "avatar_url": "https://...",&#10;      "description": "Character bio..."&#10;    }&#10;  ]&#10;}'
+              style={{
+                width: '100%',
+                minHeight: '300px',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '0.85rem',
+                fontFamily: 'monospace',
+                resize: 'vertical',
+                marginBottom: '1rem'
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowTupperboxImport(false);
+                  setTupperboxJson('');
+                }}
+                disabled={importingTupperbox}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: importingTupperbox ? 'not-allowed' : 'pointer',
+                  opacity: importingTupperbox ? 0.5 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTupperboxImport}
+                disabled={importingTupperbox || !tupperboxJson.trim()}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: (importingTupperbox || !tupperboxJson.trim()) ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+                  color: (importingTupperbox || !tupperboxJson.trim()) ? 'var(--text-secondary)' : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: (importingTupperbox || !tupperboxJson.trim()) ? 'not-allowed' : 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                {importingTupperbox ? 'Importing...' : 'Import Characters'}
               </button>
             </div>
           </div>
