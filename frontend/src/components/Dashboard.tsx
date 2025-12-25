@@ -369,7 +369,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
                       {/* Character Content Based on Tab */}
                       {characterTab === 'bio' ? (
-                        <CharacterBio character={currentCharacter} onUpdate={reloadCurrentCharacter} />
+                        <CharacterBio
+                          character={currentCharacter}
+                          onUpdate={reloadCurrentCharacter}
+                          onDelete={() => {
+                            setCurrentCharacter(null);
+                            // Trigger sidebar refresh by calling onRefresh
+                            loadDocuments();
+                          }}
+                        />
                       ) : (
                         <CharacterMemories
                           characterId={currentCharacter.id}

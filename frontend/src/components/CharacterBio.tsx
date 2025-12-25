@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   User, Target, Brain, Smile, Palette, Sword, BookOpen,
-  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save
+  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save, Trash2
 } from 'lucide-react';
 import { api } from '../utils/api';
 import TiptapField from './TiptapField';
@@ -10,9 +10,10 @@ import ImageCropper from './ImageCropper';
 interface CharacterBioProps {
   character: any;
   onUpdate: () => void;
+  onDelete?: () => void;
 }
 
-export default function CharacterBio({ character, onUpdate }: CharacterBioProps) {
+export default function CharacterBio({ character, onUpdate, onDelete }: CharacterBioProps) {
   const [bioData, setBioData] = useState({
     // Basic Identity
     fullName: character.fullName || '',
@@ -230,6 +231,23 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
       setMessage({ type: 'error', text: errorMsg });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${character.name}? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/characters/${character.id}`);
+      setMessage({ type: 'success', text: 'Character deleted' });
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (error: any) {
+      console.error('Error deleting character:', error);
+      setMessage({ type: 'error', text: 'Failed to delete character' });
     }
   };
 
@@ -508,6 +526,26 @@ export default function CharacterBio({ character, onUpdate }: CharacterBioProps)
           >
             <Save size={16} />
             {isSaving ? 'Saving...' : 'Save Bio'}
+          </button>
+          <button
+            onClick={handleDelete}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              border: '1px solid #dc3545',
+              background: 'transparent',
+              color: '#dc3545',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}
+            title="Delete character"
+          >
+            <Trash2 size={16} />
+            Delete
           </button>
         </div>
       </div>

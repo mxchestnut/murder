@@ -147,8 +147,8 @@ export default function CharacterMemories({ characterId, characterName, guildId 
               resize: 'vertical'
             }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', flex: '1 1 auto' }}>
               Discord: <code>!Memory {characterName} | [your memory]</code>
             </span>
             <button
@@ -164,7 +164,8 @@ export default function CharacterMemories({ characterId, characterName, guildId 
                 fontWeight: '500',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                flexShrink: 0
               }}
             >
               <Plus size={16} />
