@@ -216,6 +216,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('Create character button clicked');
                   onSelectCharacter(null);
                   setCharactersExpanded(true);
                 }}
@@ -227,7 +228,9 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
                   display: 'flex',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  position: 'relative',
+                  zIndex: 10
                 }}
                 title="Create new character"
               >
@@ -236,6 +239,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('Import PathCompanion button clicked');
                   setShowPathCompanionImport(true);
                   loadPathCompanionCharacters();
                 }}
@@ -247,7 +251,9 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
                   display: 'flex',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  position: 'relative',
+                  zIndex: 10
                 }}
                 title="Import from PathCompanion"
               >
@@ -256,6 +262,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('Refresh characters button clicked');
                   loadCharacters();
                 }}
                 style={{
@@ -266,7 +273,9 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
                   display: 'flex',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  position: 'relative',
+                  zIndex: 10
                 }}
                 title="Refresh characters"
               >
