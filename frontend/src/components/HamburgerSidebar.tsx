@@ -84,6 +84,26 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
     }
   };
 
+  const importAllPathCompanionCharacters = async () => {
+    if (!confirm(`Import all ${pathCompanionCharacters.length} characters from PathCompanion?`)) {
+      return;
+    }
+
+    setImportingPC(true);
+    try {
+      await api.post('/pathcompanion/import-all');
+      loadCharacters();
+      setShowPathCompanionImport(false);
+      alert('Successfully imported all characters!');
+    } catch (error: any) {
+      console.error('Failed to import all PathCompanion characters:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to import characters.';
+      alert(errorMsg);
+    } finally {
+      setImportingPC(false);
+    }
+  };
+
   const handleCreateFolder = async () => {
     if (!newItemName) return;
 
@@ -774,6 +794,24 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               </p>
             ) : (
               <div>
+                <button
+                  onClick={() => importAllPathCompanionCharacters()}
+                  disabled={importingPC}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--accent-1)',
+                    color: 'var(--text-primary)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: importingPC ? 'not-allowed' : 'pointer',
+                    opacity: importingPC ? 0.5 : 1,
+                    width: '100%',
+                    marginBottom: '1rem',
+                    fontWeight: 600
+                  }}
+                >
+                  {importingPC ? 'Importing All...' : `Import All (${pathCompanionCharacters.length})`}
+                </button>
                 {pathCompanionCharacters.map((pcChar) => (
                   <div
                     key={pcChar.id}
@@ -802,7 +840,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                       style={{
                         padding: '0.5rem 1rem',
                         background: 'var(--accent-1)',
-                        color: 'white',
+                        color: 'var(--text-primary)',
                         border: 'none',
                         borderRadius: '4px',
                         cursor: importingPC ? 'not-allowed' : 'pointer',
