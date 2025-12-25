@@ -13,7 +13,7 @@ import HallOfFameGallery from './HallOfFameGallery';
 import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
-import { FileText, LogOut, Sun, Moon, X, Bird, Dices } from 'lucide-react';
+import { FileText, Sun, Moon, X, Dices } from 'lucide-react';
 
 interface DashboardProps {
   user: any;
@@ -35,7 +35,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [characterTab, setCharacterTab] = useState<'bio' | 'memories'>('bio');
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
-  const [rightMenuOpen, setRightMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
     return (saved as 'light' | 'dark') || 'light';
@@ -227,6 +226,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
+        onLogout={handleLogout}
       />
 
       {/* Main Content */}
@@ -262,85 +262,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             >
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-
-            {/* Bird Menu Button */}
-            <button
-              onClick={() => setRightMenuOpen(!rightMenuOpen)}
-              style={{
-                padding: '0.75rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: rightMenuOpen ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-                color: rightMenuOpen ? 'var(--accent-text)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-              title="Menu"
-            >
-              <Bird size={20} />
-            </button>
           </div>
         </header>
-
-        {/* Right Side Menu Overlay */}
-        {rightMenuOpen && (
-          <div
-            onClick={() => setRightMenuOpen(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 999
-            }}
-          />
-        )}
-
-        {/* Right Side Menu */}
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          right: rightMenuOpen ? 0 : '-350px',
-          bottom: 0,
-          width: '300px',
-          background: 'var(--bg-secondary)',
-          borderLeft: `2px solid var(--border-color)`,
-          display: 'flex',
-          flexDirection: 'column',
-          zIndex: 1000,
-          transition: 'right 0.3s ease',
-          overflowY: 'auto',
-          padding: '2rem 1rem'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ padding: '0.5rem 1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              {user.username}
-            </div>
-
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '1rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: 'var(--accent-color)',
-                color: 'var(--accent-text)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                textAlign: 'left'
-              }}
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
-          </div>
-        </div>
 
         {/* Password Rotation Banner */}
         <PasswordRotationBanner />

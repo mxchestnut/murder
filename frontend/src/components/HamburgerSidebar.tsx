@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy } from 'lucide-react';
+import { Folder, File, Plus, FolderPlus, Upload, Trash2, Dices, RefreshCw, ChevronDown, ChevronRight, BookOpen, Settings, X, Download, ExternalLink, MessageCircle, Trophy, LogOut } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface HamburgerSidebarProps {
@@ -18,9 +18,10 @@ interface HamburgerSidebarProps {
   onShowDiscordCommands: () => void;
   onShowPromptsTropes: () => void;
   onShowHallOfFame: () => void;
+  onLogout: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onLogout }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -618,6 +619,34 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             </button>
           </div>
         )}
+
+        {/* Username and Logout at bottom */}
+        <div style={{ marginTop: 'auto', padding: '1rem', borderTop: `2px solid var(--border-color)` }}>
+          <div style={{ padding: '0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+            {user.username}
+          </div>
+          <button
+            onClick={onLogout}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              borderRadius: '4px',
+              border: 'none',
+              background: 'var(--accent-color)',
+              color: 'var(--accent-text)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              fontSize: '1rem',
+              fontWeight: 500
+            }}
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* PathCompanion Import Modal */}
