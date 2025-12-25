@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { X, Check } from 'lucide-react';
+import 'react-easy-crop/react-easy-crop.css';
 
 interface ImageCropperProps {
   image: string;

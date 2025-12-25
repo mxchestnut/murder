@@ -550,18 +550,6 @@ export default function CharacterSheets() {
                 </div>
               </div>
               <div className="character-item-actions">
-                {sheet.isPathCompanion && (
-                  <button
-                    className="icon-button secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      syncPathCompanionCharacter(sheet.id);
-                    }}
-                    title="Sync from PathCompanion"
-                  >
-                    <RefreshCw size={16} />
-                  </button>
-                )}
                 <button
                   className="icon-button danger"
                   onClick={(e) => {

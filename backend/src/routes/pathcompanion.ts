@@ -27,7 +27,15 @@ function decryptPassword(encryptedPassword: string): string {
 async function refreshSessionIfNeeded(userId: number): Promise<string> {
   const [user] = await db.select().from(users).where(eq(users.id, userId));
 
+  if (!user) {
+    throw new Error('User not found');
+  }
+
   if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
+    console.log(`User ${userId} missing PathCompanion credentials:`, {
+      hasUsername: !!user.pathCompanionUsername,
+      hasPassword: !!user.pathCompanionPassword
+    });
     throw new Error('No PathCompanion account connected. Please connect your PathCompanion account in Settings first.');
   }
 
@@ -36,22 +44,29 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
     try {
       // Test if session is still valid
       await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+      console.log(`User ${userId} session ticket is valid`);
       return user.pathCompanionSessionTicket;
     } catch (error) {
-      console.log('Session ticket expired, refreshing...');
+      console.log(`User ${userId} session ticket expired, refreshing...`);
     }
   }
 
   // Session expired or doesn't exist, refresh it
-  const decryptedPassword = decryptPassword(user.pathCompanionPassword);
-  const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, decryptedPassword);
+  try {
+    const decryptedPassword = decryptPassword(user.pathCompanionPassword);
+    const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, decryptedPassword);
 
-  // Update session ticket in database
-  await db.update(users)
-    .set({ pathCompanionSessionTicket: auth.sessionTicket })
-    .where(eq(users.id, userId));
+    // Update session ticket in database
+    await db.update(users)
+      .set({ pathCompanionSessionTicket: auth.sessionTicket })
+      .where(eq(users.id, userId));
 
-  return auth.sessionTicket;
+    console.log(`User ${userId} session refreshed successfully`);
+    return auth.sessionTicket;
+  } catch (error) {
+    console.error(`Failed to refresh session for user ${userId}:`, error);
+    throw new Error(`Failed to refresh PathCompanion session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 // Login endpoint doesn't require Murder Tech auth
@@ -147,9 +162,10 @@ router.get('/characters', isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to fetch PathCompanion characters:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
-      error: 'Failed to fetch characters',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage.includes('PathCompanion account') ? errorMessage : 'Failed to fetch characters',
+      details: errorMessage
     });
   }
 });
