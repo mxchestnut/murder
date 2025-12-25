@@ -17,9 +17,8 @@ export async function reinitializeDatabase(databaseUrl: string) {
   const newPool = new Pool({
     connectionString: databaseUrl,
     ssl: {
-      rejectUnauthorized: true,
-      // RDS certificates are signed by Amazon, Node.js will accept them
-      // No need to provide CA certificate for AWS RDS
+      rejectUnauthorized: false, // Allow AWS RDS self-signed certificates
+      // Note: For maximum security, download RDS CA bundle and set ca: fs.readFileSync('rds-ca-bundle.pem')
     }
   });
 
