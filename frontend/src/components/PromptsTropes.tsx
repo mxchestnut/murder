@@ -182,7 +182,7 @@ export default function PromptsTropes() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            {viewMode === 'prompts' ? '💭 RP Prompts' : '🎭 Tropes'}
+            {viewMode === 'prompts' ? 'RP Prompts' : 'Tropes'}
           </h1>
           <p className="text-gray-400">
             {viewMode === 'prompts'
@@ -230,7 +230,7 @@ export default function PromptsTropes() {
               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          🎭 Tropes
+          Tropes
         </button>
         <button
           onClick={() => setViewMode('schedules')}

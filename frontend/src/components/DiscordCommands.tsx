@@ -396,7 +396,7 @@ export default function DiscordCommands() {
         </ol>
 
         <div className="feature-highlight">
-          <h3>🌟 New Features!</h3>
+          <h3>New Features!</h3>
           <ul>
             <li><strong>Daily Prompts:</strong> Get creative inspiration with !prompt and !trope</li>
             <li><strong>Hall of Fame:</strong> Star epic moments (⭐ × 10) to immortalize them</li>

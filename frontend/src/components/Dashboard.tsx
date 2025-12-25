@@ -283,7 +283,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 gap: '0.5rem'
               }}
             >
-              📊 Stats
+              Stats
             </button>
 
             <button
@@ -503,7 +503,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                             marginBottom: '-2px'
                           }}
                         >
-                          📝 Bio
+                          Bio
                         </button>
                         <button
                           onClick={() => setCharacterTab('memories')}

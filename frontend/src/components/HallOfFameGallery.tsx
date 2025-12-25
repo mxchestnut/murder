@@ -217,7 +217,7 @@ export default function HallOfFameGallery() {
             fontWeight: '500'
           }}
         >
-          📊 Stats
+          Stats
         </button>
       </div>
 
@@ -717,7 +717,7 @@ export default function HallOfFameGallery() {
                 marginBottom: '2rem',
                 border: '1px solid var(--border-color)'
               }}>
-                <h3 style={{ marginBottom: '1rem' }}>📊 Character Leaderboard</h3>
+                <h3 style={{ marginBottom: '1rem' }}>Character Leaderboard</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--border-color)' }}>

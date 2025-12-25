@@ -111,7 +111,7 @@ export default function CharacterMemories({ characterId, characterName, guildId 
     <div style={{ padding: '1.5rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          📝 {characterName}'s Memories
+          {characterName}'s Memories
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Track important moments and character development
@@ -183,7 +183,7 @@ export default function CharacterMemories({ characterId, characterName, guildId 
           borderRadius: '8px',
           border: '1px dashed var(--border-color)'
         }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📝</div>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}></div>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>No memories yet</h3>
           <p style={{ color: 'var(--text-secondary)' }}>
             Add the first memory to track {characterName}'s journey

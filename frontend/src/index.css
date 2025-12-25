@@ -5,44 +5,44 @@
 }
 
 :root {
-  /* Light theme - Dark grey with orange text */
-  --bg-primary: #B3B2B0;
-  --bg-secondary: #6C6A68;
-  --bg-tertiary: #524944;
-  --text-primary: #7C3306;
-  --text-secondary: #B34B0C;
-  --text-tertiary: #524944;
-  --border-color: #524944;
-  --hover-bg: #6C6A68;
+  /* Light theme - White background with black text */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --border-color: #dee2e6;
+  --hover-bg: #f1f3f5;
 
-  /* Orange accent colors */
-  --accent-color: #B34B0C;
-  --accent-hover: #7C3306;
-  --accent-light: rgba(179, 75, 12, 0.1);
-  --accent-text: #B3B2B0;
+  /* Crimson accent color */
+  --accent-color: #DC143C;
+  --accent-hover: #B01030;
+  --accent-light: rgba(220, 20, 60, 0.1);
+  --accent-text: #ffffff;
 
   /* Subtle shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 :root[data-theme="dark"] {
-  /* Dark theme - Lighter grey with darker orange text */
-  --bg-primary: #37322E;
-  --bg-secondary: #524944;
-  --bg-tertiary: #6C6A68;
-  --text-primary: #B34B0C;
-  --text-secondary: #7C3306;
-  --text-tertiary: #6C6A68;
-  --border-color: #524944;
-  --hover-bg: #524944;
+  /* Dark theme - Black background with white text */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --text-primary: #f8f9fa;
+  --text-secondary: #e9ecef;
+  --text-tertiary: #adb5bd;
+  --border-color: #495057;
+  --hover-bg: #404040;
 
-  /* Orange accent colors */
-  --accent-color: #B34B0C;
-  --accent-hover: #7C3306;
-  --accent-light: rgba(179, 75, 12, 0.15);
-  --accent-text: #37322E;
+  /* Crimson accent color */
+  --accent-color: #FF1744;
+  --accent-hover: #DC143C;
+  --accent-light: rgba(255, 23, 68, 0.15);
+  --accent-text: #ffffff;
 
   /* Subtle shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);

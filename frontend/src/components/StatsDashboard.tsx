@@ -121,7 +121,7 @@ export default function StatsDashboard() {
   return (
     <div className="min-h-screen bg-[#f5f5dc] p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-serif text-[#3a2f2a] mb-8">📊 Stats Dashboard</h1>
+        <h1 className="text-4xl font-serif text-[#3a2f2a] mb-8">Stats Dashboard</h1>
 
         {/* Overview Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -138,11 +138,11 @@ export default function StatsDashboard() {
             <div className="text-2xl font-bold text-[#3a2f2a]">{overview?.totalDiceRolls || 0}</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4 border border-[#8b7355]">
-            <div className="text-sm text-gray-600">Nat 20s 🎲</div>
+            <div className="text-sm text-gray-600">Nat 20s</div>
             <div className="text-2xl font-bold text-green-600">{overview?.nat20Count || 0}</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4 border border-[#8b7355]">
-            <div className="text-sm text-gray-600">Nat 1s 💀</div>
+            <div className="text-sm text-gray-600">Nat 1s</div>
             <div className="text-2xl font-bold text-red-600">{overview?.nat1Count || 0}</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4 border border-[#8b7355]">
