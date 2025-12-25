@@ -33,6 +33,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   // Collapsible sections
   const [charactersExpanded, setCharactersExpanded] = useState(true);
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
+  const [userMenuExpanded, setUserMenuExpanded] = useState(false);
 
   useEffect(() => {
     loadCharacters();
@@ -496,30 +497,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           </button>
         </div>
 
-        {/* Settings Button */}
-        <div style={{ borderBottom: `1px solid var(--border-color)` }}>
-          <button
-            onClick={() => onShowSettings()}
-            style={{
-              width: '100%',
-              padding: '1rem',
-              borderRadius: '0',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '1rem',
-              textAlign: 'left'
-            }}
-          >
-            <Settings size={18} />
-            Settings
-          </button>
-        </div>
-
         {/* Discord Commands Button */}
         <div style={{ borderBottom: `1px solid var(--border-color)` }}>
           <button
@@ -620,32 +597,76 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           </div>
         )}
 
-        {/* Username and Logout at bottom */}
-        <div style={{ marginTop: 'auto', padding: '1rem', borderTop: `2px solid var(--border-color)` }}>
-          <div style={{ padding: '0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-            {user.username}
-          </div>
-          <button
-            onClick={onLogout}
+        {/* User Menu at bottom - Accordion */}
+        <div style={{ marginTop: 'auto', borderTop: `2px solid var(--border-color)` }}>
+          <div
+            onClick={() => setUserMenuExpanded(!userMenuExpanded)}
             style={{
-              width: '100%',
-              padding: '0.75rem',
-              borderRadius: '4px',
-              border: 'none',
-              background: 'var(--accent-color)',
-              color: 'var(--accent-text)',
-              cursor: 'pointer',
+              padding: '1rem',
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              fontSize: '1rem',
-              fontWeight: 500
+              cursor: 'pointer',
+              background: 'var(--bg-primary)'
             }}
           >
-            <LogOut size={18} />
-            Logout
-          </button>
+            <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '1rem' }}>
+              {user.username}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Settings size={18} style={{ color: 'var(--text-primary)' }} />
+              {userMenuExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            </div>
+          </div>
+          {userMenuExpanded && (
+            <div style={{ padding: '0.5rem 1rem 1rem 1rem' }}>
+              <button
+                onClick={() => {
+                  onShowSettings();
+                  setUserMenuExpanded(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1rem',
+                  marginBottom: '0.5rem',
+                  textAlign: 'left'
+                }}
+              >
+                <Settings size={18} />
+                Settings
+              </button>
+              <button
+                onClick={onLogout}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--accent-color)',
+                  color: 'var(--accent-text)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  textAlign: 'left'
+                }}
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
