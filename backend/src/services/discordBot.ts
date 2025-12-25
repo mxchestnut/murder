@@ -932,9 +932,9 @@ async function handleConnect(message: Message, args: string[]) {
 
   try {
     // Send a DM to the user for privacy
-    await message.author.send('🔐 Connecting to Murder Tech...');
+    await message.author.send('🔐 Connecting to Murder...');
 
-    // Authenticate with Murder Tech backend
+    // Authenticate with Murder backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
     const response = await axios.post(`${API_URL}/api/discord/login`, {
       username,
@@ -944,7 +944,7 @@ async function handleConnect(message: Message, args: string[]) {
 
     const { user, characters } = response.data;
 
-    await message.author.send('✅ **Successfully connected to Murder Tech!**\n\n' +
+    await message.author.send('✅ **Successfully connected to Murder!**\n\n' +
       `🎭 Account: **${user.username}**\n` +
       `🎲 Characters: **${characters.length}**\n` +
       (user.pathCompanionConnected ? '🔗 PathCompanion: **Connected**\n' : '') +
@@ -985,11 +985,11 @@ async function handleSyncAll(message: Message) {
       .where(eq(users.discordUserId, message.author.id));
 
     if (!user) {
-      await message.reply('❌ **Discord account not linked to Murder Tech.**\n\n' +
+      await message.reply('❌ **Discord account not linked to Murder.**\n\n' +
         '**To link your account:**\n' +
         '1. Use `!connect <username> <password>` in Discord, OR\n' +
         '2. Visit murder.tech to create/manage your account\n\n' +
-        '💡 Once linked, all your Murder Tech characters will be available!');
+        '💡 Once linked, all your Murder characters will be available!');
       return;
     }
 

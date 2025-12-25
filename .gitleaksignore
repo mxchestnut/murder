@@ -8,7 +8,7 @@ YOUR_SECRET_HERE
 
 # Documentation examples (not real secrets)
 **/kit's docs/**/*.md:generic-api-key
-**/README.md:generic-api-key
+README.md:database-url:36
 
 # Test files with dummy data
 **/*.test.ts:generic-api-key

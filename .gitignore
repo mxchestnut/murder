@@ -48,3 +48,6 @@ tailscale/
 # SSH keys
 *.pem
 *.key
+
+# Private documentation
+kit's docs/

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 
 const router = Router();
 
-// Discord bot authentication - validates Murder Tech credentials and returns user data
+// Discord bot authentication - validates Murder credentials and returns user data
 router.post('/login', async (req, res) => {
   try {
     const { username, password, discordUserId } = req.body;
@@ -41,11 +41,11 @@ router.post('/login', async (req, res) => {
 
       if (existingLink && existingLink.id !== user.id) {
         return res.status(400).json({
-          error: `This Discord account is already linked to another Murder Tech account (${existingLink.username})`
+          error: `This Discord account is already linked to another Murder account (${existingLink.username})`
         });
       }
 
-      // Link this Discord user to the Murder Tech account
+      // Link this Discord user to the Murder account
       await db.update(users)
         .set({ discordUserId })
         .where(eq(users.id, user.id));

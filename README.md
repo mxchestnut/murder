@@ -1,8 +1,94 @@
-# Murder Tech - Discord-Integrated Roleplay Platform
+# Murder - Discord-Integrated Roleplay Platform
 
-**Murder Tech** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
+**Murder** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
 
 🌐 **Website:** [murder.tech](https://murder.tech)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL database (AWS RDS)
+- Discord bot token
+- AWS S3 credentials
+- Google Gemini API key *(optional)*
+
+### Local Development Setup
+
+1. **Clone and install**
+   ```bash
+   git clone https://github.com/mxchestnut/murder.git
+   cd murder
+   npm install
+   cd backend && npm install
+   cd ../frontend && npm install
+   ```
+
+2. **Set up git-secrets** (IMPORTANT)
+   ```bash
+   ./.git-secrets-setup.sh
+   ```
+
+3. **Configure environment** - Create `backend/.env`:
+   ```env
+   DATABASE_URL=postgresql://user:password@host/database
+   SESSION_SECRET=your_random_secret_here
+   DISCORD_BOT_TOKEN=your_bot_token
+   AWS_ACCESS_KEY_ID=your_aws_key
+   AWS_SECRET_ACCESS_KEY=your_aws_secret
+   AWS_S3_BUCKET=your_bucket_name
+   ```
+
+4. **Initialize database**
+   ```bash
+   cd backend
+   npm run db:push
+   ```
+
+5. **Start development**
+   ```bash
+   # Terminal 1 - Backend
+   cd backend && npm run dev
+
+   # Terminal 2 - Frontend
+   cd frontend && npm run dev
+   ```
+
+6. **Access the app**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3000
+
+### Production Deployment (AWS)
+
+**Current Production:**
+- **URL:** https://murder.tech
+- **Server:** AWS EC2 (t2.micro free tier)
+- **Database:** AWS RDS PostgreSQL
+- **Storage:** AWS S3
+- **DNS:** Route53
+
+**Deploy Updates:**
+```bash
+# From your local machine
+git push origin main
+
+# SSH to server
+ssh -i ~/.ssh/murder-tech-key.pem ubuntu@44.210.148.206
+
+# Pull and rebuild
+cd murder-tech
+git pull
+cd backend && npm run build
+pm2 restart murder-tech-backend
+
+# Update frontend if needed
+cd ../frontend && npm run build
+sudo cp -r dist/* /var/www/html/
+```
+
+---
 
 ## Features
 
@@ -35,6 +121,8 @@
 - Save helpful AI responses to knowledge base
 - Semantic search across your content
 
+---
+
 ## Tech Stack
 
 ### Backend
@@ -56,90 +144,15 @@
 - **Storage:** AWS S3
 - **DNS:** AWS Route53
 - **Domain:** murder.tech
+- **SSL:** Let's Encrypt
 
-## Getting Started
-
-### Prerequisites
-- Node.js 18+
-- PostgreSQL database (AWS RDS recommended)
-- Discord bot token
-- AWS S3 credentials
-- Google Gemini API key *(optional - for AI features)*
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/mxchestnut/murder-tech.git
-cd murder-tech
-```
-
-2. **Set up git-secrets** (IMPORTANT - Prevents committing secrets)
-```bash
-./.git-secrets-setup.sh
-```
-
-3. **Install dependencies**
-```bash
-# Root dependencies
-npm install
-
-# Backend
-cd backend && npm install
-
-# Frontend
-cd ../frontend && npm install
-```
-
-4. **Configure environment variables**
-
-Create `backend/.env`:
-```env
-# Database
-DATABASE_URL=postgresql://user:password@host/database
-
-# Authentication
-SESSION_SECRET=your_random_secret_here
-PATHCOMPANION_ENCRYPTION_KEY=your_64_char_hex_string
-
-# Discord Bot
-DISCORD_BOT_TOKEN=your_bot_token
-DISCORD_CLIENT_ID=your_client_id
-
-# AWS S3
-AWS_ACCESS_KEY_ID=your_aws_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret
-AWS_REGION=us-east-1
-AWS_S3_BUCKET=your_bucket_name
-
-# API URLs
-FRONTEND_URL=http://writepretend.com
-API_URL=http://writepretend.com
-
-# OpenAI (optional, for AI features)
-OPENAI_API_KEY=your_openai_key
-```
-
-4. **Run database migrations**
-```bash
-cd backend
-npm run db:push
-```
-
-5. **Start development servers**
-```bash
-# Backend (from backend/)
-npm run dev
-
-# Frontend (from frontend/)
-npm run dev
-```
+---
 
 ## Discord Bot Setup
 
 1. **Create Discord Application**
    - Go to [Discord Developer Portal](https://discord.com/developers/applications)
-   - Create new application named "Murder Tech Bot"
+   - Create new application named "Murder Bot"
    - Go to Bot section, create bot, copy token to `.env`
 
 2. **Set Bot Permissions**
@@ -167,25 +180,7 @@ npm run dev
    Test: hello!   # Proxy as character
    ```
 
-## Deployment
-
-### AWS EC2 Deployment
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed production deployment instructions.
-
-**Quick Deploy:**
-```bash
-# On EC2 instance
-git pull
-npm run build --prefix backend
-npm run build --prefix frontend
-pm2 restart backend
-sudo cp -r frontend/dist/* /var/www/html/
-```
-
-### DNS Configuration
-
-Route53 is already configured to point murder.tech to your EC2 instance.
+---
 
 ## Project Structure
 
@@ -232,7 +227,7 @@ See [kit's docs/MURDER_ROADMAP.md](kit's%20docs/MURDER_ROADMAP.md) for the compl
 ### Discord Bot Commands
 
 **Account Setup:**
-- `!connect <username> <password>` - Link Discord to Murder Tech
+- `!connect <username> <password>` - Link Discord to Murder
 - `!syncall` - Refresh character list
 
 **Character Commands:**
@@ -290,9 +285,9 @@ Contributions are welcome! Please ensure:
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/mxchestnut/writepretend/issues)
-- **Discord:** Join our test server (link coming soon)
-- **Website:** [writepretend.com](http://writepretend.com)
+- **Issues:** [GitHub Issues](https://github.com/mxchestnut/murder/issues)
+- **Discord:** Join our server (link coming soon)
+- **Website:** [murder.tech](https://murder.tech)
 
 ## License
 

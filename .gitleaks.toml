@@ -1,7 +1,7 @@
-# Gitleaks configuration for Murder Tech
+# Gitleaks configuration for Murder
 # Detects secrets, API keys, and credentials before they get committed
 
-title = "Murder Tech Secret Scanning"
+title = "Murder Secret Scanning"
 
 [extend]
 useDefault = true

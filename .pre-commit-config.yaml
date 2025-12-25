@@ -1,4 +1,4 @@
-# Pre-commit hooks for Murder Tech security and code quality
+# Pre-commit hooks for Murder security and code quality
 # See https://pre-commit.com for more information
 
 repos:

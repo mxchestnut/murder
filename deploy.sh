@@ -1,7 +1,7 @@
 #!/bin/bash
 # Simple deploy script
 
-echo "🚀 Deploying updates to Murder Tech..."
+echo "🚀 Deploying updates to Murder..."
 
 # Git pull on server
 echo "📥 Pulling latest code..."
