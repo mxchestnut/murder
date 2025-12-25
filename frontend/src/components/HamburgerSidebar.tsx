@@ -27,6 +27,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
+  const [characterSearch, setCharacterSearch] = useState('');
   const [showPathCompanionImport, setShowPathCompanionImport] = useState(false);
   const [pathCompanionCharacters, setPathCompanionCharacters] = useState<Array<{id: string, name: string, lastModified: string | null}>>([]);
   const [loadingCharacters, setLoadingCharacters] = useState(false);
@@ -355,13 +356,37 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
             </div>
           )}
           {charactersExpanded && (
-            <div style={{ padding: '0 1rem 1rem 1rem', maxHeight: '200px', overflow: 'auto' }}>
-              {characters.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                  No characters yet
-                </p>
-              ) : (
-                characters.map((char) => (
+            <div style={{ padding: '0 1rem 1rem 1rem' }}>
+              {characters.length > 10 && (
+                <input
+                  type="text"
+                  placeholder="Search characters..."
+                  value={characterSearch}
+                  onChange={(e) => setCharacterSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    marginBottom: '0.5rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem'
+                  }}
+                />
+              )}
+              <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+                {characters.length === 0 ? (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                    No characters yet
+                  </p>
+                ) : (
+                  characters
+                    .filter(char =>
+                      char.name.toLowerCase().includes(characterSearch.toLowerCase())
+                    )
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((char) => (
                   <div
                     key={char.id}
                     onClick={() => {
@@ -383,6 +408,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                   </div>
                 ))
               )}
+              </div>
             </div>
           )}
         </div>
