@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Upload, Trash2, Download, Loader, User, Grid, X, ZoomIn } from 'lucide-react';
+import { Image as ImageIcon, Trash2, Download, Loader, User, X, ZoomIn } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface PhotoFile {
