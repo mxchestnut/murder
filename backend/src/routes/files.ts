@@ -252,8 +252,6 @@ router.get('/', isAuthenticated, async (req, res) => {
       userFiles = await query.orderBy(sql`${files.uploadedAt} DESC`);
     }
 
-    const userFiles = await query.orderBy(sql`${files.uploadedAt} DESC`);
-
     // Get storage quota info
     const [userData] = await db
       .select()
