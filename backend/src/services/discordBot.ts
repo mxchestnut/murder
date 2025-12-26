@@ -181,6 +181,15 @@ export function initializeDiscordBot(token: string) {
         case 'memory':
           await handleMemory(message, args);
           break;
+        case 'weeklyreport':
+          await handleWeeklyReport(message);
+          break;
+        case 'monthlyreport':
+          await handleMonthlyReport(message);
+          break;
+        case 'postleaderboard':
+          await handlePostLeaderboard(message, args);
+          break;
         case 'help':
           await handleHelp(message);
           break;
@@ -3345,6 +3354,59 @@ async function handleBotSet(message: Message, args: string[]) {
   }
 }
 
+async function handleWeeklyReport(message: Message) {
+  try {
+    if (!message.guild) {
+      await message.reply('This command can only be used in a server.');
+      return;
+    }
+
+    await message.reply('📊 Generating weekly activity report...');
+    await postWeeklyCharacterReport(message.guild.id);
+  } catch (error) {
+    console.error('Error in !weeklyreport command:', error);
+    await message.reply('❌ Failed to generate weekly report.');
+  }
+}
+
+async function handleMonthlyReport(message: Message) {
+  try {
+    if (!message.guild) {
+      await message.reply('This command can only be used in a server.');
+      return;
+    }
+
+    await message.reply('📅 Generating monthly summary...');
+    await postMonthlyCharacterSummary(message.guild.id);
+  } catch (error) {
+    console.error('Error in !monthlyreport command:', error);
+    await message.reply('❌ Failed to generate monthly summary.');
+  }
+}
+
+async function handlePostLeaderboard(message: Message, args: string[]) {
+  try {
+    if (!message.guild) {
+      await message.reply('This command can only be used in a server.');
+      return;
+    }
+
+    const category = args[0]?.toLowerCase() || 'messages';
+    const validCategories = ['messages', 'rolls', 'crits', 'fails', 'damage'];
+
+    if (!validCategories.includes(category)) {
+      await message.reply(`Usage: \`!postleaderboard <messages|rolls|crits|fails|damage>\`\n\nPosts the leaderboard to the announcement channel.`);
+      return;
+    }
+
+    await message.reply(`🏆 Posting ${category} leaderboard to announcement channel...`);
+    await postLeaderboardToChannel(message.guild.id, category);
+  } catch (error) {
+    console.error('Error in !postleaderboard command:', error);
+    await message.reply('❌ Failed to post leaderboard.');
+  }
+}
+
 // Helper function to track character activity and update stats
 async function trackCharacterActivity(
   characterId: number,
@@ -3403,6 +3465,27 @@ async function trackCharacterActivity(
       .set(updates)
       .where(eq(characterStats.characterId, characterId));
 
+    // Check for milestones and announce them
+    const newStats = { ...stat, ...updates };
+
+    // Message milestones (every 100 messages)
+    if (updates.totalMessages && updates.totalMessages % 100 === 0 && updates.totalMessages > 0) {
+      await announceCharacterMilestone(characterId, 'message_milestone', { count: updates.totalMessages });
+    }
+
+    // Natural 20 milestones (every 10)
+    if (updates.nat20Count && updates.nat20Count % 10 === 0 && updates.nat20Count > 0) {
+      await announceCharacterMilestone(characterId, 'nat20_milestone', { count: updates.nat20Count });
+    }
+
+    // Damage milestones (every 1000 damage)
+    if (updates.totalDamageDealt && updates.totalDamageDealt >= 1000 &&
+        Math.floor(updates.totalDamageDealt / 1000) > Math.floor((stat.totalDamageDealt || 0) / 1000)) {
+      await announceCharacterMilestone(characterId, 'damage_milestone', {
+        totalDamage: updates.totalDamageDealt
+      });
+    }
+
     // Add to activity feed
     await db.insert(activityFeed).values({
       characterId,
@@ -3414,6 +3497,348 @@ async function trackCharacterActivity(
 
   } catch (error) {
     console.error('Error tracking character activity:', error);
+  }
+}
+
+// ===== NewsChannel Analytics =====
+
+/**
+ * Post weekly character activity report to announcement channel
+ */
+export async function postWeeklyCharacterReport(guildId: string) {
+  try {
+    if (!botClient) {
+      console.log('Bot client not initialized');
+      return;
+    }
+
+    const settings = await db.select()
+      .from(botSettings)
+      .where(eq(botSettings.guildId, guildId))
+      .limit(1);
+
+    if (settings.length === 0 || !settings[0].announcementChannelId) {
+      console.log(`No announcement channel set for guild ${guildId}`);
+      return;
+    }
+
+    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    if (!channel?.isTextBased() || !('send' in channel)) {
+      console.log(`Announcement channel ${settings[0].announcementChannelId} is not text-based`);
+      return;
+    }
+
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    // Get top characters by activity in the past week (using channel mappings to filter by guild)
+    const topCharacters = await db.select({
+      character: characterSheets,
+      stats: characterStats
+    })
+      .from(characterStats)
+      .innerJoin(characterSheets, eq(characterStats.characterId, characterSheets.id))
+      .innerJoin(channelCharacterMappings, eq(channelCharacterMappings.characterId, characterSheets.id))
+      .where(and(
+        eq(channelCharacterMappings.guildId, guildId),
+        sql`${characterStats.lastActive} >= ${oneWeekAgo}`
+      ))
+      .orderBy(desc(characterStats.totalMessages))
+      .limit(5);
+
+    if (topCharacters.length === 0) {
+      await channel.send('📊 **Weekly Activity Report**\n\nNo character activity this week. Time to start a new adventure! 🎭');
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(0x5865f2)
+      .setTitle('📊 Weekly Character Activity Report')
+      .setDescription(`Here are the most active characters from the past week!`)
+      .setTimestamp();
+
+    topCharacters.forEach((entry, index) => {
+      const rank = ['🥇', '🥈', '🥉'][index] || `${index + 1}.`;
+      embed.addFields({
+        name: `${rank} ${entry.character.name}`,
+        value: `💬 ${entry.stats.totalMessages} messages • 🎲 ${entry.stats.totalDiceRolls} rolls`,
+        inline: false
+      });
+    });
+
+    await channel.send({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error posting weekly character report:', error);
+  }
+}
+
+/**
+ * Post monthly character summary to announcement channel
+ */
+export async function postMonthlyCharacterSummary(guildId: string) {
+  try {
+    if (!botClient) {
+      console.log('Bot client not initialized');
+      return;
+    }
+
+    const settings = await db.select()
+      .from(botSettings)
+      .where(eq(botSettings.guildId, guildId))
+      .limit(1);
+
+    if (settings.length === 0 || !settings[0].announcementChannelId) {
+      console.log(`No announcement channel set for guild ${guildId}`);
+      return;
+    }
+
+    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    if (!channel?.isTextBased() || !('send' in channel)) {
+      console.log(`Announcement channel ${settings[0].announcementChannelId} is not text-based`);
+      return;
+    }
+
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // Get all guild characters active this month
+    const activeCharacters = await db.select({
+      character: characterSheets,
+      stats: characterStats
+    })
+      .from(characterStats)
+      .innerJoin(characterSheets, eq(characterStats.characterId, characterSheets.id))
+      .innerJoin(channelCharacterMappings, eq(channelCharacterMappings.characterId, characterSheets.id))
+      .where(and(
+        eq(channelCharacterMappings.guildId, guildId),
+        sql`${characterStats.lastActive} >= ${oneMonthAgo}`
+      ));
+
+    if (activeCharacters.length === 0) {
+      await channel.send('📅 **Monthly Summary**\n\nNo character activity this month. The realm has been quiet... 🌙');
+      return;
+    }
+
+    const totalMessages = activeCharacters.reduce((sum, c) => sum + (c.stats.totalMessages || 0), 0);
+    const totalRolls = activeCharacters.reduce((sum, c) => sum + (c.stats.totalDiceRolls || 0), 0);
+    const totalNat20s = activeCharacters.reduce((sum, c) => sum + (c.stats.nat20Count || 0), 0);
+    const totalNat1s = activeCharacters.reduce((sum, c) => sum + (c.stats.nat1Count || 0), 0);
+
+    const embed = new EmbedBuilder()
+      .setColor(0xffd700)
+      .setTitle('📅 Monthly Character Summary')
+      .setDescription(`Activity report for ${activeCharacters.length} characters over the past month`)
+      .addFields(
+        { name: '💬 Total Messages', value: totalMessages.toString(), inline: true },
+        { name: '🎲 Total Dice Rolls', value: totalRolls.toString(), inline: true },
+        { name: '🎉 Natural 20s', value: totalNat20s.toString(), inline: true },
+        { name: '💀 Natural 1s', value: totalNat1s.toString(), inline: true },
+        { name: '🎭 Active Characters', value: activeCharacters.length.toString(), inline: true },
+        { name: '📊 Avg Rolls/Char', value: Math.round(totalRolls / activeCharacters.length).toString(), inline: true }
+      )
+      .setTimestamp();
+
+    await channel.send({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error posting monthly character summary:', error);
+  }
+}
+
+/**
+ * Announce character milestone (level up, achievement, etc.)
+ */
+export async function announceCharacterMilestone(characterId: number, milestoneType: string, details: any) {
+  try {
+    if (!botClient) {
+      console.log('Bot client not initialized');
+      return;
+    }
+
+    const character = await db.select()
+      .from(characterSheets)
+      .where(eq(characterSheets.id, characterId))
+      .limit(1);
+
+    if (character.length === 0) return;
+
+    // Get guild ID from channel mappings
+    const mapping = await db.select()
+      .from(channelCharacterMappings)
+      .where(eq(channelCharacterMappings.characterId, characterId))
+      .limit(1);
+
+    if (mapping.length === 0) return;
+
+    const settings = await db.select()
+      .from(botSettings)
+      .where(eq(botSettings.guildId, mapping[0].guildId))
+      .limit(1);
+
+    if (settings.length === 0 || !settings[0].announcementChannelId) {
+      return;
+    }
+
+    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    if (!channel?.isTextBased() || !('send' in channel)) {
+      return;
+    }
+
+    let embed = new EmbedBuilder()
+      .setTimestamp();
+
+    switch (milestoneType) {
+      case 'level_up':
+        embed.setColor(0x00ff00)
+          .setTitle(`🎉 Level Up!`)
+          .setDescription(`**${character[0].name}** has reached **Level ${details.newLevel}**!`)
+          .addFields({ name: 'Congratulations!', value: 'Your character grows stronger! 💪' });
+        break;
+
+      case 'nat20_milestone':
+        embed.setColor(0xffd700)
+          .setTitle(`🎉 Natural 20 Milestone!`)
+          .setDescription(`**${character[0].name}** has rolled **${details.count}** Natural 20s!`)
+          .addFields({ name: 'Lucky Streak!', value: 'The dice gods smile upon you! 🎲✨' });
+        break;
+
+      case 'message_milestone':
+        embed.setColor(0x5865f2)
+          .setTitle(`💬 Roleplay Milestone!`)
+          .setDescription(`**${character[0].name}** has posted **${details.count}** messages!`)
+          .addFields({ name: 'Dedicated Roleplayer!', value: 'Your storytelling knows no bounds! 📖' });
+        break;
+
+      case 'damage_milestone':
+        embed.setColor(0xff0000)
+          .setTitle(`⚔️ Combat Milestone!`)
+          .setDescription(`**${character[0].name}** has dealt **${details.totalDamage}** total damage!`)
+          .addFields({ name: 'Warrior Supreme!', value: 'Your enemies tremble before you! 💀' });
+        break;
+
+      default:
+        return;
+    }
+
+    if (character[0].avatarUrl) {
+      embed.setThumbnail(character[0].avatarUrl);
+    }
+
+    await channel.send({ embeds: [embed] });
+
+    // Track milestone in activity feed
+    await db.insert(activityFeed).values({
+      characterId,
+      activityType: milestoneType,
+      description: `Milestone: ${milestoneType}`,
+      metadata: JSON.stringify(details),
+      timestamp: new Date()
+    });
+
+  } catch (error) {
+    console.error('Error announcing character milestone:', error);
+  }
+}
+
+/**
+ * Post leaderboard to announcement channel
+ */
+export async function postLeaderboardToChannel(guildId: string, category: string = 'messages') {
+  try {
+    if (!botClient) {
+      console.log('Bot client not initialized');
+      return;
+    }
+
+    const settings = await db.select()
+      .from(botSettings)
+      .where(eq(botSettings.guildId, guildId))
+      .limit(1);
+
+    if (settings.length === 0 || !settings[0].announcementChannelId) {
+      console.log(`No announcement channel set for guild ${guildId}`);
+      return;
+    }
+
+    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    if (!channel?.isTextBased() || !('send' in channel)) {
+      console.log(`Announcement channel ${settings[0].announcementChannelId} is not text-based`);
+      return;
+    }
+
+    let orderBy;
+    let title;
+    let emoji;
+    let valueField: keyof typeof characterStats.$inferSelect;
+
+    switch (category) {
+      case 'messages':
+        orderBy = desc(characterStats.totalMessages);
+        title = '💬 Most Active Characters';
+        emoji = '💬';
+        valueField = 'totalMessages';
+        break;
+      case 'rolls':
+        orderBy = desc(characterStats.totalDiceRolls);
+        title = '🎲 Most Dice Rolls';
+        emoji = '🎲';
+        valueField = 'totalDiceRolls';
+        break;
+      case 'crits':
+        orderBy = desc(characterStats.nat20Count);
+        title = '🎉 Most Natural 20s';
+        emoji = '🎉';
+        valueField = 'nat20Count';
+        break;
+      case 'fails':
+        orderBy = desc(characterStats.nat1Count);
+        title = '💀 Most Natural 1s';
+        emoji = '💀';
+        valueField = 'nat1Count';
+        break;
+      case 'damage':
+        orderBy = desc(characterStats.totalDamageDealt);
+        title = '⚔️ Most Damage Dealt';
+        emoji = '⚔️';
+        valueField = 'totalDamageDealt';
+        break;
+      default:
+        return;
+    }
+
+    const stats = await db.select({
+      stats: characterStats,
+      character: characterSheets
+    })
+      .from(characterStats)
+      .innerJoin(characterSheets, eq(characterStats.characterId, characterSheets.id))
+      .innerJoin(channelCharacterMappings, eq(characterSheets.id, channelCharacterMappings.characterId))
+      .where(eq(channelCharacterMappings.guildId, guildId))
+      .orderBy(orderBy)
+      .limit(10);
+
+    if (stats.length === 0) {
+      await channel.send('📊 **Leaderboard**\n\nNo stats available yet. Start playing to track stats!');
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(0xffd700)
+      .setTitle(title)
+      .setDescription('Top 10 characters in this category')
+      .setTimestamp();
+
+    let description = '';
+    stats.forEach((entry, index) => {
+      const rank = ['🥇', '🥈', '🥉'][index] || `${index + 1}.`;
+      const value = entry.stats[valueField] || 0;
+      description += `${rank} **${entry.character.name}** - ${emoji} ${value}\n`;
+    });
+
+    embed.setDescription(description);
+
+    await channel.send({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error posting leaderboard to channel:', error);
   }
 }
 
