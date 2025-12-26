@@ -190,14 +190,14 @@ router.post('/character/share', async (req, res) => {
 /**
  * Import a PathCompanion character
  * POST /api/pathcompanion/import
- * Body: { characterId } - uses stored PathCompanion session
+ * Body: { characterId, mergeWithId? } - uses stored PathCompanion session
  * Requires Murder Tech authentication AND PathCompanion account connection
  */
 router.post('/import', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const userId = user.id;
-    const { characterId } = req.body;
+    const { characterId, mergeWithId } = req.body;
 
     if (!characterId) {
       return res.status(400).json({ error: 'Character ID is required' });
@@ -234,15 +234,41 @@ router.post('/import', isAuthenticated, async (req, res) => {
       bab: combatStats.baseAttackBonus
     });
 
-    // Check if this character is already imported
-    const existing = await db.select().from(characterSheets).where(
+    // Check if this character is already imported by PathCompanion ID
+    const existingByPcId = await db.select().from(characterSheets).where(
       eq(characterSheets.pathCompanionId, characterId)
     );
 
+    // Check for duplicate names (case-insensitive)
+    const { and, sql } = await import('drizzle-orm');
+    const existingByName = await db.select().from(characterSheets).where(
+      and(
+        eq(characterSheets.userId, userId),
+        sql`LOWER(${characterSheets.name}) = LOWER(${character.characterName})`
+      )
+    );
+
+    // If there's a name conflict and no merge decision, ask the user
+    if (existingByPcId.length === 0 && existingByName.length > 0 && !mergeWithId) {
+      return res.status(409).json({
+        conflict: true,
+        message: `A character named "${character.characterName}" already exists. Would you like to merge the PathCompanion data into it?`,
+        existingCharacter: {
+          id: existingByName[0].id,
+          name: existingByName[0].name,
+          level: existingByName[0].level,
+          characterClass: existingByName[0].characterClass,
+          isPathCompanion: existingByName[0].isPathCompanion
+        }
+      });
+    }
+
+    let targetId = existingByPcId.length > 0 ? existingByPcId[0].id : mergeWithId;
+
     let sheet;
 
-    if (existing.length > 0) {
-      // Update existing character
+    if (targetId) {
+      // Update existing character (either by PathCompanion ID or merge target)
       [sheet] = await db.update(characterSheets)
         .set({
           name: character.characterName,
@@ -279,12 +305,14 @@ router.post('/import', isAuthenticated, async (req, res) => {
           weapons: JSON.stringify(weapons),
           armor: JSON.stringify(armor),
           spells: JSON.stringify(spells),
+          isPathCompanion: true,
+          pathCompanionId: characterId,
           pathCompanionData: JSON.stringify(character.data),
           pathCompanionSession: user.pathCompanionSessionTicket,
           lastSynced: new Date(),
           updatedAt: new Date()
         })
-        .where(eq(characterSheets.id, existing[0].id))
+        .where(eq(characterSheets.id, targetId))
         .returning();
     } else {
       // Create new character
@@ -351,7 +379,18 @@ router.post('/import', isAuthenticated, async (req, res) => {
       isPathCompanion: true
     };
 
-    res.status(201).json(sheetWithModifiers);
+    const wasMerge = mergeWithId && existingByPcId.length === 0;
+    const wasUpdate = existingByPcId.length > 0;
+
+    res.status(wasMerge || wasUpdate ? 200 : 201).json({
+      ...sheetWithModifiers,
+      _meta: {
+        action: wasMerge ? 'merged' : (wasUpdate ? 'updated' : 'created'),
+        message: wasMerge
+          ? `PathCompanion data merged into existing character`
+          : (wasUpdate ? `Character synced from PathCompanion` : `New character imported from PathCompanion`)
+      }
+    });
   } catch (error) {
     console.error('Failed to import PathCompanion character:', error);
     res.status(500).json({
