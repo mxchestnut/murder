@@ -81,15 +81,50 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
     }
   };
 
-  const importPathCompanionCharacter = async (charId: string) => {
+  const importPathCompanionCharacter = async (charId: string, mergeWithId?: number) => {
     setImportingPC(true);
     setImportingCharacterId(charId);
     try {
-      await api.post('/pathcompanion/import', { characterId: charId });
+      const response = await api.post('/pathcompanion/import', {
+        characterId: charId,
+        mergeWithId
+      });
+
       loadCharacters();
-      alert('Successfully imported character!');
+      const message = response.data._meta?.message || 'Successfully imported character!';
+      alert(`✓ ${message}`);
     } catch (error: any) {
       console.error('Failed to import PathCompanion character:', error);
+      console.log('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        hasConflict: error.response?.data?.conflict
+      });
+
+      // Handle conflict (duplicate name)
+      if (error.response?.status === 409 && error.response?.data?.conflict) {
+        const conflictData = error.response.data;
+        const shouldMerge = window.confirm(
+          `${conflictData.message}\n\n` +
+          `Existing character: ${conflictData.existingCharacter.name} ` +
+          `(Level ${conflictData.existingCharacter.level} ${conflictData.existingCharacter.characterClass || 'N/A'})\n\n` +
+          `Click OK to merge PathCompanion data into this character, or Cancel to create a separate character.`
+        );
+
+        if (shouldMerge) {
+          // Retry with merge
+          setImportingPC(false);
+          setImportingCharacterId(null);
+          await importPathCompanionCharacter(charId, conflictData.existingCharacter.id);
+          return;
+        }
+        // If they clicked Cancel, import as a new separate character
+        alert('Import cancelled. The character was not imported.');
+        setImportingPC(false);
+        setImportingCharacterId(null);
+        return;
+      }
+
       const errorMsg = error.response?.data?.error || 'Failed to import character.';
       alert(errorMsg);
     } finally {
