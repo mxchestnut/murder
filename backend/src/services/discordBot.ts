@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
+import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
 import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
@@ -53,21 +53,24 @@ export function initializeDiscordBot(token: string) {
     const content = message.content.trim();
 
     // Check for character proxying patterns: "CharName: message" or "!CharName: message"
-    const proxyMatch = content.match(/^!?([\p{L}\p{N}\s]+):\s*(.+)$/u);
+    const proxyRegex = /^!?([\p{L}\p{N}\s]+):\s*(.+)$/u;
+    const proxyMatch = proxyRegex.exec(content);
     if (proxyMatch) {
       await handleProxy(message, proxyMatch[1].trim(), proxyMatch[2]);
       return;
     }
 
     // Check for relationship command: "!Character1 is Character2's descriptor | notes"
-    const relationshipMatch = content.match(/^!([\p{L}\p{N}\s]+)\s+is\s+([\p{L}\p{N}\s]+)'s\s+/ui);
+    const relationshipRegex = /^!([\p{L}\p{N}\s]+)\s+is\s+([\p{L}\p{N}\s]+)'s\s+/ui;
+    const relationshipMatch = relationshipRegex.exec(content);
     if (relationshipMatch) {
       await handleRelationship(message, content);
       return;
     }
 
     // Check for name-based rolling: "!CharName stat"
-    const nameRollMatch = content.match(/^!([\p{L}\p{N}\s]+)\s+(.+)$/u);
+    const nameRollRegex = /^!([\p{L}\p{N}\s]+)\s+(.+)$/u;
+    const nameRollMatch = nameRollRegex.exec(content);
     if (nameRollMatch) {
       const potentialName = nameRollMatch[1].trim();
       const potentialStat = nameRollMatch[2].trim();
@@ -764,7 +767,8 @@ async function handleProfile(message: Message, args: string[]) {
       return;
     }
 
-    const tabMatch = interaction.customId.match(/^tab_(.+)$/);
+    const tabRegex = /^tab_(.+)$/;
+    const tabMatch = tabRegex.exec(interaction.customId);
     if (tabMatch) {
       currentTab = tabMatch[1];
       await interaction.update({
@@ -810,14 +814,15 @@ async function handleRoll(message: Message, args: string[]) {
   const rollParam = args.join(' ').toLowerCase();
 
   // Determine roll type and calculate
-  let rollType = 'ability';
+  let rollType: string;
   let modifier = 0;
   let rollDescription = '';
-  let statName = rollParam;
+  let statName: string;
 
   // Check if it's an ability score
   const abilityScores = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
   if (abilityScores.some(stat => rollParam.includes(stat))) {
+    rollType = 'ability';
     const stat = abilityScores.find(s => rollParam.includes(s))!;
     modifier = Math.floor(((character as any)[stat] - 10) / 2);
     rollDescription = `${stat.charAt(0).toUpperCase() + stat.slice(1)} Check`;
@@ -843,7 +848,7 @@ async function handleRoll(message: Message, args: string[]) {
   // Check if it's a skill
   else {
     rollType = 'skill';
-    let skills = character.skills as any;
+    let skills: any = character.skills;
 
     // Parse skills if they're stored as a JSON string
     if (typeof skills === 'string') {
@@ -910,7 +915,7 @@ async function handleRoll(message: Message, args: string[]) {
 
 // Encryption utilities for PathCompanion password
 const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || node_crypto.randomBytes(32).toString('hex');
-const ALGORITHM = 'aes-256-cbc';
+const ALGORITHM = 'aes-256-gcm';
 
 function encryptPassword(password: string): string {
   const iv = node_crypto.randomBytes(16);
@@ -918,18 +923,21 @@ function encryptPassword(password: string): string {
   const cipher = node_crypto.createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(password, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
+  const authTag = cipher.getAuthTag();
+  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
 }
 
 function decryptPassword(encryptedPassword: string): string {
   const parts = encryptedPassword.split(':');
-  if (parts.length !== 2) {
+  if (parts.length !== 3) {
     throw new Error('Invalid encrypted password format');
   }
   const iv = Buffer.from(parts[0], 'hex');
-  const encrypted = parts[1];
+  const authTag = Buffer.from(parts[1], 'hex');
+  const encrypted = parts[2];
   const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
   const decipher = node_crypto.createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(authTag);
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
@@ -1137,7 +1145,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
     if (!webhook) {
       // Check if a webhook already exists
       const webhooks = await webhookChannel.fetchWebhooks();
-      webhook = webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
+      webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
       if (!webhook) {
         // Create new webhook
@@ -1147,7 +1155,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
         });
       }
 
-      webhookCache.set(webhookChannel.id, webhook!);
+      webhookCache.set(webhookChannel.id, webhook);
     }
 
     // Delete the original message
@@ -1177,7 +1185,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
         webhookOptions.threadId = channel.id;
       }
 
-      await webhook!.send(webhookOptions);
+      await webhook.send(webhookOptions);
 
       // Track stats
       await trackCharacterActivity(character.id, 'message', `Sent message in ${(channel as any).name || 'thread'}`, {
@@ -1197,7 +1205,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
         // Recreate webhook
         const webhooks = await webhookChannel.fetchWebhooks();
-        webhook = webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
+        webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
         if (!webhook) {
           webhook = await webhookChannel.createWebhook({
@@ -1206,7 +1214,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
           });
         }
 
-        webhookCache.set(webhookChannel.id, webhook!);
+        webhookCache.set(webhookChannel.id, webhook);
 
         // Retry send
         const retryOptions: any = {
@@ -1219,7 +1227,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
           retryOptions.threadId = channel.id;
         }
 
-        await webhook!.send(retryOptions);
+        await webhook.send(retryOptions);
       } else {
         throw webhookError;
       }
@@ -1433,7 +1441,8 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
 async function handleRelationship(message: Message, content: string) {
   try {
     // Parse: !Character1 is Character2's descriptor | notes
-    const match = content.match(/^!([\p{L}\p{N}\s]+)\s+is\s+([\p{L}\p{N}\s]+)'s\s+(.+?)(?:\s*\|\s*(.+))?$/ui);
+    const relationshipRegex = /^!([\p{L}\p{N}\s]+)\s+is\s+([\p{L}\p{N}\s]+)'s\s+(.+?)(?:\s*\|\s*(.+))?$/ui;
+    const match = relationshipRegex.exec(content);
 
     if (!match) {
       await message.reply('❌ Invalid relationship format. Use: `!Character1 is Character2\'s descriptor | notes`\nExample: `!Ogun is Rig\'s best friend | They admire each other.`');
@@ -1731,7 +1740,14 @@ async function handleLearnUrl(message: Message, args: string[]) {
 // Generic knowledge lookup function with AI fallback
 async function handleKnowledgeLookup(message: Message, args: string[], category: string, emoji: string, categoryName: string, gameSystem?: string) {
   if (args.length === 0) {
-    await message.reply(`Usage: \`!${category} <name>\`\nExample: \`!${category} ${category === 'kink' ? 'bondage' : category === 'feat' ? 'Power Attack' : 'Fireball'}\``);
+    // Provide category-specific examples
+    let exampleTerm = 'Fireball'; // Default for spell
+    if (category === 'kink') {
+      exampleTerm = 'bondage';
+    } else if (category === 'feat') {
+      exampleTerm = 'Power Attack';
+    }
+    await message.reply(`Usage: \`!${category} <name>\`\nExample: \`!${category} ${exampleTerm}\``);
     return;
   }
 
