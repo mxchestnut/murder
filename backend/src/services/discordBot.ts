@@ -2236,8 +2236,7 @@ async function handleStats(message: Message, args: string[]) {
         totalDiceRolls: 0,
         nat20Count: 0,
         nat1Count: 0,
-        totalDamageDealt: 0,
-        createdAt: new Date()
+        totalDamageDealt: 0
       });
       stats = await db.select()
         .from(characterStats)
