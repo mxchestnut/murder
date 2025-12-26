@@ -3,7 +3,11 @@ const fs = require('fs');
 const path = require('path');
 
 async function runMigration() {
-  // Import after secrets are loaded
+  // Load secrets first
+  const { loadSecretsAndReinitDb } = require('./dist/config/secrets');
+  await loadSecretsAndReinitDb();
+
+  // Now import database after secrets are loaded
   const { db } = require('./dist/db/index');
   const { sql } = require('drizzle-orm');
 
@@ -32,5 +36,4 @@ async function runMigration() {
   process.exit(0);
 }
 
-// Wait a bit for secrets to load
-setTimeout(() => runMigration().catch(e => { console.error('Failed:', e); process.exit(1); }), 2000);
+runMigration().catch(e => { console.error('Failed:', e); process.exit(1); });
