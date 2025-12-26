@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
+import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, PublicThreadChannel, PrivateThreadChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
 import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
@@ -1105,28 +1105,38 @@ async function handleProxy(message: Message, characterName: string, messageText:
     const character = matchedCharacters[0];
     const channel = message.channel;
 
-    // Only work in text channels
-    if (!(channel instanceof TextChannel || channel instanceof NewsChannel)) {
+    // Work in text channels, news channels, and threads (including forum posts)
+    if (!(channel instanceof TextChannel || channel instanceof NewsChannel || channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel)) {
+      return;
+    }
+
+    // For threads, get the parent channel for webhooks
+    const webhookChannel = (channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel)
+      ? channel.parent
+      : channel;
+
+    if (!webhookChannel) {
+      console.error('Could not find parent channel for thread');
       return;
     }
 
     // Get or create webhook for this channel
-    let webhook = webhookCache.get(channel.id);
+    let webhook = webhookCache.get(webhookChannel.id);
 
     if (!webhook) {
       // Check if a webhook already exists
-      const webhooks = await channel.fetchWebhooks();
+      const webhooks = await webhookChannel.fetchWebhooks();
       webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
       if (!webhook) {
         // Create new webhook
-        webhook = await channel.createWebhook({
+        webhook = await webhookChannel.createWebhook({
           name: 'Murder Proxy',
           reason: 'Character proxying for Murder Tech Portal'
         });
       }
 
-      webhookCache.set(channel.id, webhook);
+      webhookCache.set(webhookChannel.id, webhook);
     }
 
     // Delete the original message
@@ -1145,11 +1155,18 @@ async function handleProxy(message: Message, characterName: string, messageText:
     }
 
     try {
-      await webhook.send({
+      const webhookOptions: any = {
         content: messageText,
         username: character.name,
         avatarURL: avatarUrl
-      });
+      };
+
+      // If we're in a thread, specify the thread ID
+      if (channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel) {
+        webhookOptions.threadId = channel.id;
+      }
+
+      await webhook.send(webhookOptions);
 
       // Track stats
       await trackCharacterActivity(character.id, 'message', `Sent message in ${channel.name}`, {
@@ -1161,27 +1178,33 @@ async function handleProxy(message: Message, characterName: string, messageText:
       // If webhook fails (e.g., Unknown Webhook error), clear cache and retry once
       if (webhookError.code === 10015) {
         console.log('Webhook became invalid, clearing cache and retrying...');
-        webhookCache.delete(channel.id);
+        webhookCache.delete(webhookChannel.id);
 
         // Recreate webhook
-        const webhooks = await channel.fetchWebhooks();
+        const webhooks = await webhookChannel.fetchWebhooks();
         webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
         if (!webhook) {
-          webhook = await channel.createWebhook({
+          webhook = await webhookChannel.createWebhook({
             name: 'Murder Proxy',
             reason: 'Character proxying for Murder Tech Portal'
           });
         }
 
-        webhookCache.set(channel.id, webhook);
+        webhookCache.set(webhookChannel.id, webhook);
 
         // Retry send
-        await webhook.send({
+        const retryOptions: any = {
           content: messageText,
           username: character.name,
           avatarURL: avatarUrl
-        });
+        };
+
+        if (channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel) {
+          retryOptions.threadId = channel.id;
+        }
+
+        await webhook.send(retryOptions);
       } else {
         throw webhookError;
       }
