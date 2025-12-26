@@ -281,30 +281,6 @@ export const activityFeedRelations = relations(activityFeed, ({ one }) => ({
   })
 }));
 
-// Character Relationships
-export const relationships = pgTable('relationships', {
-  id: serial('id').primaryKey(),
-  character1Id: integer('character1_id').notNull().references(() => characterSheets.id),
-  character2Id: integer('character2_id').notNull().references(() => characterSheets.id),
-  relationshipType: text('relationship_type'), // 'ally', 'rival', 'romantic', 'family', etc.
-  intimacyLevel: integer('intimacy_level').default(0), // 0-10 scale
-  notes: text('notes'),
-  keyMoments: text('key_moments'), // JSON array
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-export const relationshipsRelations = relations(relationships, ({ one }) => ({
-  character1: one(characterSheets, {
-    fields: [relationships.character1Id],
-    references: [characterSheets.id]
-  }),
-  character2: one(characterSheets, {
-    fields: [relationships.character2Id],
-    references: [characterSheets.id]
-  })
-}));
-
 // File Uploads
 export const files = pgTable('files', {
   id: serial('id').primaryKey(),

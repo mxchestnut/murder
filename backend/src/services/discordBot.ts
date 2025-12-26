@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -59,14 +59,6 @@ export function initializeDiscordBot(token: string) {
       const characterName = proxyMatch[1].trim();
       const messageContent = proxyMatch[2];
       await handleProxy(message, characterName, messageContent);
-      return;
-    }
-
-    // Check for relationship command: "!Character1 is Character2's descriptor | notes"
-    const relationshipRegex = /^!([\p{L}\p{N}\s]+)\s+is\s+([\p{L}\p{N}\s]+)'s\s+/ui;
-    const relationshipMatch = relationshipRegex.exec(content);
-    if (relationshipMatch) {
-      await handleRelationship(message, content);
       return;
     }
 
@@ -568,42 +560,7 @@ async function handleProfile(message: Message, args: string[]) {
     }
   };
 
-  const buildRelationshipsTab = async (embed: EmbedBuilder) => {
-    if (character.importantRelationships) {
-      embed.addFields({ name: '👥 Important Relationships', value: truncate(stripHtml(character.importantRelationships), 1024), inline: false });
-    }
 
-    const relationshipNotes = [];
-    if (character.protectedRelationship) relationshipNotes.push(`**Would Die For:** ${stripHtml(character.protectedRelationship)}`);
-    if (character.rival) relationshipNotes.push(`**Rival:** ${stripHtml(character.rival)}`);
-    if (character.affiliatedGroups) relationshipNotes.push(`**Groups:** ${stripHtml(character.affiliatedGroups)}`);
-    if (relationshipNotes.length > 0) {
-      embed.addFields({ name: '🤝 Key Connections', value: truncate(relationshipNotes.join('\n')), inline: false });
-    }
-
-    const trackedRels = await db.query.relationships.findMany({
-      where: (rels, { eq, or }) =>
-        or(
-          eq(rels.character1Id, character.id),
-          eq(rels.character2Id, character.id)
-        ),
-      with: {
-        character1: true,
-        character2: true
-      }
-    });
-
-    if (trackedRels.length > 0) {
-      const relStrings = trackedRels.map(rel => {
-        const isChar1 = rel.character1Id === character.id;
-        const otherChar = isChar1 ? rel.character2 : rel.character1;
-        const descriptor = rel.relationshipType || 'connection';
-        const notes = rel.notes ? ` | ${rel.notes}` : '';
-        return `- ${descriptor} of **${otherChar.name}**${notes}`;
-      });
-      embed.addFields({ name: '💫 Tracked Relationships', value: truncate(relStrings.join('\n'), 1024), inline: false });
-    }
-  };
 
   const buildBeliefsTab = (embed: EmbedBuilder) => {
     if (character.beliefsPhilosophy) {
@@ -687,10 +644,6 @@ async function handleProfile(message: Message, args: string[]) {
       }
       case 'backstory': {
         buildBackstoryTab(embed);
-        break;
-      }
-      case 'relationships': {
-        await buildRelationshipsTab(embed);
         break;
       }
       case 'beliefs': {
@@ -1674,82 +1627,6 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
 }
 
 // AI FAQ System
-
-async function handleRelationship(message: Message, content: string) {
-  try {
-    // Parse: !Character1 is Character2's descriptor | notes
-    const relationshipRegex = /^!([\p{L}\p{N}\s]+)\s+is\s+([\p{L}\p{N}\s]+)'s\s+(.+?)(?:\s*\|\s*(.+))?$/ui;
-    const match = relationshipRegex.exec(content);
-
-    if (!match) {
-      await message.reply('❌ Invalid relationship format. Use: `!Character1 is Character2\'s descriptor | notes`\nExample: `!Ogun is Rig\'s best friend | They admire each other.`');
-      return;
-    }
-
-    const char1Name = match[1].trim();
-    const char2Name = match[2].trim();
-    const descriptor = match[3].trim();
-    const notes = match[4]?.trim() || '';
-
-    // Find both characters
-    const char1 = await db.query.characterSheets.findFirst({
-      where: (chars, { eq, sql }) =>
-        sql`LOWER(${chars.name}) = ${char1Name.toLowerCase()}`
-    });
-
-    const char2 = await db.query.characterSheets.findFirst({
-      where: (chars, { eq, sql }) =>
-        sql`LOWER(${chars.name}) = ${char2Name.toLowerCase()}`
-    });
-
-    if (!char1) {
-      await message.reply(`❌ Character "${char1Name}" not found.`);
-      return;
-    }
-
-    if (!char2) {
-      await message.reply(`❌ Character "${char2Name}" not found.`);
-      return;
-    }
-
-    // Check if relationship already exists
-    const existing = await db.query.relationships.findFirst({
-      where: (rels, { and, eq, or }) =>
-        and(
-          or(
-            and(eq(rels.character1Id, char1.id), eq(rels.character2Id, char2.id)),
-            and(eq(rels.character1Id, char2.id), eq(rels.character2Id, char1.id))
-          )
-        )
-    });
-
-    if (existing) {
-      // Update existing relationship
-      await db.update(relationships)
-        .set({
-          relationshipType: descriptor,
-          notes: notes,
-          updatedAt: new Date()
-        })
-        .where(eq(relationships.id, existing.id));
-
-      await message.reply(`✅ Updated relationship: **${char1.name}** is ${char2.name}'s **${descriptor}**${notes ? ` | ${notes}` : ''}`);
-    } else {
-      // Create new relationship
-      await db.insert(relationships).values({
-        character1Id: char1.id,
-        character2Id: char2.id,
-        relationshipType: descriptor,
-        notes: notes
-      });
-
-      await message.reply(`✅ Added relationship: **${char1.name}** is ${char2.name}'s **${descriptor}**${notes ? ` | ${notes}` : ''}`);
-    }
-  } catch (error) {
-    console.error('Error handling relationship command:', error);
-    await message.reply('❌ Failed to save relationship.');
-  }
-}
 
 async function handleAsk(message: Message, args: string[]) {
   if (args.length === 0) {
