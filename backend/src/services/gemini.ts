@@ -25,8 +25,8 @@ export async function askGemini(question: string, context?: string): Promise<str
     });
 
     const prompt = context
-      ? `Context: ${context}\n\nQuestion: ${question}\n\nProvide a concise, helpful answer for a D&D/Pathfinder player or GM.`
-      : `Question: ${question}\n\nProvide a concise, helpful answer for a D&D/Pathfinder player or GM.`;
+      ? `Context: ${context}\n\nQuestion: ${question}\n\nProvide a concise, helpful answer for a Pathfinder 1st Edition (1e) player or GM. ONLY use information from Pathfinder 1e published by Paizo. Do NOT include D&D 5e, D&D 3.5e, or information from other game systems unless explicitly asked.`
+      : `Question: ${question}\n\nProvide a concise, helpful answer for a Pathfinder 1st Edition (1e) player or GM. ONLY use information from Pathfinder 1e published by Paizo. Do NOT include D&D 5e, D&D 3.5e, or information from other game systems unless explicitly asked.`;
 
     const result = await model.generateContent(prompt);
     const response = result.response;

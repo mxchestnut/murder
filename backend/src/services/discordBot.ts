@@ -2039,89 +2039,8 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
       return;
     }
 
-    // If not in KB, try Wikipedia (with search fallback)
-    if ('sendTyping' in message.channel) {
-      await message.channel.sendTyping();
-    }
-
-    try {
-      let wikiPage: any = null;
-      let wikiSummary: any = null;
-
-      try {
-        // Try exact match first
-        wikiPage = await wiki.page(searchTerm);
-        wikiSummary = await wikiPage.summary();
-      } catch (exactError) {
-        // If exact match fails, try search
-        const searchResults = await wiki.search(searchTerm);
-        if (searchResults.results.length > 0) {
-          // Use the first search result
-          wikiPage = await wiki.page(searchResults.results[0].title);
-          wikiSummary = await wikiPage.summary();
-        }
-      }
-
-      if (wikiPage && wikiSummary && wikiSummary.extract && wikiSummary.extract.length > 50) {
-        // Truncate if too long for Discord embed
-        const truncatedSummary = wikiSummary.extract.length > 4000
-          ? wikiSummary.extract.substring(0, 3997) + '...'
-          : wikiSummary.extract;
-
-        const embed = new EmbedBuilder()
-          .setColor(0xf39c12)
-          .setTitle(`${emoji} ${wikiSummary.title}`)
-          .setDescription(truncatedSummary)
-          .addFields(
-            { name: 'Category', value: categoryName, inline: true },
-            { name: 'Source', value: '📚 Wikipedia', inline: true }
-          )
-          .setFooter({ text: `React ⭐ to save this to knowledge base • ${wikiPage.canonicalurl}` })
-          .setTimestamp();
-
-        if (wikiSummary.thumbnail?.source) {
-          embed.setThumbnail(wikiSummary.thumbnail.source);
-        }
-
-        const reply = await message.reply({ embeds: [embed] });
-
-        // Add star reaction for saving
-        await reply.react('⭐');
-
-        // Listen for star reaction to save to KB
-        const filter = (reaction: any, user: any) => {
-          return reaction.emoji.name === '⭐' && !user.bot;
-        };
-
-        const collector = reply.createReactionCollector({ filter, time: 60000, max: 1 });
-
-        collector.on('collect', async () => {
-          try {
-            const guildId = message.guild?.id || 'dm';
-            await db.insert(knowledgeBase).values({
-              guildId,
-              question: searchTerm,
-              answer: wikiSummary.extract,
-              category,
-              sourceUrl: wikiPage.canonicalurl,
-              aiGenerated: false,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-            await message.reply('✅ Saved Wikipedia article to this server\'s knowledge base!');
-          } catch (error) {
-            console.error('Error saving to knowledge base:', error);
-          }
-        });
-
-        return;
-      }
-    } catch (wikiError) {
-      // Wikipedia didn't find anything, use AI
-      console.log(`Wikipedia search failed for "${searchTerm}", using AI...`);
-    }
-
-    // If not in Wikipedia, ask AI as fallback
+    // Skip Wikipedia - we want ONLY Pathfinder 1e data, not generic D&D
+    // Go straight to AI with strict Pathfinder 1e prompts
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
@@ -2129,14 +2048,14 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
     // Add game system context if specified
     const systemContext = gameSystem ? ` from ${gameSystem}` : '';
 
-    // Adjust prompt based on category
+    // Adjust prompt based on category - enforce Pathfinder 1e ONLY
     let aiQuestion = '';
     if (category === 'kink') {
       aiQuestion = `Provide a concise, educational definition of "${searchTerm}" in the context of BDSM and kink practices. Include: 1) Clear definition (2-3 sentences), 2) Common practices or variations, 3) Safety/consent considerations if relevant. Keep response under 300 words. Be factual, respectful, and informative. Do NOT talk about D&D, Pathfinder, or tabletop games.`;
     } else if (category === 'spell') {
-      aiQuestion = `Provide detailed information about the spell "${searchTerm}" from Pathfinder or D&D. Include: spell level, school, casting time, components, duration, and description of effects. Be specific and comprehensive. Only use information from Pathfinder or D&D game systems.`;
+      aiQuestion = `Provide detailed information about the spell "${searchTerm}" from Pathfinder 1st Edition (1e). Include: spell level, school, casting time, components, range, duration, saving throw, spell resistance, and full description of effects. ONLY use information from Pathfinder 1e published by Paizo. DO NOT include D&D 5e, D&D 3.5e, or other game system information. If the spell does not exist in Pathfinder 1e, say so explicitly. Be specific and comprehensive about the Pathfinder 1e version only.`;
     } else if (category === 'feat') {
-      aiQuestion = `Provide detailed information about the feat "${searchTerm}" from Pathfinder. Include: prerequisites, benefits, and tactical uses. Only use information from Pathfinder. Do not include information from other game systems.`;
+      aiQuestion = `Provide detailed information about the feat "${searchTerm}" from Pathfinder 1st Edition (1e). Include: feat type, prerequisites, benefit description, and special notes. ONLY use information from Pathfinder 1e published by Paizo. DO NOT include D&D 5e, D&D 3.5e, or other game system information. If the feat does not exist in Pathfinder 1e, say so explicitly. Be specific and comprehensive about the Pathfinder 1e version only.`;
     } else {
       aiQuestion = `Provide detailed information about the ${categoryName.toLowerCase()} "${searchTerm}"${systemContext}. Be specific and comprehensive.${gameSystem ? ` Only use information from ${gameSystem}. Do not include information from other game systems.` : ''}`;
     }
@@ -2188,7 +2107,20 @@ async function handleKnowledgeLookup(message: Message, args: string[], category:
 
   } catch (error) {
     console.error(`Error in !${category} command:`, error);
-    await message.reply(`❌ Sorry, I encountered an error looking up that ${categoryName.toLowerCase()}.`);
+
+    // Check if it's a quota error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('quota') || errorMessage.includes('429')) {
+      await message.reply(
+        `❌ AI service is currently over quota. Please:\n` +
+        `1. Use \`!learnurl <url>\` to add ${categoryName.toLowerCase()}s from d20pfsrd.com\n` +
+        `2. Use \`!learn ${searchTerm} | <description> | ${category}\` to add it manually\n` +
+        `3. Try again in a few minutes when quota resets\n\n` +
+        `Example: \`!learnurl <https://www.d20pfsrd.com/feats/${searchTerm.toLowerCase().replaceAll(' ', '-')}/>\``
+      );
+    } else {
+      await message.reply(`❌ Sorry, I encountered an error looking up that ${categoryName.toLowerCase()}.`);
+    }
   }
 }
 
