@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { characterSheets, users } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { characterSheets, users, files } from '../db/schema';
+import { eq, and, isNull } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 import { sendRollToDiscord } from '../services/discordBot';
+import { deleteFromS3 } from '../config/s3';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -533,9 +534,55 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Character sheet not found' });
     }
 
+    // Find and delete associated avatar files
+    const characterFiles = await db.select().from(files)
+      .where(and(
+        eq(files.userId, userId),
+        eq(files.category, 'avatar'),
+        isNull(files.deletedAt)
+      ));
+
+    // Filter files that match this character's name or ID
+    const characterName = existing.name.toLowerCase();
+    const filesToDelete = characterFiles.filter(file =>
+      file.fileName.toLowerCase().includes(characterName) ||
+      file.fileName.toLowerCase().includes(`char-${sheetId}`)
+    );
+
+    // Delete files from S3 and database
+    let deletedFilesSize = 0;
+    for (const file of filesToDelete) {
+      try {
+        await deleteFromS3(file.s3Key);
+        if (file.thumbnailS3Key) {
+          await deleteFromS3(file.thumbnailS3Key);
+        }
+        await db.update(files)
+          .set({ deletedAt: new Date() })
+          .where(eq(files.id, file.id));
+        deletedFilesSize += file.fileSize;
+      } catch (error) {
+        console.error(`Failed to delete file ${file.id}:`, error);
+      }
+    }
+
+    // Update user storage usage if files were deleted
+    if (deletedFilesSize > 0) {
+      const [userData] = await db.select().from(users).where(eq(users.id, userId));
+      const newUsedBytes = Math.max(0, (userData.storageUsedBytes || 0) - deletedFilesSize);
+      await db.update(users)
+        .set({ storageUsedBytes: newUsedBytes })
+        .where(eq(users.id, userId));
+    }
+
+    // Delete the character sheet
     await db.delete(characterSheets).where(eq(characterSheets.id, sheetId));
 
-    res.json({ message: 'Character sheet deleted successfully' });
+    res.json({
+      message: 'Character sheet deleted successfully',
+      deletedFiles: filesToDelete.length,
+      reclaimedBytes: deletedFilesSize
+    });
   } catch (error) {
     console.error('Error deleting character sheet:', error);
     res.status(500).json({ error: 'Failed to delete character sheet' });

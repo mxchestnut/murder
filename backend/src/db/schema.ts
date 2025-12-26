@@ -7,6 +7,8 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   email: text('email'),
   isAdmin: boolean('is_admin').default(false).notNull(),
+  // Subscription tier: free (1GB), pro (10GB), premium (50GB)
+  subscriptionTier: text('subscription_tier').default('free').notNull(),
   // PathCompanion account binding (optional)
   pathCompanionUsername: text('path_companion_username'),
   pathCompanionPassword: text('path_companion_password'), // Encrypted

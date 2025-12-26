@@ -18,6 +18,17 @@ import {
 
 const router = Router();
 
+// Storage quota tiers
+const STORAGE_QUOTAS = {
+  free: 1073741824,      // 1GB
+  pro: 10737418240,      // 10GB
+  premium: 53687091200   // 50GB
+};
+
+function getStorageQuota(subscriptionTier: string): number {
+  return STORAGE_QUOTAS[subscriptionTier as keyof typeof STORAGE_QUOTAS] || STORAGE_QUOTAS.free;
+}
+
 // Configure multer for temporary file storage
 const upload = multer({
   dest: '/tmp/uploads/', // Temporary storage before S3
@@ -93,16 +104,20 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
       .from(users)
       .where(eq(users.id, user.id));
 
-    const quotaBytes = userData.storageQuotaBytes || 1073741824; // 1GB default
+    const quotaBytes = getStorageQuota(userData.subscriptionTier || 'free');
     const usedBytes = userData.storageUsedBytes || 0;
 
     if (usedBytes + uploadedFile.size > quotaBytes) {
       fs.unlinkSync(uploadedFile.path);
       const usedMB = (usedBytes / (1024 * 1024)).toFixed(2);
       const quotaMB = (quotaBytes / (1024 * 1024)).toFixed(2);
+      const tier = userData.subscriptionTier || 'free';
       return res.status(400).json({
         error: 'Storage quota exceeded',
-        details: `You have used ${usedMB}MB of your ${quotaMB}MB quota`
+        details: `You have used ${usedMB}MB of your ${quotaMB}MB quota (${tier} tier)`,
+        tier,
+        used: usedBytes,
+        quota: quotaBytes
       });
     }
 
@@ -258,14 +273,17 @@ router.get('/', isAuthenticated, async (req, res) => {
       .from(users)
       .where(eq(users.id, user.id));
 
+    const quotaBytes = getStorageQuota(userData.subscriptionTier || 'free');
+
     res.json({
       files: userFiles,
       quota: {
         used: userData.storageUsedBytes || 0,
-        total: userData.storageQuotaBytes || 1073741824,
+        total: quotaBytes,
         usedMB: ((userData.storageUsedBytes || 0) / (1024 * 1024)).toFixed(2),
-        totalMB: ((userData.storageQuotaBytes || 1073741824) / (1024 * 1024)).toFixed(2),
-        percentUsed: Math.round(((userData.storageUsedBytes || 0) / (userData.storageQuotaBytes || 1073741824)) * 100)
+        totalMB: (quotaBytes / (1024 * 1024)).toFixed(2),
+        percentUsed: Math.round(((userData.storageUsedBytes || 0) / quotaBytes) * 100),
+        tier: userData.subscriptionTier || 'free'
       }
     });
   } catch (error: any) {
