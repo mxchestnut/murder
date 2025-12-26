@@ -1056,14 +1056,20 @@ async function handleRoll(message: Message, args: string[]) {
   await message.reply({ embeds: [embed] });
 
   // Track stats
-  await trackCharacterActivity(character.id, 'roll', `Rolled ${rollDescription}: ${total}`, {
-    diceRoll,
-    modifier,
-    total,
-    stat: statName,
-    nat20: diceRoll === 20,
-    nat1: diceRoll === 1
-  });
+  await trackCharacterActivity(
+    character.id,
+    message.guild?.id || '',
+    'roll',
+    `Rolled ${rollDescription}: ${total}`,
+    {
+      diceRoll,
+      modifier,
+      total,
+      stat: statName,
+      nat20: diceRoll === 20,
+      nat1: diceRoll === 1
+    }
+  );
 }
 
 // Encryption utilities for PathCompanion password
@@ -1418,10 +1424,16 @@ async function handleProxy(message: Message, characterName: string, messageText:
       await webhook.send(webhookOptions);
 
       // Track stats
-      await trackCharacterActivity(character.id, 'message', `Sent message in ${(channel as any).name || 'thread'}`, {
-        messageLength: messageText.length,
-        channelId: channel.id
-      });
+      await trackCharacterActivity(
+        character.id,
+        message.guild?.id || '',
+        'message',
+        `Sent message in ${(channel as any).name || 'thread'}`,
+        {
+          messageLength: messageText.length,
+          channelId: channel.id
+        }
+      );
 
     } catch (webhookError: any) {
       // If webhook fails (e.g., Unknown Webhook error), clear cache and retry once
@@ -1589,6 +1601,7 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
     // Track the roll in character stats
     await trackCharacterActivity(
       character.id,
+      message.guild?.id || '',
       'roll',
       `Rolled ${rollDescription} in #${message.channel && 'name' in message.channel ? message.channel.name : 'unknown'}`,
       {
@@ -2190,6 +2203,12 @@ async function handleSpell(message: Message, args: string[]) {
 // Character Stats
 async function handleStats(message: Message, args: string[]) {
   try {
+    const guildId = message.guild?.id || '';
+    if (!guildId) {
+      await message.reply('❌ This command can only be used in a server.');
+      return;
+    }
+
     let characterId: number | null = null;
 
     if (args.length === 0) {
@@ -2198,7 +2217,7 @@ async function handleStats(message: Message, args: string[]) {
         .from(channelCharacterMappings)
         .where(and(
           eq(channelCharacterMappings.channelId, message.channel.id),
-          eq(channelCharacterMappings.guildId, message.guild?.id || '')
+          eq(channelCharacterMappings.guildId, guildId)
         ))
         .limit(1);
 
@@ -2222,16 +2241,20 @@ async function handleStats(message: Message, args: string[]) {
       characterId = characters[0].id;
     }
 
-    // Get or create stats
+    // Get or create stats for this character in this server
     let stats = await db.select()
       .from(characterStats)
-      .where(eq(characterStats.characterId, characterId))
+      .where(and(
+        eq(characterStats.characterId, characterId),
+        eq(characterStats.guildId, guildId)
+      ))
       .limit(1);
 
     if (stats.length === 0) {
-      // Create initial stats
+      // Create initial stats for this server
       await db.insert(characterStats).values({
         characterId,
+        guildId,
         totalMessages: 0,
         totalDiceRolls: 0,
         nat20Count: 0,
@@ -2240,7 +2263,10 @@ async function handleStats(message: Message, args: string[]) {
       });
       stats = await db.select()
         .from(characterStats)
-        .where(eq(characterStats.characterId, characterId))
+        .where(and(
+          eq(characterStats.characterId, characterId),
+          eq(characterStats.guildId, guildId)
+        ))
         .limit(1);
     }
 
@@ -3680,31 +3706,40 @@ async function handlePostLeaderboard(message: Message, args: string[]) {
 // Helper function to track character activity and update stats
 async function trackCharacterActivity(
   characterId: number,
+  guildId: string,
   activityType: string,
   description: string,
   metadata?: any
 ) {
   try {
-    // Get or create stats
+    if (!guildId) return; // Skip if no guild context
+
+    // Get or create stats for this character in this server
     let stats = await db.select()
       .from(characterStats)
-      .where(eq(characterStats.characterId, characterId))
+      .where(and(
+        eq(characterStats.characterId, characterId),
+        eq(characterStats.guildId, guildId)
+      ))
       .limit(1);
 
     if (stats.length === 0) {
       await db.insert(characterStats).values({
         characterId,
+        guildId,
         totalMessages: 0,
         totalDiceRolls: 0,
         nat20Count: 0,
         nat1Count: 0,
         totalDamageDealt: 0,
-        lastActive: new Date(),
-        createdAt: new Date()
+        lastActive: new Date()
       });
       stats = await db.select()
         .from(characterStats)
-        .where(eq(characterStats.characterId, characterId))
+        .where(and(
+          eq(characterStats.characterId, characterId),
+          eq(characterStats.guildId, guildId)
+        ))
         .limit(1);
     }
 
@@ -3733,7 +3768,10 @@ async function trackCharacterActivity(
 
     await db.update(characterStats)
       .set(updates)
-      .where(eq(characterStats.characterId, characterId));
+      .where(and(
+        eq(characterStats.characterId, characterId),
+        eq(characterStats.guildId, guildId)
+      ));
 
     // Check for milestones and announce them
     const newStats = { ...stat, ...updates };

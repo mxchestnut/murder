@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean, time } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, integer, boolean, time, varchar, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -244,7 +244,8 @@ export const knowledgeBase = pgTable('knowledge_base', {
 // Character Stats Tracking
 export const characterStats = pgTable('character_stats', {
   id: serial('id').primaryKey(),
-  characterId: integer('character_id').notNull().references(() => characterSheets.id).unique(),
+  characterId: integer('character_id').notNull().references(() => characterSheets.id),
+  guildId: varchar('guild_id', { length: 255 }).notNull(),
   totalMessages: integer('total_messages').default(0),
   totalDiceRolls: integer('total_dice_rolls').default(0),
   nat20Count: integer('nat20_count').default(0),
@@ -252,7 +253,9 @@ export const characterStats = pgTable('character_stats', {
   totalDamageDealt: integer('total_damage_dealt').default(0),
   lastActive: timestamp('last_active'),
   createdAt: timestamp('created_at').defaultNow().notNull()
-});
+}, (table) => ({
+  characterGuildUnique: unique().on(table.characterId, table.guildId)
+}));
 
 export const characterStatsRelations = relations(characterStats, ({ one }) => ({
   character: one(characterSheets, {
