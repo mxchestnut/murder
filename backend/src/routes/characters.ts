@@ -616,10 +616,6 @@ router.post('/:id/roll', async (req, res) => {
       return res.status(404).json({ error: 'Character sheet not found' });
     }
 
-    // Get user's Discord webhook
-    const [user] = await db.select({ botToken: users.discordBotToken }).from(users).where(eq(users.id, userId));
-    const hasBotToken = !!user?.botToken;
-
     let diceRoll: number;
     let total: number;
     let modifier: number = 0;
@@ -679,27 +675,22 @@ router.post('/:id/roll', async (req, res) => {
       rollDescription = stat ? `${stat.toUpperCase()} check` : 'Check';
     }
 
-    // Send to Discord via bot if configured
+    // Send to Discord via bot if character is linked to a channel
     let sentToDiscord = false;
     console.log(`Roll completed for ${sheet.name} (ID: ${sheetId}): ${rollDescription} = ${total}`);
-    console.log(`hasBotToken: ${hasBotToken}, botToken: ${user?.botToken ? 'present' : 'missing'}`);
 
-    if (hasBotToken) {
-      try {
-        const rollData = {
-          rollDescription,
-          diceRoll,
-          modifier,
-          total
-        };
-        console.log(`Attempting to send roll to Discord for character ${sheetId}:`, rollData);
-        sentToDiscord = await sendRollToDiscord(sheetId, rollData);
-        console.log(`Roll sent to Discord: ${sentToDiscord}`);
-      } catch (error) {
-        console.error('Error sending to Discord via bot:', error);
-      }
-    } else {
-      console.log('Not sending to Discord - no bot token configured');
+    try {
+      const rollData = {
+        rollDescription,
+        diceRoll,
+        modifier,
+        total
+      };
+      console.log(`Attempting to send roll to Discord for character ${sheetId}:`, rollData);
+      sentToDiscord = await sendRollToDiscord(sheetId, rollData);
+      console.log(`Roll sent to Discord: ${sentToDiscord}`);
+    } catch (error) {
+      console.error('Error sending to Discord via bot:', error);
     }
 
     res.json({
