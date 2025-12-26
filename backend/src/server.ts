@@ -4,6 +4,8 @@ import path from 'path';
 // Load .env from project root FIRST, before any other imports that use env vars
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import express from 'express';
 import session from 'express-session';
 import passport from 'passport';
@@ -36,6 +38,20 @@ import { getSecretsWithFallback } from './config/secrets';
 import { reinitializeDatabase, db } from './db';
 import { sql } from 'drizzle-orm';
 import { initializePasswordRotationTracking } from './db/passwordRotation';
+
+// Initialize Sentry
+Sentry.init({
+  dsn: 'https://3703aff1185c87a288fbe6470adcd55e@o4510280685977605.ingest.us.sentry.io/4510601564913664',
+  integrations: [
+    nodeProfilingIntegration(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 1.0, // Capture 100% of transactions
+  // Profiling
+  profilesSampleRate: 1.0, // Profile 100% of transactions
+  // Environment
+  environment: process.env.NODE_ENV || 'development',
+});
 
 async function startServer() {
   // Load secrets from AWS Secrets Manager (or .env in development)
@@ -215,9 +231,22 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
+  // Sentry error handler - must be before other error handlers
+  Sentry.setupExpressErrorHandler(app);
+
   // Error handling middleware
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error(err.stack);
+
+    // Send error to Sentry
+    Sentry.captureException(err, {
+      user: req.user ? { id: (req.user as any).id, username: (req.user as any).username } : undefined,
+      tags: {
+        path: req.path,
+        method: req.method,
+      },
+    });
+
     res.status(500).json({ error: 'Something went wrong!' });
   });
 
