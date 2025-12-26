@@ -8,13 +8,9 @@ async function runMigration() {
   const { loadSecrets } = require('./dist/config/secrets');
   const secrets = await loadSecrets();
 
-  // Connect to database
+  // Connect to database using DATABASE_URL
   const client = new Client({
-    host: secrets.database.host,
-    port: secrets.database.port,
-    database: secrets.database.database,
-    user: secrets.database.user,
-    password: secrets.database.password,
+    connectionString: secrets.DATABASE_URL,
     ssl: {
       rejectUnauthorized: false
     }
