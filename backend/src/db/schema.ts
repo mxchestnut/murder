@@ -348,39 +348,6 @@ export const systemSettings = pgTable('system_settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-// RP Prompts
-export const prompts = pgTable('prompts', {
-  id: serial('id').primaryKey(),
-  category: text('category').notNull(), // 'character', 'world', 'combat', 'social', 'plot'
-  promptText: text('prompt_text').notNull(),
-  createdBy: integer('created_by').references(() => users.id),
-  useCount: integer('use_count').default(0),
-  lastUsed: timestamp('last_used'),
-  createdAt: timestamp('created_at').defaultNow().notNull()
-});
-
-// Tropes for RP inspiration
-export const tropes = pgTable('tropes', {
-  id: serial('id').primaryKey(),
-  category: text('category').notNull(), // 'archetype', 'dynamic', 'situation', 'plot'
-  name: text('name').notNull(),
-  description: text('description').notNull(),
-  useCount: integer('use_count').default(0),
-  createdAt: timestamp('created_at').defaultNow().notNull()
-});
-
-// Prompt Schedule (for automated posting)
-export const promptSchedule = pgTable('prompt_schedule', {
-  id: serial('id').primaryKey(),
-  channelId: text('channel_id').notNull().unique(),
-  guildId: text('guild_id').notNull(),
-  scheduleTime: text('schedule_time').notNull(), // Cron format or "09:00"
-  enabled: boolean('enabled').default(true),
-  category: text('category'), // Optional: specific category for scheduled prompts
-  lastSent: timestamp('last_sent'),
-  createdAt: timestamp('created_at').defaultNow().notNull()
-});
-
 // RP Sessions
 export const sessions = pgTable('sessions', {
   id: serial('id').primaryKey(),
@@ -500,11 +467,7 @@ export const gameTime = pgTable('game_time', {
 export const botSettings = pgTable('bot_settings', {
   id: serial('id').primaryKey(),
   guildId: text('guild_id').notNull().unique(),
-  announcementChannelId: text('announcement_channel_id'), // For prompts, challenges, etc.
-  dailyPromptEnabled: boolean('daily_prompt_enabled').default(false),
-  dailyPromptTime: text('daily_prompt_time').default('09:00:00'),
-  dailyPromptChannelId: text('daily_prompt_channel_id'),
-  lastPromptPosted: timestamp('last_prompt_posted'),
+  announcementChannelId: text('announcement_channel_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });

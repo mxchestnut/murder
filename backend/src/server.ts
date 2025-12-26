@@ -25,7 +25,6 @@ import systemRoutes from './routes/system';
 import filesRoutes from './routes/files';
 import knowledgeBaseRoutes from './routes/knowledgeBase';
 import adminRoutes from './routes/admin';
-import promptsRoutes from './routes/prompts';
 import importDefaultsRoutes from './routes/import-defaults';
 import statsRoutes from './routes/stats';
 import hallOfFameRoutes from './routes/hall-of-fame';
@@ -192,7 +191,6 @@ app.use('/api/system', doubleCsrfProtection);
 app.use('/api/files', doubleCsrfProtection);
 app.use('/api/knowledge-base', doubleCsrfProtection);
 app.use('/api/admin', doubleCsrfProtection);
-app.use('/api/prompts', doubleCsrfProtection);
 app.use('/api/import-defaults', doubleCsrfProtection);
 app.use('/api/stats', doubleCsrfProtection);
 app.use('/api/hall-of-fame', doubleCsrfProtection);
@@ -210,7 +208,6 @@ app.use('/api/system', systemRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/prompts', promptsRoutes);
 app.use('/api/import-defaults', importDefaultsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/hall-of-fame', hallOfFameRoutes);
@@ -285,31 +282,6 @@ app.get('*', (req, res) => {
         );
         CREATE INDEX IF NOT EXISTS idx_character_memories_char ON character_memories(character_id);
         CREATE INDEX IF NOT EXISTS idx_character_memories_guild ON character_memories(guild_id);
-      `);
-
-      // Prompts table
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS prompts (
-          id SERIAL PRIMARY KEY,
-          category TEXT NOT NULL,
-          prompt_text TEXT NOT NULL,
-          created_by INTEGER,
-          use_count INTEGER DEFAULT 0,
-          last_used TIMESTAMP,
-          created_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
-      `);
-
-      // Tropes table
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS tropes (
-          id SERIAL PRIMARY KEY,
-          category TEXT NOT NULL,
-          name TEXT NOT NULL,
-          description TEXT NOT NULL,
-          use_count INTEGER DEFAULT 0,
-          created_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
       `);
 
       // Sessions table

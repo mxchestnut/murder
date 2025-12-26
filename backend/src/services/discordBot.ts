@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, sessions, sessionMessages, scenes, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -45,10 +45,6 @@ export function initializeDiscordBot(token: string) {
 
   botClient.on('ready', () => {
     console.log(`Discord bot logged in as ${botClient?.user?.tag}`);
-
-    // Start the daily prompt scheduler
-    const { startPromptScheduler } = require('./promptScheduler');
-    startPromptScheduler(botClient);
   });
 
   botClient.on('messageCreate', async (message: Message) => {
@@ -145,12 +141,6 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'leaderboard':
           await handleLeaderboard(message, args);
-          break;
-        case 'prompt':
-          await handlePrompt(message, args);
-          break;
-        case 'trope':
-          await handleTrope(message, args);
           break;
         case 'session':
           await handleSession(message, args);
@@ -2338,125 +2328,6 @@ async function handleLeaderboard(message: Message, args: string[]) {
 }
 
 // ==================== RP PROMPTS ====================
-async function handlePrompt(message: Message, args: string[]) {
-  try {
-    const subcmd = args[0]?.toLowerCase();
-
-    if (subcmd === 'random' && args.length > 1) {
-      // !prompt random <category>
-      const category = args.slice(1).join(' ').toLowerCase();
-      const validCategories = ['character', 'world', 'combat', 'social', 'plot'];
-
-      if (!validCategories.includes(category)) {
-        await message.reply(`❌ Invalid category. Valid categories: ${validCategories.join(', ')}`);
-        return;
-      }
-
-      const categoryPrompts = await db
-        .select()
-        .from(prompts)
-        .where(eq(prompts.category, category));
-
-      if (categoryPrompts.length === 0) {
-        await message.reply(`❌ No prompts found for category "${category}".`);
-        return;
-      }
-
-      const randomPrompt = categoryPrompts[Math.floor(Math.random() * categoryPrompts.length)];
-
-      // Update use count
-      await db.update(prompts)
-        .set({
-          useCount: (randomPrompt.useCount || 0) + 1,
-          lastUsed: new Date()
-        })
-        .where(eq(prompts.id, randomPrompt.id));
-
-      const embed = new EmbedBuilder()
-        .setColor('#9b59b6')
-        .setTitle(`💭 ${category.charAt(0).toUpperCase() + category.slice(1)} Prompt`)
-        .setDescription(randomPrompt.promptText)
-        .setFooter({ text: `Prompt #${randomPrompt.id}` });
-
-      await message.reply({ embeds: [embed] });
-    } else {
-      // !prompt - Random from any category
-      const allPrompts = await db.select().from(prompts);
-
-      if (allPrompts.length === 0) {
-        await message.reply('❌ No prompts available. Add some prompts to the database!');
-        return;
-      }
-
-      const randomPrompt = allPrompts[Math.floor(Math.random() * allPrompts.length)];
-
-      // Update use count
-      await db.update(prompts)
-        .set({
-          useCount: (randomPrompt.useCount || 0) + 1,
-          lastUsed: new Date()
-        })
-        .where(eq(prompts.id, randomPrompt.id));
-
-      const embed = new EmbedBuilder()
-        .setColor('#9b59b6')
-        .setTitle(`💭 ${randomPrompt.category.charAt(0).toUpperCase() + randomPrompt.category.slice(1)} Prompt`)
-        .setDescription(randomPrompt.promptText)
-        .setFooter({ text: `Prompt #${randomPrompt.id}` });
-
-      await message.reply({ embeds: [embed] });
-    }
-  } catch (error) {
-    console.error('Error in !prompt command:', error);
-    await message.reply('❌ Failed to retrieve prompt.');
-  }
-}
-
-async function handleTrope(message: Message, args: string[]) {
-  try {
-    const category = args.join(' ').toLowerCase();
-    let tropeList = [];
-
-    if (category && category !== '') {
-      const validCategories = ['archetype', 'dynamic', 'situation', 'plot'];
-      if (!validCategories.includes(category)) {
-        await message.reply(`❌ Invalid category. Valid categories: ${validCategories.join(', ')}`);
-        return;
-      }
-
-      tropeList = await db
-        .select()
-        .from(tropes)
-        .where(eq(tropes.category, category));
-    } else {
-      tropeList = await db.select().from(tropes);
-    }
-
-    if (tropeList.length === 0) {
-      await message.reply('❌ No tropes available.');
-      return;
-    }
-
-    const randomTrope = tropeList[Math.floor(Math.random() * tropeList.length)];
-
-    // Update use count
-    await db.update(tropes)
-      .set({ useCount: (randomTrope.useCount || 0) + 1 })
-      .where(eq(tropes.id, randomTrope.id));
-
-    const embed = new EmbedBuilder()
-      .setColor('#e74c3c')
-      .setTitle(`🎭 ${randomTrope.name}`)
-      .setDescription(randomTrope.description)
-      .setFooter({ text: `${randomTrope.category.charAt(0).toUpperCase() + randomTrope.category.slice(1)} Trope` });
-
-    await message.reply({ embeds: [embed] });
-  } catch (error) {
-    console.error('Error in !trope command:', error);
-    await message.reply('❌ Failed to retrieve trope.');
-  }
-}
-
 // ==================== SESSION LOGGING ====================
 async function handleSession(message: Message, args: string[]) {
   try {
@@ -3390,11 +3261,6 @@ async function handleBotSet(message: Message, args: string[]) {
   if (args.length > 0) {
     const subcommand = args[0].toLowerCase();
 
-    if (subcommand === 'prompt') {
-      await handlePromptSettings(message, args.slice(1));
-      return;
-    }
-
     if (subcommand === 'help') {
       const helpEmbed = {
         title: '⚙️ Bot Settings Help',
@@ -3403,26 +3269,6 @@ async function handleBotSet(message: Message, args: string[]) {
           {
             name: '!botset',
             value: 'Set the announcement channel (this channel)'
-          },
-          {
-            name: '!botset prompt enable',
-            value: 'Enable daily automated prompts'
-          },
-          {
-            name: '!botset prompt disable',
-            value: 'Disable daily automated prompts'
-          },
-          {
-            name: '!botset prompt time HH:MM',
-            value: 'Set the time for daily prompts (24-hour format, e.g., 09:00 or 18:30)'
-          },
-          {
-            name: '!botset prompt channel #channel',
-            value: 'Set the channel for daily prompts'
-          },
-          {
-            name: '!botset prompt status',
-            value: 'Show current prompt settings'
           }
         ]
       };
@@ -3458,127 +3304,6 @@ async function handleBotSet(message: Message, args: string[]) {
   } catch (error) {
     console.error('Error in !botset command:', error);
     await message.reply('❌ Failed to set bot channel.');
-  }
-}
-
-async function handlePromptSettings(message: Message, args: string[]) {
-  const guildId = message.guild?.id || '';
-
-  if (args.length === 0) {
-    await message.reply('❌ Please specify: enable, disable, time, channel, or status');
-    return;
-  }
-
-  const action = args[0].toLowerCase();
-
-  try {
-    // Ensure settings exist
-    const [existing] = await db.select()
-      .from(botSettings)
-      .where(eq(botSettings.guildId, guildId));
-
-    if (!existing && action !== 'status') {
-      // Create default settings
-      await db.insert(botSettings).values({
-        guildId,
-        announcementChannelId: message.channel.id
-      });
-    }
-
-    switch (action) {
-      case 'enable':
-        await db.update(botSettings)
-          .set({ dailyPromptEnabled: true, updatedAt: new Date() })
-          .where(eq(botSettings.guildId, guildId));
-        await message.reply('✅ Daily prompts enabled! Use `!botset prompt time` and `!botset prompt channel` to configure.');
-        break;
-
-      case 'disable':
-        await db.update(botSettings)
-          .set({ dailyPromptEnabled: false, updatedAt: new Date() })
-          .where(eq(botSettings.guildId, guildId));
-        await message.reply('✅ Daily prompts disabled.');
-        break;
-
-      case 'time':
-        if (args.length < 2) {
-          await message.reply('❌ Please specify a time in 24-hour format (e.g., 09:00 or 18:30)');
-          return;
-        }
-        const timeStr = args[1];
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
-        if (!timeRegex.test(timeStr)) {
-          await message.reply('❌ Invalid time format. Use HH:MM (e.g., 09:00 or 18:30)');
-          return;
-        }
-        await db.update(botSettings)
-          .set({ dailyPromptTime: timeStr + ':00', updatedAt: new Date() })
-          .where(eq(botSettings.guildId, guildId));
-        await message.reply(`✅ Daily prompt time set to ${timeStr} (server time).`);
-        break;
-
-      case 'channel':
-        const channelMatch = args[1]?.match(/<#(\d+)>/);
-        if (!channelMatch) {
-          await message.reply('❌ Please mention a channel (e.g., #prompts)');
-          return;
-        }
-        const channelId = channelMatch[1];
-        await db.update(botSettings)
-          .set({ dailyPromptChannelId: channelId, updatedAt: new Date() })
-          .where(eq(botSettings.guildId, guildId));
-        await message.reply(`✅ Daily prompts will be posted to <#${channelId}>.`);
-        break;
-
-      case 'status':
-        const settings = existing || await db.select()
-          .from(botSettings)
-          .where(eq(botSettings.guildId, guildId))
-          .limit(1)
-          .then(r => r[0]);
-
-        if (!settings) {
-          await message.reply('❌ No bot settings configured yet. Use `!botset` to set up.');
-          return;
-        }
-
-        const statusEmbed = {
-          title: '⚙️ Daily Prompt Settings',
-          color: settings.dailyPromptEnabled ? 0x57F287 : 0x5865F2,
-          fields: [
-            {
-              name: 'Status',
-              value: settings.dailyPromptEnabled ? '✅ Enabled' : '❌ Disabled',
-              inline: true
-            },
-            {
-              name: 'Time',
-              value: settings.dailyPromptTime || 'Not set',
-              inline: true
-            },
-            {
-              name: 'Channel',
-              value: settings.dailyPromptChannelId ? `<#${settings.dailyPromptChannelId}>` : 'Not set',
-              inline: true
-            },
-            {
-              name: 'Last Posted',
-              value: settings.lastPromptPosted
-                ? new Date(settings.lastPromptPosted).toLocaleString()
-                : 'Never',
-              inline: false
-            }
-          ]
-        };
-        await message.reply({ embeds: [statusEmbed] });
-        break;
-
-      default:
-        await message.reply('❌ Unknown prompt setting. Use: enable, disable, time, channel, or status');
-    }
-  } catch (error) {
-    console.error('Error in prompt settings:', error);
-    await message.reply('❌ Failed to update prompt settings.');
   }
 }
 
