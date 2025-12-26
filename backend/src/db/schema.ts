@@ -362,6 +362,8 @@ export const sessions = pgTable('sessions', {
   messageCount: integer('message_count').default(0),
   summary: text('summary'), // AI-generated summary
   tags: text('tags'), // JSON array
+  notes: text('notes'), // Session notes
+  loot: text('loot'), // Loot collected
   createdBy: integer('created_by').references(() => users.id)
 });
 

@@ -56,7 +56,12 @@ export function initializeDiscordBot(token: string) {
     const proxyRegex = /^!?([\p{L}\p{N}\s]+):\s*(.+)$/u;
     const proxyMatch = proxyRegex.exec(content);
     if (proxyMatch) {
-      await handleProxy(message, proxyMatch[1].trim(), proxyMatch[2]);
+      const characterName = proxyMatch[1].trim();
+      const messageContent = proxyMatch[2];
+      await handleProxy(message, characterName, messageContent);
+
+      // Track in active session if exists
+      await trackSessionMessage(message, characterName, messageContent, false);
       return;
     }
 
@@ -930,6 +935,15 @@ async function handleRoll(message: Message, args: string[]) {
     }
 
     await message.reply({ embeds: [embed] });
+
+    // Track in session if active (using "Dice Roll" as character name for generic rolls)
+    await trackSessionMessage(
+      message,
+      'Dice Roll',
+      `${numDice}d${dieSize}${modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : ''} = ${total}`,
+      true
+    );
+
     return;
   }
 
@@ -1059,6 +1073,14 @@ async function handleRoll(message: Message, args: string[]) {
       nat20: diceRoll === 20,
       nat1: diceRoll === 1
     }
+  );
+
+  // Track in active session
+  await trackSessionMessage(
+    message,
+    character.name,
+    `${rollDescription}: ${diceRoll} ${modifier >= 0 ? '+' : ''}${modifier} = ${total}`,
+    true
   );
 }
 
@@ -1604,6 +1626,14 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
         nat1: diceRoll === 1,
         channelId: message.channelId
       }
+    );
+
+    // Track in active session
+    await trackSessionMessage(
+      message,
+      character.name,
+      `${rollDescription}: ${diceRoll} ${modifier >= 0 ? '+' : ''}${modifier} = ${total}`,
+      true
     );
 
     return true;
@@ -2329,6 +2359,38 @@ async function handleLeaderboard(message: Message, args: string[]) {
 
 // ==================== RP PROMPTS ====================
 // ==================== SESSION LOGGING ====================
+async function trackSessionMessage(message: Message, characterName: string, content: string, isDiceRoll: boolean) {
+  try {
+    const channelId = message.channel.id;
+    const [session] = await db.select()
+      .from(sessions)
+      .where(and(
+        eq(sessions.channelId, channelId),
+        sql`${sessions.endedAt} IS NULL`,
+        eq(sessions.isPaused, false)
+      ));
+
+    if (!session) return; // No active session, nothing to track
+
+    await db.insert(sessionMessages).values({
+      sessionId: session.id,
+      messageId: message.id,
+      authorId: message.author.id,
+      characterName,
+      content,
+      isDiceRoll,
+      timestamp: new Date()
+    });
+
+    // Update message count
+    await db.update(sessions)
+      .set({ messageCount: sql`${sessions.messageCount} + 1` })
+      .where(eq(sessions.id, session.id));
+  } catch (error) {
+    console.error('Error tracking session message:', error);
+  }
+}
+
 async function handleSession(message: Message, args: string[]) {
   try {
     const subcmd = args[0]?.toLowerCase();
@@ -2459,8 +2521,68 @@ async function handleSession(message: Message, args: string[]) {
         break;
       }
 
+      case 'notes': {
+        const noteText = args.slice(1).join(' ');
+        if (!noteText) {
+          await message.reply('Usage: `!session notes <your notes>`');
+          return;
+        }
+
+        const [session] = await db.select()
+          .from(sessions)
+          .where(and(
+            eq(sessions.channelId, channelId),
+            sql`${sessions.endedAt} IS NULL`
+          ));
+
+        if (!session) {
+          await message.reply('❌ No active session in this channel.');
+          return;
+        }
+
+        const currentNotes = session.notes || '';
+        const updatedNotes = currentNotes ? `${currentNotes}\n${noteText}` : noteText;
+
+        await db.update(sessions)
+          .set({ notes: updatedNotes })
+          .where(eq(sessions.id, session.id));
+
+        await message.reply('📝 Note added to session!');
+        break;
+      }
+
+      case 'loot': {
+        const lootText = args.slice(1).join(' ');
+        if (!lootText) {
+          await message.reply('Usage: `!session loot <loot item>`');
+          return;
+        }
+
+        const [session] = await db.select()
+          .from(sessions)
+          .where(and(
+            eq(sessions.channelId, channelId),
+            sql`${sessions.endedAt} IS NULL`
+          ));
+
+        if (!session) {
+          await message.reply('❌ No active session in this channel.');
+          return;
+        }
+
+        const currentLoot = session.loot || '';
+        const updatedLoot = currentLoot ? `${currentLoot}\n${lootText}` : lootText;
+
+        await db.update(sessions)
+          .set({ loot: updatedLoot })
+          .where(eq(sessions.id, session.id));
+
+        await message.reply('💰 Loot added to session!');
+        break;
+      }
+
       default:
-        await message.reply('Usage: `!session <start|end|pause|resume|list> [args]`');
+        await message.reply('Usage: `!session <start|end|pause|resume|list|notes|loot> [args]`');
     }
   } catch (error) {
     console.error('Error in !session command:', error);
@@ -3070,6 +3192,16 @@ async function handleRecap(message: Message) {
         { name: 'Participants', value: `${participants.length}`, inline: true }
       )
       .setDescription('Session is ongoing. Use `!session end` to finalize.');
+
+    // Add notes if present
+    if (session.notes) {
+      embed.addFields({ name: '📝 Notes', value: session.notes.substring(0, 1024), inline: false });
+    }
+
+    // Add loot if present
+    if (session.loot) {
+      embed.addFields({ name: '💰 Loot', value: session.loot.substring(0, 1024), inline: false });
+    }
 
     await message.reply({ embeds: [embed] });
   } catch (error) {
