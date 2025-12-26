@@ -1113,8 +1113,8 @@ async function handleProxy(message: Message, characterName: string, messageText:
     // For threads, get the parent channel for webhooks
     const webhookChannel = channel.isThread() ? channel.parent : channel;
 
-    if (!webhookChannel) {
-      console.error('Could not find parent channel for thread');
+    if (!webhookChannel || !('fetchWebhooks' in webhookChannel)) {
+      console.error('Channel does not support webhooks');
       return;
     }
 
@@ -1134,7 +1134,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
         });
       }
 
-      webhookCache.set(webhookChannel.id, webhook);
+      webhookCache.set(webhookChannel.id, webhook!);
     }
 
     // Delete the original message
@@ -1178,6 +1178,10 @@ async function handleProxy(message: Message, characterName: string, messageText:
         console.log('Webhook became invalid, clearing cache and retrying...');
         webhookCache.delete(webhookChannel.id);
 
+        if (!('fetchWebhooks' in webhookChannel)) {
+          throw new Error('Channel does not support webhooks');
+        }
+
         // Recreate webhook
         const webhooks = await webhookChannel.fetchWebhooks();
         webhook = webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
@@ -1189,7 +1193,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
           });
         }
 
-        webhookCache.set(webhookChannel.id, webhook);
+        webhookCache.set(webhookChannel.id, webhook!);
 
         // Retry send
         const retryOptions: any = {
