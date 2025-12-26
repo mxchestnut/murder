@@ -993,10 +993,10 @@ async function handleConnect(message: Message, args: string[]) {
       '• Type `CharName: message` to proxy as that character\n' +
       '• Use `!help` for more commands');
 
-    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Write Pretend user: ${username}`);
+    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Murder user: ${username}`);
 
   } catch (error: any) {
-    console.error('Discord Write Pretend connect error:', error);
+    console.error('Discord Murder connect error:', error);
 
     let errorMsg = 'Unknown error occurred';
     if (error.response?.data?.error) {
@@ -1008,12 +1008,12 @@ async function handleConnect(message: Message, args: string[]) {
     await message.author.send('❌ **Failed to connect to Write Pretend.**\n\n' +
       `Error: ${errorMsg}\n\n` +
       'Please check your username and password and try again.\n\n' +
-      '💡 Need help? Visit http://writepretend.com to manage your account.');
+      '💡 Need help? Visit https://murder.tech to manage your account.');
   }
 }
 
 async function handleSyncAll(message: Message) {
-  await message.reply('🔄 Refreshing your character list from Write Pretend...');
+  await message.reply('🔄 Refreshing your character list from Murder...');
 
   try {
     // Get user by Discord ID
@@ -1036,9 +1036,9 @@ async function handleSyncAll(message: Message) {
       .where(eq(characterSheets.userId, user.id));
 
     if (characters.length === 0) {
-      await message.reply('ℹ️ **No characters found in your Write Pretend account.**\n\n' +
+      await message.reply('ℹ️ **No characters found in your Murder account.**\n\n' +
         '**Create characters:**\n' +
-        '• Visit http://54.242.214.56 and create a character manually\n' +
+        '• Visit https://murder.tech and create a character manually\n' +
         (user.pathCompanionUsername ? '• Or import from PathCompanion in the web portal\n' : '') +
         '\n💡 Characters you create will automatically be available in Discord!');
       return;
