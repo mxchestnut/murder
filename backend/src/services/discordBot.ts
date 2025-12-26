@@ -531,14 +531,6 @@ async function handleProfile(message: Message, args: string[]) {
         break;
 
       case 'skills':
-        const skillsInfo = [];
-        if (character.notableEquipment) skillsInfo.push(`**Equipment:** ${stripHtml(character.notableEquipment)}`);
-        if (character.skillsReliedOn) skillsInfo.push(`**Strengths:** ${stripHtml(character.skillsReliedOn)}`);
-        if (character.skillsAvoided) skillsInfo.push(`**Weaknesses:** ${stripHtml(character.skillsAvoided)}`);
-        if (skillsInfo.length > 0) {
-          embed.addFields({ name: '⚔️ Skills & Abilities', value: truncate(skillsInfo.join('\n')), inline: false });
-        }
-
         // Parse and display Pathfinder skills
         let skills = character.skills as any;
         if (typeof skills === 'string') {
@@ -552,8 +544,24 @@ async function handleProfile(message: Message, args: string[]) {
             .map(([name, data]: any) => `**${name}:** +${data.total}`)
             .join('\n');
           if (trainedSkills) {
-            embed.addFields({ name: '📚 Trained Skills', value: truncate(trainedSkills, 1024), inline: false });
+            embed.addFields({ name: '📚 Pathfinder Skills', value: truncate(trainedSkills, 1024), inline: false });
+          } else {
+            embed.addFields({ name: '📚 Pathfinder Skills', value: 'No trained skills recorded', inline: false });
           }
+        } else {
+          embed.addFields({ name: '📚 Pathfinder Skills', value: 'No skill data available', inline: false });
+        }
+        break;
+
+      case 'abilities':
+        const abilitiesInfo = [];
+        if (character.notableEquipment) abilitiesInfo.push(`**Equipment:** ${stripHtml(character.notableEquipment)}`);
+        if (character.skillsReliedOn) abilitiesInfo.push(`**Strengths:** ${stripHtml(character.skillsReliedOn)}`);
+        if (character.skillsAvoided) abilitiesInfo.push(`**Weaknesses:** ${stripHtml(character.skillsAvoided)}`);
+        if (abilitiesInfo.length > 0) {
+          embed.addFields({ name: '⚔️ Abilities & Equipment', value: truncate(abilitiesInfo.join('\n')), inline: false });
+        } else {
+          embed.addFields({ name: '⚔️ Abilities & Equipment', value: 'No abilities recorded', inline: false });
         }
         break;
 
@@ -694,6 +702,11 @@ async function handleProfile(message: Message, args: string[]) {
           .setStyle(currentTab === 'skills' ? ButtonStyle.Primary : ButtonStyle.Secondary)
           .setEmoji('📚'),
         new ButtonBuilder()
+          .setCustomId('tab_abilities')
+          .setLabel('Abilities')
+          .setStyle(currentTab === 'abilities' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('⚔️'),
+        new ButtonBuilder()
           .setCustomId('tab_backstory')
           .setLabel('Backstory')
           .setStyle(currentTab === 'backstory' ? ButtonStyle.Primary : ButtonStyle.Secondary)
@@ -707,18 +720,18 @@ async function handleProfile(message: Message, args: string[]) {
           .setCustomId('tab_beliefs')
           .setLabel('Beliefs')
           .setStyle(currentTab === 'beliefs' ? ButtonStyle.Primary : ButtonStyle.Secondary)
-          .setEmoji('🧠'),
-        new ButtonBuilder()
-          .setCustomId('tab_public_private')
-          .setLabel('Public/Private')
-          .setStyle(currentTab === 'public_private' ? ButtonStyle.Primary : ButtonStyle.Secondary)
-          .setEmoji('👁️')
+          .setEmoji('🧠')
       );
   };
 
   const createButtons3 = (currentTab: string) => {
     return new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
+        new ButtonBuilder()
+          .setCustomId('tab_public_private')
+          .setLabel('Public/Private')
+          .setStyle(currentTab === 'public_private' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+          .setEmoji('👁️'),
         new ButtonBuilder()
           .setCustomId('tab_growth')
           .setLabel('Growth')
