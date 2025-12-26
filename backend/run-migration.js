@@ -1,15 +1,27 @@
 // Simple migration runner using AWS Secrets
 const fs = require('fs');
 const path = require('path');
+const { Client } = require('pg');
 
 async function runMigration() {
-  // Load secrets first
-  const { loadSecretsAndReinitDb } = require('./dist/config/secrets');
-  await loadSecretsAndReinitDb();
+  // Load secrets
+  const { loadSecrets } = require('./dist/config/secrets');
+  const secrets = await loadSecrets();
 
-  // Now import database after secrets are loaded
-  const { db } = require('./dist/db/index');
-  const { sql } = require('drizzle-orm');
+  // Connect to database
+  const client = new Client({
+    host: secrets.database.host,
+    port: secrets.database.port,
+    database: secrets.database.database,
+    user: secrets.database.user,
+    password: secrets.database.password,
+    ssl: {
+      rejectUnauthorized: false
+    }
+  });
+
+  await client.connect();
+  console.log('✓ Connected to database');
 
   const migrationPath = path.join(__dirname, 'migrations/add_guild_id_to_character_stats.sql');
   const migration = fs.readFileSync(migrationPath, 'utf8');
@@ -20,7 +32,7 @@ async function runMigration() {
 
   for (const stmt of statements) {
     try {
-      await db.execute(sql.raw(stmt));
+      await client.query(stmt);
       console.log('✓', stmt.substring(0, 60).replace(/\n/g, ' ') + '...');
     } catch (e) {
       if (e.message.includes('already exists') || e.message.includes('does not exist')) {
@@ -32,6 +44,7 @@ async function runMigration() {
     }
   }
 
+  await client.end();
   console.log('\n✓ Migration completed!');
   process.exit(0);
 }
