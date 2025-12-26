@@ -1528,8 +1528,10 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
 
 
 export async function sendRollToDiscord(characterId: number, rollData: any) {
+  console.log(`[sendRollToDiscord] Called for character ${characterId}`, rollData);
+
   if (!botClient) {
-    console.log('Discord bot not initialized');
+    console.log('[sendRollToDiscord] Discord bot not initialized');
     return false;
   }
 
@@ -1540,8 +1542,10 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
     .innerJoin(characterSheets, eq(channelCharacterMappings.characterId, characterSheets.id))
     .where(eq(channelCharacterMappings.characterId, characterId));
 
+  console.log(`[sendRollToDiscord] Found ${mappings.length} channel mappings for character ${characterId}`);
+
   if (mappings.length === 0) {
-    console.log(`No channels linked to character ${characterId}`);
+    console.log(`[sendRollToDiscord] No channels linked to character ${characterId}`);
     return false;
   }
 
@@ -1549,6 +1553,7 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
   let sentCount = 0;
 
   for (const mapping of mappings) {
+    console.log(`[sendRollToDiscord] Attempting to send to channel ${mapping.channel_character_mappings.channelId}`);
     try {
       const channel = await botClient.channels.fetch(mapping.channel_character_mappings.channelId);
       if (channel && channel.isTextBased() && 'send' in channel) {
@@ -1570,14 +1575,19 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
           embed.addFields({ name: '💀', value: 'Natural 1!', inline: true });
         }
 
+        console.log(`[sendRollToDiscord] Sending embed to channel ${mapping.channel_character_mappings.channelId}`);
         await channel.send({ embeds: [embed] });
+        console.log(`[sendRollToDiscord] Successfully sent to channel`);
         sentCount++;
+      } else {
+        console.log(`[sendRollToDiscord] Channel not text-based or cannot send messages`);
       }
     } catch (error) {
-      console.error(`Failed to send roll to channel ${mapping.channel_character_mappings.channelId}:`, error);
+      console.error(`[sendRollToDiscord] Failed to send roll to channel ${mapping.channel_character_mappings.channelId}:`, error);
     }
   }
 
+  console.log(`[sendRollToDiscord] Sent to ${sentCount} channels`);
   return sentCount > 0;
 }
 

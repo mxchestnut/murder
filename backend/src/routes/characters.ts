@@ -681,6 +681,9 @@ router.post('/:id/roll', async (req, res) => {
 
     // Send to Discord via bot if configured
     let sentToDiscord = false;
+    console.log(`Roll completed for ${sheet.name} (ID: ${sheetId}): ${rollDescription} = ${total}`);
+    console.log(`hasBotToken: ${hasBotToken}, botToken: ${user?.botToken ? 'present' : 'missing'}`);
+
     if (hasBotToken) {
       try {
         const rollData = {
@@ -689,10 +692,14 @@ router.post('/:id/roll', async (req, res) => {
           modifier,
           total
         };
+        console.log(`Attempting to send roll to Discord for character ${sheetId}:`, rollData);
         sentToDiscord = await sendRollToDiscord(sheetId, rollData);
+        console.log(`Roll sent to Discord: ${sentToDiscord}`);
       } catch (error) {
         console.error('Error sending to Discord via bot:', error);
       }
+    } else {
+      console.log('Not sending to Discord - no bot token configured');
     }
 
     res.json({
