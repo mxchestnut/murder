@@ -257,10 +257,11 @@ async function handleSetChar(message: Message, args: string[]) {
   const guildId = message.guild?.id || '';
 
   // Find character by name (case-insensitive)
+  const { sql } = await import('drizzle-orm');
   const characters = await db
     .select()
     .from(characterSheets)
-    .where(eq(characterSheets.name, characterName));
+    .where(sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`);
 
   if (characters.length === 0) {
     await message.reply(`❌ Character "${characterName}" not found. Check spelling and try again.`);
