@@ -45,6 +45,10 @@ export function initializeDiscordBot(token: string) {
 
   botClient.on('ready', () => {
     console.log(`Discord bot logged in as ${botClient?.user?.tag}`);
+
+    // Start the daily prompt scheduler
+    const { startPromptScheduler } = require('./promptScheduler');
+    startPromptScheduler(botClient);
   });
 
   botClient.on('messageCreate', async (message: Message) => {
@@ -3325,6 +3329,53 @@ async function handleBotSet(message: Message, args: string[]) {
   }
 
   const guildId = message.guild?.id || '';
+
+  // Handle subcommands
+  if (args.length > 0) {
+    const subcommand = args[0].toLowerCase();
+
+    if (subcommand === 'prompt') {
+      await handlePromptSettings(message, args.slice(1));
+      return;
+    }
+
+    if (subcommand === 'help') {
+      const helpEmbed = {
+        title: '⚙️ Bot Settings Help',
+        color: 0x5865F2,
+        fields: [
+          {
+            name: '!botset',
+            value: 'Set the announcement channel (this channel)'
+          },
+          {
+            name: '!botset prompt enable',
+            value: 'Enable daily automated prompts'
+          },
+          {
+            name: '!botset prompt disable',
+            value: 'Disable daily automated prompts'
+          },
+          {
+            name: '!botset prompt time HH:MM',
+            value: 'Set the time for daily prompts (24-hour format, e.g., 09:00 or 18:30)'
+          },
+          {
+            name: '!botset prompt channel #channel',
+            value: 'Set the channel for daily prompts'
+          },
+          {
+            name: '!botset prompt status',
+            value: 'Show current prompt settings'
+          }
+        ]
+      };
+      await message.reply({ embeds: [helpEmbed] });
+      return;
+    }
+  }
+
+  // Default: set announcement channel to current channel
   const channelId = message.channel.id;
 
   try {
@@ -3347,10 +3398,131 @@ async function handleBotSet(message: Message, args: string[]) {
       });
     }
 
-    await message.reply(`✅ Bot announcement channel set to <#${channelId}>!\n\nThis channel will be used for:\n• Daily prompts (when scheduled)\n• Challenges\n• Bot announcements`);
+    await message.reply(`✅ Bot announcement channel set to <#${channelId}>!\n\nThis channel will be used for:\n• Daily prompts (when scheduled)\n• Challenges\n• Bot announcements\n\nUse \`!botset prompt\` commands to configure daily prompts, or \`!botset help\` for all options.`);
   } catch (error) {
     console.error('Error in !botset command:', error);
     await message.reply('❌ Failed to set bot channel.');
+  }
+}
+
+async function handlePromptSettings(message: Message, args: string[]) {
+  const guildId = message.guild?.id || '';
+
+  if (args.length === 0) {
+    await message.reply('❌ Please specify: enable, disable, time, channel, or status');
+    return;
+  }
+
+  const action = args[0].toLowerCase();
+
+  try {
+    // Ensure settings exist
+    const [existing] = await db.select()
+      .from(botSettings)
+      .where(eq(botSettings.guildId, guildId));
+
+    if (!existing && action !== 'status') {
+      // Create default settings
+      await db.insert(botSettings).values({
+        guildId,
+        announcementChannelId: message.channel.id
+      });
+    }
+
+    switch (action) {
+      case 'enable':
+        await db.update(botSettings)
+          .set({ dailyPromptEnabled: true, updatedAt: new Date() })
+          .where(eq(botSettings.guildId, guildId));
+        await message.reply('✅ Daily prompts enabled! Use `!botset prompt time` and `!botset prompt channel` to configure.');
+        break;
+
+      case 'disable':
+        await db.update(botSettings)
+          .set({ dailyPromptEnabled: false, updatedAt: new Date() })
+          .where(eq(botSettings.guildId, guildId));
+        await message.reply('✅ Daily prompts disabled.');
+        break;
+
+      case 'time':
+        if (args.length < 2) {
+          await message.reply('❌ Please specify a time in 24-hour format (e.g., 09:00 or 18:30)');
+          return;
+        }
+        const timeStr = args[1];
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+        if (!timeRegex.test(timeStr)) {
+          await message.reply('❌ Invalid time format. Use HH:MM (e.g., 09:00 or 18:30)');
+          return;
+        }
+        await db.update(botSettings)
+          .set({ dailyPromptTime: timeStr + ':00', updatedAt: new Date() })
+          .where(eq(botSettings.guildId, guildId));
+        await message.reply(`✅ Daily prompt time set to ${timeStr} (server time).`);
+        break;
+
+      case 'channel':
+        const channelMatch = args[1]?.match(/<#(\d+)>/);
+        if (!channelMatch) {
+          await message.reply('❌ Please mention a channel (e.g., #prompts)');
+          return;
+        }
+        const channelId = channelMatch[1];
+        await db.update(botSettings)
+          .set({ dailyPromptChannelId: channelId, updatedAt: new Date() })
+          .where(eq(botSettings.guildId, guildId));
+        await message.reply(`✅ Daily prompts will be posted to <#${channelId}>.`);
+        break;
+
+      case 'status':
+        const settings = existing || await db.select()
+          .from(botSettings)
+          .where(eq(botSettings.guildId, guildId))
+          .limit(1)
+          .then(r => r[0]);
+
+        if (!settings) {
+          await message.reply('❌ No bot settings configured yet. Use `!botset` to set up.');
+          return;
+        }
+
+        const statusEmbed = {
+          title: '⚙️ Daily Prompt Settings',
+          color: settings.dailyPromptEnabled ? 0x57F287 : 0x5865F2,
+          fields: [
+            {
+              name: 'Status',
+              value: settings.dailyPromptEnabled ? '✅ Enabled' : '❌ Disabled',
+              inline: true
+            },
+            {
+              name: 'Time',
+              value: settings.dailyPromptTime || 'Not set',
+              inline: true
+            },
+            {
+              name: 'Channel',
+              value: settings.dailyPromptChannelId ? `<#${settings.dailyPromptChannelId}>` : 'Not set',
+              inline: true
+            },
+            {
+              name: 'Last Posted',
+              value: settings.lastPromptPosted
+                ? new Date(settings.lastPromptPosted).toLocaleString()
+                : 'Never',
+              inline: false
+            }
+          ]
+        };
+        await message.reply({ embeds: [statusEmbed] });
+        break;
+
+      default:
+        await message.reply('❌ Unknown prompt setting. Use: enable, disable, time, channel, or status');
+    }
+  } catch (error) {
+    console.error('Error in prompt settings:', error);
+    await message.reply('❌ Failed to update prompt settings.');
   }
 }
 

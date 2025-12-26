@@ -321,15 +321,27 @@ export function extractCharacterLevel(characterData: any): number {
     const levels = Object.keys(characterData.characterInfo.levelInfo);
     const numericLevels = levels.map(l => parseInt(l)).filter(l => !isNaN(l));
     if (numericLevels.length > 0) {
-      return Math.max(...numericLevels);
+      const level = Math.max(...numericLevels);
+      console.log(`✓ Extracted character level: ${level} from levelInfo with ${numericLevels.length} levels`);
+      return level;
     }
   }
 
   // Fallback checks
-  if (characterData.level !== undefined) return characterData.level;
-  if (characterData.characterInfo?.level !== undefined) return characterData.characterInfo.level;
-  if (characterData.characterLevel !== undefined) return characterData.characterLevel;
+  if (characterData.level !== undefined) {
+    console.log(`✓ Extracted character level: ${characterData.level} from characterData.level`);
+    return characterData.level;
+  }
+  if (characterData.characterInfo?.level !== undefined) {
+    console.log(`✓ Extracted character level: ${characterData.characterInfo.level} from characterInfo.level`);
+    return characterData.characterInfo.level;
+  }
+  if (characterData.characterLevel !== undefined) {
+    console.log(`✓ Extracted character level: ${characterData.characterLevel} from characterLevel`);
+    return characterData.characterLevel;
+  }
 
+  console.log(`⚠️ Character level not found, defaulting to 1`);
   return 1; // Default to level 1
 }
 
@@ -380,6 +392,13 @@ export function extractCombatStats(characterData: any) {
   const defense = characterData.defense || {};
   const offense = characterData.offense || {};
 
+  console.log('=== Extracting Combat Stats ===');
+  console.log('Defense HP:', JSON.stringify(defense.hp));
+  console.log('Defense AC:', JSON.stringify(defense.ac));
+  console.log('Offense BAB:', JSON.stringify(offense.bab));
+  console.log('Offense CMB:', JSON.stringify(offense.cmb));
+  console.log('Defense CMD:', JSON.stringify(defense.cmd));
+
   // BAB can be a number or an object with total
   const bab = typeof offense.bab === 'number' ? offense.bab : (offense.bab?.total || 0);
 
@@ -403,7 +422,7 @@ export function extractCombatStats(characterData: any) {
     cmd = defense.cmd.total || 10;
   }
 
-  return {
+  const stats = {
     currentHp,
     maxHp,
     tempHp,
@@ -416,6 +435,9 @@ export function extractCombatStats(characterData: any) {
     cmb,
     cmd,
   };
+
+  console.log('✓ Extracted combat stats:', JSON.stringify(stats));
+  return stats;
 }
 
 /**
@@ -579,12 +601,36 @@ export function extractSpells(characterData: any) {
 export function extractBasicInfo(characterData: any) {
   const charInfo = characterData.characterInfo || {};
 
+  // Extract character classes from levelInfo
+  let characterClass = '';
+  if (charInfo.levelInfo) {
+    const classes: string[] = [];
+    for (const level of Object.keys(charInfo.levelInfo)) {
+      const levelData = charInfo.levelInfo[level];
+      if (levelData.Class && !classes.includes(levelData.Class)) {
+        classes.push(levelData.Class);
+      }
+    }
+    characterClass = classes.join(' / ');
+  }
+
+  // Fallback to direct class field
+  if (!characterClass) {
+    characterClass = characterData.class || characterData.className || charInfo.class || charInfo.className || '';
+  }
+
+  console.log('=== Extracting Basic Info ===');
+  console.log('Character class:', characterClass);
+  console.log('Race:', charInfo.race);
+  console.log('Alignment:', charInfo.alignment);
+
   return {
     race: charInfo.race || charInfo.raceName || '',
     alignment: charInfo.alignment || '',
     deity: charInfo.deity || charInfo.god || '',
     size: charInfo.size || 'Medium',
-    avatarUrl: charInfo.portrait || charInfo.portraitUrl || charInfo.image || charInfo.avatar || null
+    avatarUrl: charInfo.portrait || charInfo.portraitUrl || charInfo.image || charInfo.avatar || null,
+    characterClass
   };
 }
 

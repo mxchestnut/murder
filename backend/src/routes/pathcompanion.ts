@@ -226,6 +226,14 @@ router.post('/import', isAuthenticated, async (req, res) => {
     const armor = PlayFabService.extractArmor(character.data);
     const spells = PlayFabService.extractSpells(character.data);
 
+    console.log(`Importing character ${character.characterName}:`, {
+      level,
+      characterClass: basicInfo.characterClass,
+      hp: `${combatStats.currentHp}/${combatStats.maxHp}`,
+      ac: combatStats.armorClass,
+      bab: combatStats.baseAttackBonus
+    });
+
     // Check if this character is already imported
     const existing = await db.select().from(characterSheets).where(
       eq(characterSheets.pathCompanionId, characterId)
@@ -244,7 +252,7 @@ router.post('/import', isAuthenticated, async (req, res) => {
           intelligence: abilities.intelligence,
           wisdom: abilities.wisdom,
           charisma: abilities.charisma,
-          characterClass: character.data.class || character.data.className,
+          characterClass: basicInfo.characterClass,
           level: level,
           race: basicInfo.race,
           alignment: basicInfo.alignment,
@@ -289,7 +297,7 @@ router.post('/import', isAuthenticated, async (req, res) => {
         intelligence: abilities.intelligence,
         wisdom: abilities.wisdom,
         charisma: abilities.charisma,
-        characterClass: character.data.class || character.data.className,
+        characterClass: basicInfo.characterClass,
         level: level,
         race: basicInfo.race,
         alignment: basicInfo.alignment,

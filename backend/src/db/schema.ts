@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, integer, boolean, time } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -498,6 +498,10 @@ export const botSettings = pgTable('bot_settings', {
   id: serial('id').primaryKey(),
   guildId: text('guild_id').notNull().unique(),
   announcementChannelId: text('announcement_channel_id'), // For prompts, challenges, etc.
+  dailyPromptEnabled: boolean('daily_prompt_enabled').default(false),
+  dailyPromptTime: text('daily_prompt_time').default('09:00:00'),
+  dailyPromptChannelId: text('daily_prompt_channel_id'),
+  lastPromptPosted: timestamp('last_prompt_posted'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
