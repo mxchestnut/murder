@@ -2515,7 +2515,65 @@ async function handleSession(message: Message, args: string[]) {
           .setDescription(recentSessions.map((s, i) => {
             const status = s.endedAt ? '✅ Ended' : (s.isPaused ? '⏸️ Paused' : '▶️ Active');
             return `${i + 1}. **${s.title}** - ${status}\nStarted: ${s.startedAt.toLocaleDateString()}`;
-          }).join('\n\n'));
+          }).join('\n\n'))
+          .setFooter({ text: 'Use !session view <number> to see details' });
+
+        await message.reply({ embeds: [embed] });
+        break;
+      }
+
+      case 'view': {
+        const sessionNumber = parseInt(args[1]);
+        if (!sessionNumber || sessionNumber < 1) {
+          await message.reply('Usage: `!session view <number>` (from !session list)');
+          return;
+        }
+
+        const recentSessions = await db.select()
+          .from(sessions)
+          .where(eq(sessions.guildId, guildId))
+          .orderBy(desc(sessions.startedAt))
+          .limit(10);
+
+        if (sessionNumber > recentSessions.length) {
+          await message.reply(`❌ Session #${sessionNumber} not found. Use \`!session list\` to see available sessions.`);
+          return;
+        }
+
+        const session = recentSessions[sessionNumber - 1];
+
+        // Get message count
+        const msgCount = await db.select({ count: sql<number>`count(*)` })
+          .from(sessionMessages)
+          .where(eq(sessionMessages.sessionId, session.id));
+
+        // Get participants
+        const participants = JSON.parse(session.participants || '[]');
+
+        const status = session.endedAt ? '✅ Ended' : (session.isPaused ? '⏸️ Paused' : '▶️ Active');
+        const embed = new EmbedBuilder()
+          .setColor('#3498db')
+          .setTitle(`📋 Session: ${session.title}`)
+          .addFields(
+            { name: 'Status', value: status, inline: true },
+            { name: 'Started', value: session.startedAt.toLocaleString(), inline: true },
+            { name: 'Messages', value: `${msgCount[0]?.count || 0}`, inline: true },
+            { name: 'Participants', value: `${participants.length}`, inline: true }
+          );
+
+        if (session.endedAt) {
+          embed.addFields({ name: 'Ended', value: session.endedAt.toLocaleString(), inline: true });
+        }
+
+        // Add notes if present
+        if (session.notes) {
+          embed.addFields({ name: '📝 Notes', value: session.notes.substring(0, 1024), inline: false });
+        }
+
+        // Add loot if present
+        if (session.loot) {
+          embed.addFields({ name: '💰 Loot', value: session.loot.substring(0, 1024), inline: false });
+        }
 
         await message.reply({ embeds: [embed] });
         break;
@@ -2582,7 +2640,7 @@ async function handleSession(message: Message, args: string[]) {
       }
 
       default:
-        await message.reply('Usage: `!session <start|end|pause|resume|list|notes|loot> [args]`');
+        await message.reply('Usage: `!session <start|end|pause|resume|list|view|notes|loot> [args]`');
     }
   } catch (error) {
     console.error('Error in !session command:', error);
