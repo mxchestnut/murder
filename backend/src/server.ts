@@ -32,6 +32,7 @@ import hallOfFameRoutes from './routes/hall-of-fame';
 import memoriesRoutes from './routes/memories';
 import sessionsRoutes from './routes/sessions';
 import scenesRoutes from './routes/scenes';
+import publicRoutes from './routes/public';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -216,6 +217,7 @@ app.use('/api/hall-of-fame', hallOfFameRoutes);
 app.use('/api/memories', memoriesRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/scenes', scenesRoutes);
+app.use('/api/public', publicRoutes); // No auth required for public profiles
 
 // Health check
 app.get('/health', (req, res) => {

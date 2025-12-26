@@ -1048,4 +1048,245 @@ router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
   }
 });
 
+// Toggle character public status
+router.patch('/:id/public', isAuthenticated, async (req, res) => {
+  try {
+    const characterId = parseInt(req.params.id);
+    const { isPublic } = req.body;
+    const userId = (req.user as any).id;
+
+    // Verify ownership
+    const character = await db.query.characterSheets.findFirst({
+      where: and(
+        eq(characterSheets.id, characterId),
+        eq(characterSheets.userId, userId)
+      )
+    });
+
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    // Generate slug if making public and doesn't have one
+    let publicSlug = character.publicSlug;
+    if (isPublic && !publicSlug) {
+      const baseslug = character.name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      // Ensure uniqueness
+      let slug = baseslug;
+      let counter = 1;
+      while (true) {
+        const existing = await db.query.characterSheets.findFirst({
+          where: eq(characterSheets.publicSlug, slug)
+        });
+        if (!existing) break;
+        slug = `${baseslug}-${counter}`;
+        counter++;
+      }
+      publicSlug = slug;
+    }
+
+    // Update character
+    await db.update(characterSheets)
+      .set({
+        isPublic,
+        publicSlug: isPublic ? publicSlug : null
+      })
+      .where(eq(characterSheets.id, characterId));
+
+    res.json({
+      isPublic,
+      publicSlug: isPublic ? publicSlug : null,
+      publicUrl: isPublic ? `/public/${publicSlug}` : null
+    });
+  } catch (error) {
+    console.error('Error toggling public status:', error);
+    res.status(500).json({ error: 'Failed to update character' });
+  }
+});
+
+// Generate Discord markdown for character
+router.get('/:id/discord-markdown', isAuthenticated, async (req, res) => {
+  try {
+    const characterId = parseInt(req.params.id);
+    const userId = (req.user as any).id;
+
+    // Verify ownership
+    const character = await db.query.characterSheets.findFirst({
+      where: and(
+        eq(characterSheets.id, characterId),
+        eq(characterSheets.userId, userId)
+      )
+    });
+
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    // Generate comprehensive Discord markdown
+    const markdown = generateDiscordMarkdown(character);
+
+    res.json({ markdown });
+  } catch (error) {
+    console.error('Error generating Discord markdown:', error);
+    res.status(500).json({ error: 'Failed to generate markdown' });
+  }
+});
+
+// Helper function to generate Discord markdown
+function generateDiscordMarkdown(character: any): string {
+  const lines: string[] = [];
+
+  // Header with character name
+  lines.push(`# ${character.name}`);
+  if (character.fullName && character.fullName !== character.name) {
+    lines.push(`*${character.fullName}*`);
+  }
+  lines.push('');
+
+  // Basic Identity
+  if (character.species || character.characterClass || character.level) {
+    const identity = [];
+    if (character.level) identity.push(`Level ${character.level}`);
+    if (character.characterClass) identity.push(character.characterClass);
+    if (character.species) identity.push(character.species);
+    lines.push(`**${identity.join(' ')}**`);
+    lines.push('');
+  }
+
+  // Titles/Epithets
+  if (character.titles) {
+    lines.push(`*${character.titles}*`);
+    lines.push('');
+  }
+
+  // Personality One-Liner
+  if (character.personalityOneSentence) {
+    lines.push(`> ${character.personalityOneSentence}`);
+    lines.push('');
+  }
+
+  // Core Stats (if Pathfinder character)
+  if (character.level) {
+    lines.push('## Combat Stats');
+
+    // HP & AC
+    const stats = [];
+    if (character.hp !== undefined) stats.push(`**HP:** ${character.hp}${character.maxHp ? `/${character.maxHp}` : ''}`);
+    if (character.ac !== undefined) stats.push(`**AC:** ${character.ac}`);
+    if (stats.length) {
+      lines.push(stats.join(' | '));
+    }
+
+    // Ability Scores
+    if (character.str || character.dex || character.con || character.int || character.wis || character.cha) {
+      lines.push('');
+      const abilities = [];
+      if (character.str) abilities.push(`**STR** ${character.str > 0 ? '+' : ''}${character.str}`);
+      if (character.dex) abilities.push(`**DEX** ${character.dex > 0 ? '+' : ''}${character.dex}`);
+      if (character.con) abilities.push(`**CON** ${character.con > 0 ? '+' : ''}${character.con}`);
+      if (character.int) abilities.push(`**INT** ${character.int > 0 ? '+' : ''}${character.int}`);
+      if (character.wis) abilities.push(`**WIS** ${character.wis > 0 ? '+' : ''}${character.wis}`);
+      if (character.cha) abilities.push(`**CHA** ${character.cha > 0 ? '+' : ''}${character.cha}`);
+      lines.push(abilities.join(' | '));
+    }
+
+    // Saves
+    if (character.fortitude !== undefined || character.reflex !== undefined || character.will !== undefined) {
+      lines.push('');
+      const saves = [];
+      if (character.fortitude !== undefined) saves.push(`**Fort** ${character.fortitude > 0 ? '+' : ''}${character.fortitude}`);
+      if (character.reflex !== undefined) saves.push(`**Ref** ${character.reflex > 0 ? '+' : ''}${character.reflex}`);
+      if (character.will !== undefined) saves.push(`**Will** ${character.will > 0 ? '+' : ''}${character.will}`);
+      lines.push(saves.join(' | '));
+    }
+
+    lines.push('');
+  }
+
+  // Bio Section
+  lines.push('## Character Bio');
+
+  if (character.pronouns || character.genderIdentity) {
+    const pronounInfo = [];
+    if (character.pronouns) pronounInfo.push(character.pronouns);
+    if (character.genderIdentity) pronounInfo.push(character.genderIdentity);
+    lines.push(`**Pronouns:** ${pronounInfo.join(', ')}`);
+  }
+
+  if (character.ageDescription) {
+    lines.push(`**Age:** ${character.ageDescription}`);
+  }
+
+  if (character.occupation) {
+    lines.push(`**Occupation:** ${character.occupation}`);
+  }
+
+  if (character.currentLocation) {
+    lines.push(`**Location:** ${character.currentLocation}`);
+  }
+
+  lines.push('');
+
+  // Appearance
+  if (character.physicalPresence) {
+    lines.push('### Appearance');
+    lines.push(character.physicalPresence);
+
+    if (character.identifyingTraits) {
+      lines.push(`\n**Distinctive Features:** ${character.identifyingTraits}`);
+    }
+
+    if (character.clothingAesthetic) {
+      lines.push(`**Clothing Style:** ${character.clothingAesthetic}`);
+    }
+
+    lines.push('');
+  }
+
+  // Personality
+  if (character.keyVirtues || character.keyFlaws) {
+    lines.push('### Personality');
+
+    if (character.keyVirtues) {
+      lines.push(`**Virtues:** ${character.keyVirtues}`);
+    }
+
+    if (character.keyFlaws) {
+      lines.push(`**Flaws:** ${character.keyFlaws}`);
+    }
+
+    lines.push('');
+  }
+
+  // Goals & Motivations
+  if (character.currentGoal || character.longTermDesire) {
+    lines.push('### Goals & Motivations');
+
+    if (character.currentGoal) {
+      lines.push(`**Current Goal:** ${character.currentGoal}`);
+    }
+
+    if (character.longTermDesire) {
+      lines.push(`**Long-term Desire:** ${character.longTermDesire}`);
+    }
+
+    if (character.coreMotivation) {
+      lines.push(`**Core Motivation:** ${character.coreMotivation}`);
+    }
+
+    lines.push('');
+  }
+
+  // Public profile link (if public)
+  if (character.isPublic && character.publicSlug) {
+    lines.push('---');
+    lines.push(`*View full profile: ${process.env.FRONTEND_URL || 'https://murder-tech.com'}/public/${character.publicSlug}*`);
+  }
+
+  return lines.join('\n');
+}
+
 export default router;

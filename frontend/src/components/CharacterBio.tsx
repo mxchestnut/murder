@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   User, Target, Brain, Smile, Palette, Sword, BookOpen,
-  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save, Trash2
+  Users, Eye, TrendingUp, Award, ChevronDown, ChevronRight, Save, Trash2,
+  Globe, Copy, Check
 } from 'lucide-react';
 import { api } from '../utils/api';
 import TiptapField from './TiptapField';
@@ -102,6 +103,8 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
   const [characterKey, setCharacterKey] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isPublic, setIsPublic] = useState(character.isPublic || false);
+  const [copiedMarkdown, setCopiedMarkdown] = useState(false);
 
   useEffect(() => {
     // Update bio data when character changes
@@ -217,6 +220,40 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
       showError(error, 'Failed to sync character');
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleTogglePublic = async () => {
+    try {
+      const response = await api.patch(`/characters/${character.id}/public`, {
+        isPublic: !isPublic
+      });
+
+      setIsPublic(response.data.isPublic);
+
+      if (response.data.isPublic) {
+        const publicUrl = `${window.location.origin}/public/${response.data.publicSlug}`;
+        showToast('success', `Character is now public! Share: ${publicUrl}`);
+      } else {
+        showToast('success', 'Character is now private');
+      }
+    } catch (error) {
+      showError(error, 'Failed to update public status');
+    }
+  };
+
+  const handleCopyDiscordMarkdown = async () => {
+    try {
+      const response = await api.get(`/characters/${character.id}/discord-markdown`);
+      const markdown = response.data.markdown;
+
+      await navigator.clipboard.writeText(markdown);
+      setCopiedMarkdown(true);
+      showToast('success', 'Discord markdown copied to clipboard!');
+
+      setTimeout(() => setCopiedMarkdown(false), 3000);
+    } catch (error) {
+      showError(error, 'Failed to copy markdown');
     }
   };
 
@@ -508,6 +545,46 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
           >
             <Save size={16} />
             {isSaving ? 'Saving...' : 'Save Bio'}
+          </button>
+          <button
+            onClick={handleTogglePublic}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              border: `1px solid ${isPublic ? '#10b981' : 'var(--border-color)'}`,
+              background: isPublic ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-secondary)',
+              color: isPublic ? '#10b981' : 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}
+            title={isPublic ? 'Make character private' : 'Make character public'}
+          >
+            <Globe size={16} />
+            {isPublic ? 'Public' : 'Private'}
+          </button>
+          <button
+            onClick={handleCopyDiscordMarkdown}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: copiedMarkdown ? '#10b981' : 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}
+            title="Copy character sheet as Discord markdown"
+          >
+            {copiedMarkdown ? <Check size={16} /> : <Copy size={16} />}
+            {copiedMarkdown ? 'Copied!' : 'Share'}
           </button>
           <button
             onClick={handleDelete}

@@ -159,6 +159,10 @@ export const characterSheets = pgTable('character_sheets', {
   symbolOrMotif: text('symbol_or_motif'),
   legacy: text('legacy'),
   rememberedAs: text('remembered_as'),
+  // Public Profile
+  isPublic: boolean('is_public').default(false),
+  publicSlug: text('public_slug'), // Unique slug for public URLs
+  publicViews: integer('public_views').default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
