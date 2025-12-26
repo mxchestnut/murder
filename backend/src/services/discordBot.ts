@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, sessions, sessionMessages, scenes, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -59,9 +59,6 @@ export function initializeDiscordBot(token: string) {
       const characterName = proxyMatch[1].trim();
       const messageContent = proxyMatch[2];
       await handleProxy(message, characterName, messageContent);
-
-      // Track in active session if exists
-      await trackSessionMessage(message, characterName, messageContent, false);
       return;
     }
 
@@ -147,12 +144,6 @@ export function initializeDiscordBot(token: string) {
         case 'leaderboard':
           await handleLeaderboard(message, args);
           break;
-        case 'session':
-          await handleSession(message, args);
-          break;
-        case 'scene':
-          await handleScene(message, args);
-          break;
         case 'time':
           await handleTime(message, args);
           break;
@@ -164,9 +155,6 @@ export function initializeDiscordBot(token: string) {
           break;
         case 'music':
           await handleMusic(message);
-          break;
-        case 'recap':
-          await handleRecap(message);
           break;
         case 'hall':
           await handleHall(message, args);
@@ -936,14 +924,6 @@ async function handleRoll(message: Message, args: string[]) {
 
     await message.reply({ embeds: [embed] });
 
-    // Track in session if active (using "Dice Roll" as character name for generic rolls)
-    await trackSessionMessage(
-      message,
-      'Dice Roll',
-      `${numDice}d${dieSize}${modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : ''} = ${total}`,
-      true
-    );
-
     return;
   }
 
@@ -1073,14 +1053,6 @@ async function handleRoll(message: Message, args: string[]) {
       nat20: diceRoll === 20,
       nat1: diceRoll === 1
     }
-  );
-
-  // Track in active session
-  await trackSessionMessage(
-    message,
-    character.name,
-    `${rollDescription}: ${diceRoll} ${modifier >= 0 ? '+' : ''}${modifier} = ${total}`,
-    true
   );
 }
 
@@ -1626,14 +1598,6 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
         nat1: diceRoll === 1,
         channelId: message.channelId
       }
-    );
-
-    // Track in active session
-    await trackSessionMessage(
-      message,
-      character.name,
-      `${rollDescription}: ${diceRoll} ${modifier >= 0 ? '+' : ''}${modifier} = ${total}`,
-      true
     );
 
     return true;
@@ -2357,387 +2321,6 @@ async function handleLeaderboard(message: Message, args: string[]) {
   }
 }
 
-// ==================== RP PROMPTS ====================
-// ==================== SESSION LOGGING ====================
-async function trackSessionMessage(message: Message, characterName: string, content: string, isDiceRoll: boolean) {
-  try {
-    const channelId = message.channel.id;
-    const [session] = await db.select()
-      .from(sessions)
-      .where(and(
-        eq(sessions.channelId, channelId),
-        sql`${sessions.endedAt} IS NULL`,
-        eq(sessions.isPaused, false)
-      ));
-
-    if (!session) return; // No active session, nothing to track
-
-    await db.insert(sessionMessages).values({
-      sessionId: session.id,
-      messageId: message.id,
-      authorId: message.author.id,
-      characterName,
-      content,
-      isDiceRoll,
-      timestamp: new Date()
-    });
-
-    // Update message count
-    await db.update(sessions)
-      .set({ messageCount: sql`${sessions.messageCount} + 1` })
-      .where(eq(sessions.id, session.id));
-  } catch (error) {
-    console.error('Error tracking session message:', error);
-  }
-}
-
-async function handleSession(message: Message, args: string[]) {
-  try {
-    const subcmd = args[0]?.toLowerCase();
-    const channelId = message.channel.id;
-    const guildId = message.guild?.id || '';
-
-    switch (subcmd) {
-      case 'start': {
-        const title = args.slice(1).join(' ');
-        if (!title) {
-          await message.reply('Usage: `!session start <title>`');
-          return;
-        }
-
-        // Check if session already running
-        const existing = await db.select()
-          .from(sessions)
-          .where(and(
-            eq(sessions.channelId, channelId),
-            sql`${sessions.endedAt} IS NULL`
-          ));
-
-        if (existing.length > 0) {
-          await message.reply('❌ A session is already running in this channel. Use `!session end` first.');
-          return;
-        }
-
-        const [session] = await db.insert(sessions).values({
-          title,
-          channelId,
-          guildId,
-          participants: JSON.stringify([message.author.id]),
-          startedAt: new Date()
-        }).returning();
-
-        await message.reply(`✅ Session **"${title}"** started! Messages will be logged.`);
-        break;
-      }
-
-      case 'end': {
-        const [session] = await db.select()
-          .from(sessions)
-          .where(and(
-            eq(sessions.channelId, channelId),
-            sql`${sessions.endedAt} IS NULL`
-          ));
-
-        if (!session) {
-          await message.reply('❌ No active session in this channel.');
-          return;
-        }
-
-        await db.update(sessions)
-          .set({ endedAt: new Date() })
-          .where(eq(sessions.id, session.id));
-
-        const messageCount = await db.select({ count: sql<number>`count(*)` })
-          .from(sessionMessages)
-          .where(eq(sessionMessages.sessionId, session.id));
-
-        await message.reply(`✅ Session **"${session.title}"** ended! Logged ${messageCount[0]?.count || 0} messages.`);
-        break;
-      }
-
-      case 'pause': {
-        const [session] = await db.select()
-          .from(sessions)
-          .where(and(
-            eq(sessions.channelId, channelId),
-            sql`${sessions.endedAt} IS NULL`
-          ));
-
-        if (!session) {
-          await message.reply('❌ No active session in this channel.');
-          return;
-        }
-
-        await db.update(sessions)
-          .set({ isPaused: true, pausedAt: new Date() })
-          .where(eq(sessions.id, session.id));
-
-        await message.reply('⏸️ Session paused. Use `!session resume` to continue.');
-        break;
-      }
-
-      case 'resume': {
-        const [session] = await db.select()
-          .from(sessions)
-          .where(and(
-            eq(sessions.channelId, channelId),
-            sql`${sessions.endedAt} IS NULL`
-          ));
-
-        if (!session) {
-          await message.reply('❌ No active session in this channel.');
-          return;
-        }
-
-        await db.update(sessions)
-          .set({ isPaused: false, pausedAt: null })
-          .where(eq(sessions.id, session.id));
-
-        await message.reply('▶️ Session resumed!');
-        break;
-      }
-
-      case 'list': {
-        const recentSessions = await db.select()
-          .from(sessions)
-          .where(eq(sessions.guildId, guildId))
-          .orderBy(desc(sessions.startedAt))
-          .limit(10);
-
-        if (recentSessions.length === 0) {
-          await message.reply('No sessions found for this server.');
-          return;
-        }
-
-        const embed = new EmbedBuilder()
-          .setColor('#3498db')
-          .setTitle('📝 Recent Sessions')
-          .setDescription(recentSessions.map((s, i) => {
-            const status = s.endedAt ? '✅ Ended' : (s.isPaused ? '⏸️ Paused' : '▶️ Active');
-            return `${i + 1}. **${s.title}** - ${status}\nStarted: ${s.startedAt.toLocaleDateString()}`;
-          }).join('\n\n'));
-
-        await message.reply({ embeds: [embed] });
-        break;
-      }
-
-      case 'notes': {
-        const noteText = args.slice(1).join(' ');
-        if (!noteText) {
-          await message.reply('Usage: `!session notes <your notes>`');
-          return;
-        }
-
-        const [session] = await db.select()
-          .from(sessions)
-          .where(and(
-            eq(sessions.channelId, channelId),
-            sql`${sessions.endedAt} IS NULL`
-          ));
-
-        if (!session) {
-          await message.reply('❌ No active session in this channel.');
-          return;
-        }
-
-        const currentNotes = session.notes || '';
-        const updatedNotes = currentNotes ? `${currentNotes}\n${noteText}` : noteText;
-
-        await db.update(sessions)
-          .set({ notes: updatedNotes })
-          .where(eq(sessions.id, session.id));
-
-        await message.reply('📝 Note added to session!');
-        break;
-      }
-
-      case 'loot': {
-        const lootText = args.slice(1).join(' ');
-        if (!lootText) {
-          await message.reply('Usage: `!session loot <loot item>`');
-          return;
-        }
-
-        const [session] = await db.select()
-          .from(sessions)
-          .where(and(
-            eq(sessions.channelId, channelId),
-            sql`${sessions.endedAt} IS NULL`
-          ));
-
-        if (!session) {
-          await message.reply('❌ No active session in this channel.');
-          return;
-        }
-
-        const currentLoot = session.loot || '';
-        const updatedLoot = currentLoot ? `${currentLoot}\n${lootText}` : lootText;
-
-        await db.update(sessions)
-          .set({ loot: updatedLoot })
-          .where(eq(sessions.id, session.id));
-
-        await message.reply('💰 Loot added to session!');
-        break;
-      }
-
-      default:
-        await message.reply('Usage: `!session <start|end|pause|resume|list|notes|loot> [args]`');
-    }
-  } catch (error) {
-    console.error('Error in !session command:', error);
-    await message.reply('❌ Failed to handle session command.');
-  }
-}
-
-// ==================== SCENE MANAGER ====================
-async function handleScene(message: Message, args: string[]) {
-  try {
-    const subcmd = args[0]?.toLowerCase();
-    const channelId = message.channel.id;
-    const guildId = message.guild?.id || '';
-
-    switch (subcmd) {
-      case 'start': {
-        const title = args.slice(1).join(' ');
-        if (!title) {
-          await message.reply('Usage: `!scene start <title>`');
-          return;
-        }
-
-        // Check if scene already running
-        const existing = await db.select()
-          .from(scenes)
-          .where(and(
-            eq(scenes.channelId, channelId),
-            sql`${scenes.endedAt} IS NULL`
-          ));
-
-        if (existing.length > 0) {
-          await message.reply('❌ A scene is already active in this channel. Use `!scene end` first.');
-          return;
-        }
-
-        const [scene] = await db.insert(scenes).values({
-          title,
-          channelId,
-          guildId,
-          participants: JSON.stringify([message.author.id]),
-          startedAt: new Date()
-        }).returning();
-
-        await message.reply(`🎬 Scene **"${title}"** started!`);
-        break;
-      }
-
-      case 'end': {
-        const [scene] = await db.select()
-          .from(scenes)
-          .where(and(
-            eq(scenes.channelId, channelId),
-            sql`${scenes.endedAt} IS NULL`
-          ));
-
-        if (!scene) {
-          await message.reply('❌ No active scene in this channel.');
-          return;
-        }
-
-        await db.update(scenes)
-          .set({ endedAt: new Date() })
-          .where(eq(scenes.id, scene.id));
-
-        await message.reply(`✅ Scene **"${scene.title}"** ended!`);
-        break;
-      }
-
-      case 'tag': {
-        const tags = args.slice(1).join(' ').split(',').map(t => t.trim());
-        if (tags.length === 0) {
-          await message.reply('Usage: `!scene tag <tag1, tag2, ...>`');
-          return;
-        }
-
-        const [scene] = await db.select()
-          .from(scenes)
-          .where(and(
-            eq(scenes.channelId, channelId),
-            sql`${scenes.endedAt} IS NULL`
-          ));
-
-        if (!scene) {
-          await message.reply('❌ No active scene in this channel.');
-          return;
-        }
-
-        await db.update(scenes)
-          .set({ tags: JSON.stringify(tags) })
-          .where(eq(scenes.id, scene.id));
-
-        await message.reply(`🏷️ Tags added: ${tags.join(', ')}`);
-        break;
-      }
-
-      case 'location': {
-        const location = args.slice(1).join(' ');
-        if (!location) {
-          await message.reply('Usage: `!scene location <location>`');
-          return;
-        }
-
-        const [scene] = await db.select()
-          .from(scenes)
-          .where(and(
-            eq(scenes.channelId, channelId),
-            sql`${scenes.endedAt} IS NULL`
-          ));
-
-        if (!scene) {
-          await message.reply('❌ No active scene in this channel.');
-          return;
-        }
-
-        await db.update(scenes)
-          .set({ location })
-          .where(eq(scenes.id, scene.id));
-
-        await message.reply(`📍 Location set: ${location}`);
-        break;
-      }
-
-      case 'list': {
-        const recentScenes = await db.select()
-          .from(scenes)
-          .where(eq(scenes.guildId, guildId))
-          .orderBy(desc(scenes.startedAt))
-          .limit(10);
-
-        if (recentScenes.length === 0) {
-          await message.reply('No scenes found for this server.');
-          return;
-        }
-
-        const embed = new EmbedBuilder()
-          .setColor('#e67e22')
-          .setTitle('🎬 Recent Scenes')
-          .setDescription(recentScenes.map((s, i) => {
-            const status = s.endedAt ? '✅' : '▶️';
-            return `${status} ${i + 1}. **${s.title}**\n${s.location ? `📍 ${s.location}` : 'No location set'}`;
-          }).join('\n\n'));
-
-        await message.reply({ embeds: [embed] });
-        break;
-      }
-
-      default:
-        await message.reply('Usage: `!scene <start|end|tag|location|list> [args]`');
-    }
-  } catch (error) {
-    console.error('Error in !scene command:', error);
-    await message.reply('❌ Failed to handle scene command.');
-  }
-}
-
 // ==================== UTILITY COMMANDS ====================
 async function handleTime(message: Message, args: string[]) {
   try {
@@ -3156,58 +2739,6 @@ async function handleMusic(message: Message) {
     .setFooter({ text: 'Perfect for setting the scene!' });
 
   await message.reply({ embeds: [embed] });
-}
-
-async function handleRecap(message: Message) {
-  try {
-    const channelId = message.channel.id;
-
-    // Find active session
-    const [session] = await db.select()
-      .from(sessions)
-      .where(and(
-        eq(sessions.channelId, channelId),
-        sql`${sessions.endedAt} IS NULL`
-      ));
-
-    if (!session) {
-      await message.reply('❌ No active session to recap. Start one with `!session start <title>`');
-      return;
-    }
-
-    // Get message count
-    const msgCount = await db.select({ count: sql<number>`count(*)` })
-      .from(sessionMessages)
-      .where(eq(sessionMessages.sessionId, session.id));
-
-    // Get participants
-    const participants = JSON.parse(session.participants || '[]');
-
-    const embed = new EmbedBuilder()
-      .setColor('#3498db')
-      .setTitle(`📋 Session Recap: ${session.title}`)
-      .addFields(
-        { name: 'Started', value: session.startedAt.toLocaleString(), inline: true },
-        { name: 'Messages', value: `${msgCount[0]?.count || 0}`, inline: true },
-        { name: 'Participants', value: `${participants.length}`, inline: true }
-      )
-      .setDescription('Session is ongoing. Use `!session end` to finalize.');
-
-    // Add notes if present
-    if (session.notes) {
-      embed.addFields({ name: '📝 Notes', value: session.notes.substring(0, 1024), inline: false });
-    }
-
-    // Add loot if present
-    if (session.loot) {
-      embed.addFields({ name: '💰 Loot', value: session.loot.substring(0, 1024), inline: false });
-    }
-
-    await message.reply({ embeds: [embed] });
-  } catch (error) {
-    console.error('Error in !recap command:', error);
-    await message.reply('❌ Failed to generate recap.');
-  }
 }
 
 // ==================== HALL OF FAME (STARBOARD) ====================

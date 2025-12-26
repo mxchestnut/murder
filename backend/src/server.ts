@@ -28,8 +28,6 @@ import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
 import hallOfFameRoutes from './routes/hall-of-fame';
 import memoriesRoutes from './routes/memories';
-import sessionsRoutes from './routes/sessions';
-import scenesRoutes from './routes/scenes';
 import publicRoutes from './routes/public';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
@@ -193,8 +191,6 @@ app.use('/api/admin', doubleCsrfProtection);
 app.use('/api/stats', doubleCsrfProtection);
 app.use('/api/hall-of-fame', doubleCsrfProtection);
 app.use('/api/memories', doubleCsrfProtection);
-app.use('/api/sessions', doubleCsrfProtection);
-app.use('/api/scenes', doubleCsrfProtection);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -209,8 +205,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/hall-of-fame', hallOfFameRoutes);
 app.use('/api/memories', memoriesRoutes);
-app.use('/api/sessions', sessionsRoutes);
-app.use('/api/scenes', scenesRoutes);
 app.use('/api/public', publicRoutes); // No auth required for public profiles
 
 // Health check
@@ -279,41 +273,6 @@ app.get('*', (req, res) => {
         );
         CREATE INDEX IF NOT EXISTS idx_character_memories_char ON character_memories(character_id);
         CREATE INDEX IF NOT EXISTS idx_character_memories_guild ON character_memories(guild_id);
-      `);
-
-      // Sessions table
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS sessions (
-          id SERIAL PRIMARY KEY,
-          title TEXT NOT NULL,
-          channel_id TEXT NOT NULL,
-          guild_id TEXT NOT NULL,
-          started_at TIMESTAMP DEFAULT NOW() NOT NULL,
-          ended_at TIMESTAMP,
-          paused_at TIMESTAMP,
-          is_paused BOOLEAN DEFAULT false,
-          participants TEXT,
-          message_count INTEGER DEFAULT 0,
-          summary TEXT,
-          tags TEXT,
-          created_by INTEGER
-        );
-      `);
-
-      // Scenes table
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS scenes (
-          id SERIAL PRIMARY KEY,
-          session_id INTEGER,
-          title TEXT NOT NULL,
-          location TEXT,
-          channel_id TEXT NOT NULL,
-          guild_id TEXT NOT NULL,
-          started_at TIMESTAMP DEFAULT NOW() NOT NULL,
-          ended_at TIMESTAMP,
-          participants TEXT,
-          tags TEXT
-        );
       `);
 
       // Hall of Fame table
