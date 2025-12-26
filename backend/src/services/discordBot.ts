@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, PublicThreadChannel, PrivateThreadChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
+import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, NewsChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
 import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, relationships, prompts, tropes, sessions, sessionMessages, scenes, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
@@ -1106,14 +1106,12 @@ async function handleProxy(message: Message, characterName: string, messageText:
     const channel = message.channel;
 
     // Work in text channels, news channels, and threads (including forum posts)
-    if (!(channel instanceof TextChannel || channel instanceof NewsChannel || channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel)) {
+    if (!('send' in channel)) {
       return;
     }
 
     // For threads, get the parent channel for webhooks
-    const webhookChannel = (channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel)
-      ? channel.parent
-      : channel;
+    const webhookChannel = channel.isThread() ? channel.parent : channel;
 
     if (!webhookChannel) {
       console.error('Could not find parent channel for thread');
@@ -1126,7 +1124,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
     if (!webhook) {
       // Check if a webhook already exists
       const webhooks = await webhookChannel.fetchWebhooks();
-      webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
+      webhook = webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
       if (!webhook) {
         // Create new webhook
@@ -1162,14 +1160,14 @@ async function handleProxy(message: Message, characterName: string, messageText:
       };
 
       // If we're in a thread, specify the thread ID
-      if (channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel) {
+      if (channel.isThread()) {
         webhookOptions.threadId = channel.id;
       }
 
-      await webhook.send(webhookOptions);
+      await webhook!.send(webhookOptions);
 
       // Track stats
-      await trackCharacterActivity(character.id, 'message', `Sent message in ${channel.name}`, {
+      await trackCharacterActivity(character.id, 'message', `Sent message in ${(channel as any).name || 'thread'}`, {
         messageLength: messageText.length,
         channelId: channel.id
       });
@@ -1182,7 +1180,7 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
         // Recreate webhook
         const webhooks = await webhookChannel.fetchWebhooks();
-        webhook = webhooks.find(wh => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
+        webhook = webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
 
         if (!webhook) {
           webhook = await webhookChannel.createWebhook({
@@ -1200,11 +1198,11 @@ async function handleProxy(message: Message, characterName: string, messageText:
           avatarURL: avatarUrl
         };
 
-        if (channel instanceof PublicThreadChannel || channel instanceof PrivateThreadChannel) {
+        if (channel.isThread()) {
           retryOptions.threadId = channel.id;
         }
 
-        await webhook.send(retryOptions);
+        await webhook!.send(retryOptions);
       } else {
         throw webhookError;
       }
