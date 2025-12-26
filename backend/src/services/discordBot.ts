@@ -2264,7 +2264,10 @@ async function handleStats(message: Message, args: string[]) {
       .setTimestamp();
 
     if (character[0].avatarUrl) {
-      embed.setThumbnail(character[0].avatarUrl);
+      const avatarUrl = character[0].avatarUrl.startsWith('http')
+        ? character[0].avatarUrl
+        : `https://murder.tech${character[0].avatarUrl}`;
+      embed.setThumbnail(avatarUrl);
     }
 
     await message.reply({ embeds: [embed] });
