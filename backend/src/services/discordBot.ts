@@ -39,8 +39,10 @@ export function initializeDiscordBot(token: string) {
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
       GatewayIntentBits.GuildMessageReactions,
+      GatewayIntentBits.GuildPublicThreads,
+      GatewayIntentBits.GuildPrivateThreads,
     ],
-    partials: [Partials.Message, Partials.Reaction],
+    partials: [Partials.Message, Partials.Reaction, Partials.Channel],
   });
 
   botClient.on('ready', () => {
