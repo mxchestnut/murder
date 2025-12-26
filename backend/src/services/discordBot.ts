@@ -423,6 +423,224 @@ async function handleProfile(message: Message, args: string[]) {
     return race.name || race.race || '';
   };
 
+  // Helper functions to build tab content
+  const buildIdentityTab = (embed: EmbedBuilder) => {
+    const identityInfo = [];
+    if (character.fullName && character.fullName !== character.name) identityInfo.push(`**Full Name:** ${stripHtml(character.fullName)}`);
+    if (character.titles) identityInfo.push(`**Titles:** ${stripHtml(character.titles)}`);
+    if (character.species) identityInfo.push(`**Species:** ${stripHtml(character.species)}`);
+    if (character.race) {
+      const raceName = getRaceName(character.race);
+      if (raceName) identityInfo.push(`**Race:** ${raceName}`);
+    }
+    if (character.ageDescription) identityInfo.push(`**Age:** ${stripHtml(character.ageDescription)}`);
+    if (character.culturalBackground) identityInfo.push(`**Culture:** ${stripHtml(character.culturalBackground)}`);
+    if (character.pronouns) identityInfo.push(`**Pronouns:** ${stripHtml(character.pronouns)}`);
+    if (character.genderIdentity) identityInfo.push(`**Gender:** ${stripHtml(character.genderIdentity)}`);
+    if (character.sexuality) identityInfo.push(`**Sexuality:** ${stripHtml(character.sexuality)}`);
+    if (character.occupation) identityInfo.push(`**Occupation:** ${stripHtml(character.occupation)}`);
+    if (character.currentLocation) identityInfo.push(`**Location:** ${stripHtml(character.currentLocation)}`);
+    if (character.characterClass) identityInfo.push(`**Class:** ${character.characterClass}`);
+    if (character.level) identityInfo.push(`**Level:** ${character.level}`);
+    if (identityInfo.length > 0) {
+      embed.addFields({ name: '👤 Basic Identity', value: truncate(identityInfo.join('\n')), inline: false });
+    }
+  };
+
+  const buildCombatTab = (embed: EmbedBuilder) => {
+    const statModifier = (stat: number) => {
+      const mod = Math.floor((stat - 10) / 2);
+      return mod >= 0 ? `+${mod}` : `${mod}`;
+    };
+    const statsInfo = [
+      `**STR:** ${character.strength} (${statModifier(character.strength)})`,
+      `**DEX:** ${character.dexterity} (${statModifier(character.dexterity)})`,
+      `**CON:** ${character.constitution} (${statModifier(character.constitution)})`,
+      `**INT:** ${character.intelligence} (${statModifier(character.intelligence)})`,
+      `**WIS:** ${character.wisdom} (${statModifier(character.wisdom)})`,
+      `**CHA:** ${character.charisma} (${statModifier(character.charisma)})`
+    ];
+    embed.addFields({ name: '📊 Ability Scores', value: statsInfo.join(' • '), inline: false });
+
+    const combatInfo = [
+      `**HP:** ${character.currentHp || 0}/${character.maxHp || 0}`,
+      `**AC:** ${character.armorClass || 10}`,
+      `**Initiative:** ${(character.initiative || 0) >= 0 ? '+' : ''}${character.initiative || 0}`,
+      `**Speed:** ${character.speed || 30}ft`
+    ];
+    embed.addFields({ name: '⚔️ Combat Stats', value: combatInfo.join(' • '), inline: false });
+
+    const savesInfo = [
+      `**Fortitude:** ${(character.fortitudeSave || 0) >= 0 ? '+' : ''}${character.fortitudeSave || 0}`,
+      `**Reflex:** ${(character.reflexSave || 0) >= 0 ? '+' : ''}${character.reflexSave || 0}`,
+      `**Will:** ${(character.willSave || 0) >= 0 ? '+' : ''}${character.willSave || 0}`
+    ];
+    embed.addFields({ name: '🛡️ Saving Throws', value: savesInfo.join(' • '), inline: false });
+  };
+
+  const buildGoalsTab = (embed: EmbedBuilder) => {
+    const goalsInfo = [];
+    if (character.currentGoal) goalsInfo.push(`**Current Goal:** ${stripHtml(character.currentGoal)}`);
+    if (character.longTermDesire) goalsInfo.push(`**Long-term Desire:** ${stripHtml(character.longTermDesire)}`);
+    if (character.coreMotivation) goalsInfo.push(`**Core Motivation:** ${stripHtml(character.coreMotivation)}`);
+    if (character.deepestFear) goalsInfo.push(`**Deepest Fear:** ${stripHtml(character.deepestFear)}`);
+    if (character.alignmentTendency) goalsInfo.push(`**Alignment:** ${stripHtml(character.alignmentTendency)}`);
+    if (goalsInfo.length > 0) {
+      embed.addFields({ name: '🎯 Goals & Motivations', value: truncate(goalsInfo.join('\n')), inline: false });
+    }
+  };
+
+  const buildPersonalityTab = (embed: EmbedBuilder) => {
+    if (character.personalityOneSentence) {
+      embed.addFields({ name: '💬 In a Nutshell', value: `*"${stripHtml(character.personalityOneSentence)}"*`, inline: false });
+    }
+
+    const personalityInfo = [];
+    if (character.keyVirtues) personalityInfo.push(`**Virtues:** ${stripHtml(character.keyVirtues)}`);
+    if (character.keyFlaws) personalityInfo.push(`**Flaws:** ${stripHtml(character.keyFlaws)}`);
+    if (character.stressBehavior) personalityInfo.push(`**Under Stress:** ${stripHtml(character.stressBehavior)}`);
+    if (character.habitsOrTells) personalityInfo.push(`**Habits:** ${stripHtml(character.habitsOrTells)}`);
+    if (character.speechStyle) personalityInfo.push(`**Speech:** ${stripHtml(character.speechStyle)}`);
+    if (personalityInfo.length > 0) {
+      embed.addFields({ name: '😊 Personality Traits', value: truncate(personalityInfo.join('\n')), inline: false });
+    }
+  };
+
+  const buildAppearanceTab = (embed: EmbedBuilder) => {
+    const appearanceInfo = [];
+    if (character.physicalPresence) appearanceInfo.push(`**Presence:** ${stripHtml(character.physicalPresence)}`);
+    if (character.identifyingTraits) appearanceInfo.push(`**Identifying Traits:** ${stripHtml(character.identifyingTraits)}`);
+    if (character.clothingAesthetic) appearanceInfo.push(`**Clothing Style:** ${stripHtml(character.clothingAesthetic)}`);
+    if (appearanceInfo.length > 0) {
+      embed.addFields({ name: '🎨 Appearance', value: truncate(appearanceInfo.join('\n')), inline: false });
+    }
+  };
+
+  const buildSkillsTab = (embed: EmbedBuilder) => {
+    let skills: any = character.skills;
+    if (typeof skills === 'string') {
+      try {
+        skills = JSON.parse(skills);
+      } catch (e) {
+        // Silent fail - will show "no data" message
+      }
+    }
+    if (skills && typeof skills === 'object') {
+      const trainedSkills = Object.entries(skills)
+        .filter(([_, data]: any) => data.ranks > 0 || data.total >= 5)
+        .map(([name, data]: any) => `**${name}:** +${data.total}`)
+        .join('\n');
+      if (trainedSkills) {
+        embed.addFields({ name: '📚 Pathfinder Skills', value: truncate(trainedSkills, 1024), inline: false });
+      } else {
+        embed.addFields({ name: '📚 Pathfinder Skills', value: 'No trained skills recorded', inline: false });
+      }
+    } else {
+      embed.addFields({ name: '📚 Pathfinder Skills', value: 'No skill data available', inline: false });
+    }
+  };
+
+  const buildAbilitiesTab = (embed: EmbedBuilder) => {
+    const abilitiesInfo = [];
+    if (character.notableEquipment) abilitiesInfo.push(`**Equipment:** ${stripHtml(character.notableEquipment)}`);
+    if (character.skillsReliedOn) abilitiesInfo.push(`**Strengths:** ${stripHtml(character.skillsReliedOn)}`);
+    if (character.skillsAvoided) abilitiesInfo.push(`**Weaknesses:** ${stripHtml(character.skillsAvoided)}`);
+    if (abilitiesInfo.length > 0) {
+      embed.addFields({ name: '⚔️ Abilities & Equipment', value: truncate(abilitiesInfo.join('\n')), inline: false });
+    } else {
+      embed.addFields({ name: '⚔️ Abilities & Equipment', value: 'No abilities recorded', inline: false });
+    }
+  };
+
+  const buildBackstoryTab = (embed: EmbedBuilder) => {
+    if (character.origin) {
+      embed.addFields({ name: '📖 Origin', value: truncate(stripHtml(character.origin), 1024), inline: false });
+    }
+
+    const backstoryNotes = [];
+    if (character.greatestSuccess) backstoryNotes.push(`**Greatest Success:** ${stripHtml(character.greatestSuccess)}`);
+    if (character.greatestFailure) backstoryNotes.push(`**Greatest Failure:** ${stripHtml(character.greatestFailure)}`);
+    if (character.regret) backstoryNotes.push(`**Regret:** ${stripHtml(character.regret)}`);
+    if (backstoryNotes.length > 0) {
+      embed.addFields({ name: '🏆 Defining Moments', value: truncate(backstoryNotes.join('\n\n')), inline: false });
+    }
+  };
+
+  const buildRelationshipsTab = async (embed: EmbedBuilder) => {
+    if (character.importantRelationships) {
+      embed.addFields({ name: '👥 Important Relationships', value: truncate(stripHtml(character.importantRelationships), 1024), inline: false });
+    }
+
+    const relationshipNotes = [];
+    if (character.protectedRelationship) relationshipNotes.push(`**Would Die For:** ${stripHtml(character.protectedRelationship)}`);
+    if (character.rival) relationshipNotes.push(`**Rival:** ${stripHtml(character.rival)}`);
+    if (character.affiliatedGroups) relationshipNotes.push(`**Groups:** ${stripHtml(character.affiliatedGroups)}`);
+    if (relationshipNotes.length > 0) {
+      embed.addFields({ name: '🤝 Key Connections', value: truncate(relationshipNotes.join('\n')), inline: false });
+    }
+
+    const trackedRels = await db.query.relationships.findMany({
+      where: (rels, { eq, or }) =>
+        or(
+          eq(rels.character1Id, character.id),
+          eq(rels.character2Id, character.id)
+        ),
+      with: {
+        character1: true,
+        character2: true
+      }
+    });
+
+    if (trackedRels.length > 0) {
+      const relStrings = trackedRels.map(rel => {
+        const isChar1 = rel.character1Id === character.id;
+        const otherChar = isChar1 ? rel.character2 : rel.character1;
+        const descriptor = rel.relationshipType || 'connection';
+        const notes = rel.notes ? ` | ${rel.notes}` : '';
+        return `- ${descriptor} of **${otherChar.name}**${notes}`;
+      });
+      embed.addFields({ name: '💫 Tracked Relationships', value: truncate(relStrings.join('\n'), 1024), inline: false });
+    }
+  };
+
+  const buildBeliefsTab = (embed: EmbedBuilder) => {
+    if (character.beliefsPhilosophy) {
+      embed.addFields({ name: '🧠 Beliefs & Philosophy', value: truncate(stripHtml(character.beliefsPhilosophy), 1024), inline: false });
+    }
+    if (character.coreBelief) {
+      embed.addFields({ name: '💭 Core Belief', value: truncate(stripHtml(character.coreBelief), 1024), inline: false });
+    }
+  };
+
+  const buildPublicPrivateTab = (embed: EmbedBuilder) => {
+    const secretsInfo = [];
+    if (character.publicFacade) secretsInfo.push(`**Public Face:** ${stripHtml(character.publicFacade)}`);
+    if (character.hiddenAspect) secretsInfo.push(`**Hidden Aspect:** ${stripHtml(character.hiddenAspect)}`);
+    if (character.secret) secretsInfo.push(`**Secret:** ${stripHtml(character.secret)}`);
+    if (secretsInfo.length > 0) {
+      embed.addFields({ name: '👁️ Public vs Private Self', value: truncate(secretsInfo.join('\n\n')), inline: false });
+    }
+  };
+
+  const buildGrowthTab = (embed: EmbedBuilder) => {
+    const arcInfo = [];
+    if (character.recentChange) arcInfo.push(`**Recent Change:** ${stripHtml(character.recentChange)}`);
+    if (character.potentialChange) arcInfo.push(`**Potential Growth:** ${stripHtml(character.potentialChange)}`);
+    if (arcInfo.length > 0) {
+      embed.addFields({ name: '📈 Growth & Change', value: truncate(arcInfo.join('\n\n')), inline: false });
+    }
+  };
+
+  const buildLegacyTab = (embed: EmbedBuilder) => {
+    const legacyInfo = [];
+    if (character.symbolOrMotif) legacyInfo.push(`**Symbol:** ${stripHtml(character.symbolOrMotif)}`);
+    if (character.legacy) legacyInfo.push(`**Legacy:** ${stripHtml(character.legacy)}`);
+    if (character.rememberedAs) legacyInfo.push(`**Remembered As:** ${stripHtml(character.rememberedAs)}`);
+    if (legacyInfo.length > 0) {
+      embed.addFields({ name: '🌟 Legacy & Symbol', value: truncate(legacyInfo.join('\n\n')), inline: false });
+    }
+  };
+
   // Function to build embed for each tab
   const buildEmbed = async (tab: string): Promise<EmbedBuilder> => {
     const embed = new EmbedBuilder()
@@ -430,7 +648,6 @@ async function handleProfile(message: Message, args: string[]) {
       .setColor('#6366f1');
 
     if (character.avatarUrl) {
-      // Convert relative URL to absolute URL for Discord
       const avatarUrl = character.avatarUrl.startsWith('http')
         ? character.avatarUrl
         : `https://murder.tech${character.avatarUrl}`;
@@ -438,226 +655,58 @@ async function handleProfile(message: Message, args: string[]) {
     }
 
     switch (tab) {
-      case 'identity':
-        const identityInfo = [];
-        if (character.fullName && character.fullName !== character.name) identityInfo.push(`**Full Name:** ${stripHtml(character.fullName)}`);
-        if (character.titles) identityInfo.push(`**Titles:** ${stripHtml(character.titles)}`);
-        if (character.species) identityInfo.push(`**Species:** ${stripHtml(character.species)}`);
-        if (character.race) {
-          const raceName = getRaceName(character.race);
-          if (raceName) identityInfo.push(`**Race:** ${raceName}`);
-        }
-        if (character.ageDescription) identityInfo.push(`**Age:** ${stripHtml(character.ageDescription)}`);
-        if (character.culturalBackground) identityInfo.push(`**Culture:** ${stripHtml(character.culturalBackground)}`);
-        if (character.pronouns) identityInfo.push(`**Pronouns:** ${stripHtml(character.pronouns)}`);
-        if (character.genderIdentity) identityInfo.push(`**Gender:** ${stripHtml(character.genderIdentity)}`);
-        if (character.sexuality) identityInfo.push(`**Sexuality:** ${stripHtml(character.sexuality)}`);
-        if (character.occupation) identityInfo.push(`**Occupation:** ${stripHtml(character.occupation)}`);
-        if (character.currentLocation) identityInfo.push(`**Location:** ${stripHtml(character.currentLocation)}`);
-        if (character.characterClass) identityInfo.push(`**Class:** ${character.characterClass}`);
-        if (character.level) identityInfo.push(`**Level:** ${character.level}`);
-        if (identityInfo.length > 0) {
-          embed.addFields({ name: '👤 Basic Identity', value: truncate(identityInfo.join('\n')), inline: false });
-        }
+      case 'identity': {
+        buildIdentityTab(embed);
         break;
-
-      case 'combat':
-        // Stats
-        const statModifier = (stat: number) => {
-          const mod = Math.floor((stat - 10) / 2);
-          return mod >= 0 ? `+${mod}` : `${mod}`;
-        };
-        const statsInfo = [
-          `**STR:** ${character.strength} (${statModifier(character.strength)})`,
-          `**DEX:** ${character.dexterity} (${statModifier(character.dexterity)})`,
-          `**CON:** ${character.constitution} (${statModifier(character.constitution)})`,
-          `**INT:** ${character.intelligence} (${statModifier(character.intelligence)})`,
-          `**WIS:** ${character.wisdom} (${statModifier(character.wisdom)})`,
-          `**CHA:** ${character.charisma} (${statModifier(character.charisma)})`
-        ];
-        embed.addFields({ name: '📊 Ability Scores', value: statsInfo.join(' • '), inline: false });
-
-        // Combat Stats
-        const combatInfo = [
-          `**HP:** ${character.currentHp || 0}/${character.maxHp || 0}`,
-          `**AC:** ${character.armorClass || 10}`,
-          `**Initiative:** ${(character.initiative || 0) >= 0 ? '+' : ''}${character.initiative || 0}`,
-          `**Speed:** ${character.speed || 30}ft`
-        ];
-        embed.addFields({ name: '⚔️ Combat Stats', value: combatInfo.join(' • '), inline: false });
-
-        // Saves
-        const savesInfo = [
-          `**Fortitude:** ${(character.fortitudeSave || 0) >= 0 ? '+' : ''}${character.fortitudeSave || 0}`,
-          `**Reflex:** ${(character.reflexSave || 0) >= 0 ? '+' : ''}${character.reflexSave || 0}`,
-          `**Will:** ${(character.willSave || 0) >= 0 ? '+' : ''}${character.willSave || 0}`
-        ];
-        embed.addFields({ name: '🛡️ Saving Throws', value: savesInfo.join(' • '), inline: false });
+      }
+      case 'combat': {
+        buildCombatTab(embed);
         break;
-
-      case 'goals':
-        const goalsInfo = [];
-        if (character.currentGoal) goalsInfo.push(`**Current Goal:** ${stripHtml(character.currentGoal)}`);
-        if (character.longTermDesire) goalsInfo.push(`**Long-term Desire:** ${stripHtml(character.longTermDesire)}`);
-        if (character.coreMotivation) goalsInfo.push(`**Core Motivation:** ${stripHtml(character.coreMotivation)}`);
-        if (character.deepestFear) goalsInfo.push(`**Deepest Fear:** ${stripHtml(character.deepestFear)}`);
-        if (character.alignmentTendency) goalsInfo.push(`**Alignment:** ${stripHtml(character.alignmentTendency)}`);
-        if (goalsInfo.length > 0) {
-          embed.addFields({ name: '🎯 Goals & Motivations', value: truncate(goalsInfo.join('\n')), inline: false });
-        }
+      }
+      case 'goals': {
+        buildGoalsTab(embed);
         break;
-
-      case 'personality':
-        if (character.personalityOneSentence) {
-          embed.addFields({ name: '💬 In a Nutshell', value: `*"${stripHtml(character.personalityOneSentence)}"*`, inline: false });
-        }
-
-        const personalityInfo = [];
-        if (character.keyVirtues) personalityInfo.push(`**Virtues:** ${stripHtml(character.keyVirtues)}`);
-        if (character.keyFlaws) personalityInfo.push(`**Flaws:** ${stripHtml(character.keyFlaws)}`);
-        if (character.stressBehavior) personalityInfo.push(`**Under Stress:** ${stripHtml(character.stressBehavior)}`);
-        if (character.habitsOrTells) personalityInfo.push(`**Habits:** ${stripHtml(character.habitsOrTells)}`);
-        if (character.speechStyle) personalityInfo.push(`**Speech:** ${stripHtml(character.speechStyle)}`);
-        if (personalityInfo.length > 0) {
-          embed.addFields({ name: '😊 Personality Traits', value: truncate(personalityInfo.join('\n')), inline: false });
-        }
+      }
+      case 'personality': {
+        buildPersonalityTab(embed);
         break;
-
-      case 'appearance':
-        const appearanceInfo = [];
-        if (character.physicalPresence) appearanceInfo.push(`**Presence:** ${stripHtml(character.physicalPresence)}`);
-        if (character.identifyingTraits) appearanceInfo.push(`**Identifying Traits:** ${stripHtml(character.identifyingTraits)}`);
-        if (character.clothingAesthetic) appearanceInfo.push(`**Clothing Style:** ${stripHtml(character.clothingAesthetic)}`);
-        if (appearanceInfo.length > 0) {
-          embed.addFields({ name: '🎨 Appearance', value: truncate(appearanceInfo.join('\n')), inline: false });
-        }
+      }
+      case 'appearance': {
+        buildAppearanceTab(embed);
         break;
-
-      case 'skills':
-        // Parse and display Pathfinder skills
-        let skills = character.skills as any;
-        if (typeof skills === 'string') {
-          try {
-            skills = JSON.parse(skills);
-          } catch (e) {}
-        }
-        if (skills && typeof skills === 'object') {
-          const trainedSkills = Object.entries(skills)
-            .filter(([_, data]: any) => data.ranks > 0 || data.total >= 5)
-            .map(([name, data]: any) => `**${name}:** +${data.total}`)
-            .join('\n');
-          if (trainedSkills) {
-            embed.addFields({ name: '📚 Pathfinder Skills', value: truncate(trainedSkills, 1024), inline: false });
-          } else {
-            embed.addFields({ name: '📚 Pathfinder Skills', value: 'No trained skills recorded', inline: false });
-          }
-        } else {
-          embed.addFields({ name: '📚 Pathfinder Skills', value: 'No skill data available', inline: false });
-        }
+      }
+      case 'skills': {
+        buildSkillsTab(embed);
         break;
-
-      case 'abilities':
-        const abilitiesInfo = [];
-        if (character.notableEquipment) abilitiesInfo.push(`**Equipment:** ${stripHtml(character.notableEquipment)}`);
-        if (character.skillsReliedOn) abilitiesInfo.push(`**Strengths:** ${stripHtml(character.skillsReliedOn)}`);
-        if (character.skillsAvoided) abilitiesInfo.push(`**Weaknesses:** ${stripHtml(character.skillsAvoided)}`);
-        if (abilitiesInfo.length > 0) {
-          embed.addFields({ name: '⚔️ Abilities & Equipment', value: truncate(abilitiesInfo.join('\n')), inline: false });
-        } else {
-          embed.addFields({ name: '⚔️ Abilities & Equipment', value: 'No abilities recorded', inline: false });
-        }
+      }
+      case 'abilities': {
+        buildAbilitiesTab(embed);
         break;
-
-      case 'backstory':
-        if (character.origin) {
-          embed.addFields({ name: '📖 Origin', value: truncate(stripHtml(character.origin), 1024), inline: false });
-        }
-
-        const backstoryNotes = [];
-        if (character.greatestSuccess) backstoryNotes.push(`**Greatest Success:** ${stripHtml(character.greatestSuccess)}`);
-        if (character.greatestFailure) backstoryNotes.push(`**Greatest Failure:** ${stripHtml(character.greatestFailure)}`);
-        if (character.regret) backstoryNotes.push(`**Regret:** ${stripHtml(character.regret)}`);
-        if (backstoryNotes.length > 0) {
-          embed.addFields({ name: '🏆 Defining Moments', value: truncate(backstoryNotes.join('\n\n')), inline: false });
-        }
+      }
+      case 'backstory': {
+        buildBackstoryTab(embed);
         break;
-
-      case 'relationships':
-        // Portal relationships
-        if (character.importantRelationships) {
-          embed.addFields({ name: '👥 Important Relationships', value: truncate(stripHtml(character.importantRelationships), 1024), inline: false });
-        }
-
-        const relationshipNotes = [];
-        if (character.protectedRelationship) relationshipNotes.push(`**Would Die For:** ${stripHtml(character.protectedRelationship)}`);
-        if (character.rival) relationshipNotes.push(`**Rival:** ${stripHtml(character.rival)}`);
-        if (character.affiliatedGroups) relationshipNotes.push(`**Groups:** ${stripHtml(character.affiliatedGroups)}`);
-        if (relationshipNotes.length > 0) {
-          embed.addFields({ name: '🤝 Key Connections', value: truncate(relationshipNotes.join('\n')), inline: false });
-        }
-
-        // Tracked relationships
-        const trackedRels = await db.query.relationships.findMany({
-          where: (rels, { eq, or }) =>
-            or(
-              eq(rels.character1Id, character.id),
-              eq(rels.character2Id, character.id)
-            ),
-          with: {
-            character1: true,
-            character2: true
-          }
-        });
-
-        if (trackedRels.length > 0) {
-          const relStrings = trackedRels.map(rel => {
-            const isChar1 = rel.character1Id === character.id;
-            const otherChar = isChar1 ? rel.character2 : rel.character1;
-            const descriptor = rel.relationshipType || 'connection';
-            const notes = rel.notes ? ` | ${rel.notes}` : '';
-            return `- ${descriptor} of **${otherChar.name}**${notes}`;
-          });
-          embed.addFields({ name: '💫 Tracked Relationships', value: truncate(relStrings.join('\n'), 1024), inline: false });
-        }
+      }
+      case 'relationships': {
+        await buildRelationshipsTab(embed);
         break;
-
-      case 'beliefs':
-        if (character.beliefsPhilosophy) {
-          embed.addFields({ name: '🧠 Beliefs & Philosophy', value: truncate(stripHtml(character.beliefsPhilosophy), 1024), inline: false });
-        }
-        if (character.coreBelief) {
-          embed.addFields({ name: '💭 Core Belief', value: truncate(stripHtml(character.coreBelief), 1024), inline: false });
-        }
+      }
+      case 'beliefs': {
+        buildBeliefsTab(embed);
         break;
-
-      case 'public_private':
-        const secretsInfo = [];
-        if (character.publicFacade) secretsInfo.push(`**Public Face:** ${stripHtml(character.publicFacade)}`);
-        if (character.hiddenAspect) secretsInfo.push(`**Hidden Aspect:** ${stripHtml(character.hiddenAspect)}`);
-        if (character.secret) secretsInfo.push(`**Secret:** ${stripHtml(character.secret)}`);
-        if (secretsInfo.length > 0) {
-          embed.addFields({ name: '👁️ Public vs Private Self', value: truncate(secretsInfo.join('\n\n')), inline: false });
-        }
+      }
+      case 'public_private': {
+        buildPublicPrivateTab(embed);
         break;
-
-      case 'growth':
-        const arcInfo = [];
-        if (character.recentChange) arcInfo.push(`**Recent Change:** ${stripHtml(character.recentChange)}`);
-        if (character.potentialChange) arcInfo.push(`**Potential Growth:** ${stripHtml(character.potentialChange)}`);
-        if (arcInfo.length > 0) {
-          embed.addFields({ name: '📈 Growth & Change', value: truncate(arcInfo.join('\n\n')), inline: false });
-        }
+      }
+      case 'growth': {
+        buildGrowthTab(embed);
         break;
-
-      case 'legacy':
-        const legacyInfo = [];
-        if (character.symbolOrMotif) legacyInfo.push(`**Symbol:** ${stripHtml(character.symbolOrMotif)}`);
-        if (character.legacy) legacyInfo.push(`**Legacy:** ${stripHtml(character.legacy)}`);
-        if (character.rememberedAs) legacyInfo.push(`**Remembered As:** ${stripHtml(character.rememberedAs)}`);
-        if (legacyInfo.length > 0) {
-          embed.addFields({ name: '🌟 Legacy & Symbol', value: truncate(legacyInfo.join('\n\n')), inline: false });
-        }
+      }
+      case 'legacy': {
+        buildLegacyTab(embed);
         break;
+      }
     }
 
     embed.setFooter({ text: `Use !roll <stat> to roll for ${character.name}` });
