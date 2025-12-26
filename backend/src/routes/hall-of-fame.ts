@@ -6,7 +6,78 @@ import { isAuthenticated } from '../middleware/auth';
 
 const router = express.Router();
 
-// Get Hall of Fame messages with filters
+// Get Hall of Fame messages with filters (root endpoint)
+router.get('/', isAuthenticated, async (req, res) => {
+  try {
+    const {
+      character,
+      minStars,
+      startDate,
+      endDate,
+      limit = '50',
+      offset = '0'
+    } = req.query;
+
+    let query = db.select().from(hallOfFame);
+    const conditions = [];
+
+    // Character filter
+    if (character && typeof character === 'string') {
+      conditions.push(eq(hallOfFame.characterName, character));
+    }
+
+    // Star count filter
+    if (minStars && typeof minStars === 'string') {
+      const minStarsNum = parseInt(minStars);
+      if (!isNaN(minStarsNum)) {
+        conditions.push(gte(hallOfFame.starCount, minStarsNum));
+      }
+    }
+
+    // Date range filter
+    if (startDate && typeof startDate === 'string') {
+      conditions.push(gte(hallOfFame.addedToHallAt, new Date(startDate)));
+    }
+    if (endDate && typeof endDate === 'string') {
+      conditions.push(lte(hallOfFame.addedToHallAt, new Date(endDate)));
+    }
+
+    // Apply filters
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    // Apply ordering and pagination
+    const limitNum = parseInt(limit as string) || 50;
+    const offsetNum = parseInt(offset as string) || 0;
+
+    const messages = await query
+      .orderBy(desc(hallOfFame.addedToHallAt))
+      .limit(limitNum)
+      .offset(offsetNum);
+
+    // Get total count for pagination
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(hallOfFame)
+      .where(conditions.length > 0 ? and(...conditions) : sql`true`);
+
+    res.json({
+      messages,
+      pagination: {
+        total: count,
+        limit: limitNum,
+        offset: offsetNum,
+        hasMore: offsetNum + messages.length < count
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching Hall of Fame messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// Legacy endpoint for backward compatibility
 router.get('/list', isAuthenticated, async (req, res) => {
   try {
     const {

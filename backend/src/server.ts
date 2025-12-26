@@ -28,6 +28,8 @@ import importDefaultsRoutes from './routes/import-defaults';
 import statsRoutes from './routes/stats';
 import hallOfFameRoutes from './routes/hall-of-fame';
 import memoriesRoutes from './routes/memories';
+import sessionsRoutes from './routes/sessions';
+import scenesRoutes from './routes/scenes';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -178,6 +180,8 @@ app.use('/api/import-defaults', doubleCsrfProtection);
 app.use('/api/stats', doubleCsrfProtection);
 app.use('/api/hall-of-fame', doubleCsrfProtection);
 app.use('/api/memories', doubleCsrfProtection);
+app.use('/api/sessions', doubleCsrfProtection);
+app.use('/api/scenes', doubleCsrfProtection);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -194,6 +198,8 @@ app.use('/api/import-defaults', importDefaultsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/hall-of-fame', hallOfFameRoutes);
 app.use('/api/memories', memoriesRoutes);
+app.use('/api/sessions', sessionsRoutes);
+app.use('/api/scenes', scenesRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

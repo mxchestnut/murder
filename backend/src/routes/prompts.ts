@@ -6,7 +6,29 @@ import { isAuthenticated } from '../middleware/auth.js';
 
 const router = Router();
 
-// Get all prompts with optional category filter
+// Get all prompts with optional category filter (root endpoint)
+router.get('/', isAuthenticated, async (req, res) => {
+  try {
+    const { category } = req.query;
+
+    let query;
+
+    if (category && category !== 'all') {
+      query = db.select().from(prompts).where(eq(prompts.category, category as string)).orderBy(desc(prompts.createdAt));
+    } else {
+      query = db.select().from(prompts).orderBy(desc(prompts.createdAt));
+    }
+
+    const allPrompts = await query;
+
+    res.json(allPrompts);
+  } catch (error) {
+    console.error('Error fetching prompts:', error);
+    res.status(500).json({ error: 'Failed to fetch prompts' });
+  }
+});
+
+// Legacy endpoint for backward compatibility
 router.get('/prompts', isAuthenticated, async (req, res) => {
   try {
     const { category } = req.query;
