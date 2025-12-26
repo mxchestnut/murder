@@ -665,6 +665,137 @@ router.post('/:id/roll', async (req, res) => {
   }
 });
 
+// Sync/refresh PathCompanion data for an already-linked character
+router.post('/:id/sync-pathcompanion', async (req, res) => {
+  try {
+    const sheetId = parseInt(req.params.id);
+    const userId = (req.user as any).id;
+
+    // Get the character sheet
+    const sheets = await db.select().from(characterSheets).where(
+      and(
+        eq(characterSheets.id, sheetId),
+        eq(characterSheets.userId, userId)
+      )
+    );
+
+    if (sheets.length === 0) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const sheet = sheets[0];
+
+    // Check if character is linked to PathCompanion
+    if (!sheet.isPathCompanion || !sheet.pathCompanionId) {
+      return res.status(400).json({
+        error: 'Character is not linked to PathCompanion. Use link-pathcompanion endpoint instead.'
+      });
+    }
+
+    // Get user's PathCompanion session
+    const userRecords = await db.select().from(users).where(eq(users.id, userId));
+    if (userRecords.length === 0 || !userRecords[0].pathCompanionSessionTicket) {
+      return res.status(400).json({
+        error: 'PathCompanion session not found. Please log in to PathCompanion first.'
+      });
+    }
+
+    const sessionTicket = userRecords[0].pathCompanionSessionTicket;
+
+    // Import PathCompanion data
+    const PlayFabService = require('../services/playfab');
+    const character = await PlayFabService.getCharacter(sessionTicket, sheet.pathCompanionId);
+
+    if (!character) {
+      return res.status(404).json({ error: 'PathCompanion character not found' });
+    }
+
+    // Extract all data
+    const abilities = PlayFabService.extractAbilityScores(character.data);
+    const level = PlayFabService.extractCharacterLevel(character.data);
+    const combatStats = PlayFabService.extractCombatStats(character.data);
+    const saves = PlayFabService.extractSavingThrows(character.data);
+    const basicInfo = PlayFabService.extractBasicInfo(character.data);
+    const skills = PlayFabService.extractSkills(character.data);
+    const feats = PlayFabService.extractFeats(character.data);
+    const specialAbilities = PlayFabService.extractSpecialAbilities(character.data);
+    const weapons = PlayFabService.extractWeapons(character.data);
+    const armor = PlayFabService.extractArmor(character.data);
+    const spells = PlayFabService.extractSpells(character.data);
+
+    // Update the character with PathCompanion data
+    await db.update(characterSheets)
+      .set({
+        name: character.characterName,
+        strength: abilities.strength,
+        dexterity: abilities.dexterity,
+        constitution: abilities.constitution,
+        intelligence: abilities.intelligence,
+        wisdom: abilities.wisdom,
+        charisma: abilities.charisma,
+        characterClass: character.data.class || character.data.className,
+        level: level,
+        race: basicInfo.race,
+        alignment: basicInfo.alignment,
+        deity: basicInfo.deity,
+        size: basicInfo.size,
+        currentHp: combatStats.currentHp,
+        maxHp: combatStats.maxHp,
+        tempHp: combatStats.tempHp,
+        armorClass: combatStats.armorClass,
+        touchAc: combatStats.touchAc,
+        flatFootedAc: combatStats.flatFootedAc,
+        initiative: combatStats.initiative,
+        speed: combatStats.speed,
+        baseAttackBonus: combatStats.baseAttackBonus,
+        cmb: combatStats.cmb,
+        cmd: combatStats.cmd,
+        fortitudeSave: saves.fortitudeSave,
+        reflexSave: saves.reflexSave,
+        willSave: saves.willSave,
+        skills: JSON.stringify(skills),
+        feats: JSON.stringify(feats),
+        specialAbilities: JSON.stringify(specialAbilities),
+        weapons: JSON.stringify(weapons),
+        armor: JSON.stringify(armor),
+        spells: JSON.stringify(spells),
+        pathCompanionData: JSON.stringify(character.data),
+        pathCompanionSession: sessionTicket,
+        lastSynced: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(characterSheets.id, sheetId));
+
+    // Fetch and return updated character
+    const updated = await db.select().from(characterSheets).where(
+      eq(characterSheets.id, sheetId)
+    );
+
+    const updatedSheet = {
+      ...updated[0],
+      skills: updated[0].skills ? JSON.parse(updated[0].skills) : {},
+      weapons: updated[0].weapons ? JSON.parse(updated[0].weapons) : [],
+      armor: updated[0].armor ? JSON.parse(updated[0].armor) : {},
+      feats: updated[0].feats ? JSON.parse(updated[0].feats) : [],
+      specialAbilities: updated[0].specialAbilities ? JSON.parse(updated[0].specialAbilities) : [],
+      spells: updated[0].spells ? JSON.parse(updated[0].spells) : {},
+      modifiers: {
+        strength: calculateModifier(updated[0].strength),
+        dexterity: calculateModifier(updated[0].dexterity),
+        constitution: calculateModifier(updated[0].constitution),
+        intelligence: calculateModifier(updated[0].intelligence),
+        wisdom: calculateModifier(updated[0].wisdom),
+        charisma: calculateModifier(updated[0].charisma)
+      }
+    };
+
+    res.json(updatedSheet);
+  } catch (error) {
+    console.error('Error syncing PathCompanion data:', error);
+    res.status(500).json({ error: 'Failed to sync PathCompanion data' });
+  }
+});
+
 // Link an existing character to PathCompanion and sync data
 router.post('/:id/link-pathcompanion', async (req, res) => {
   try {

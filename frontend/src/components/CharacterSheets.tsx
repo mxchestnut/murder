@@ -15,7 +15,8 @@ import {
   MessageCircle,
   Download,
   ExternalLink,
-  User
+  User,
+  RefreshCw
 } from 'lucide-react';
 import CharacterBio from './CharacterBio';
 
@@ -461,6 +462,24 @@ export default function CharacterSheets() {
     }
   };
 
+  const syncPathCompanion = async (sheetId: number) => {
+    try {
+      const response = await api.post(`/characters/${sheetId}/sync-pathcompanion`);
+
+      const updatedSheets = sheets.map(s => s.id === sheetId ? response.data : s);
+      setSheets(updatedSheets);
+      if (selectedSheet?.id === sheetId) {
+        setSelectedSheet(response.data);
+      }
+
+      alert('Character successfully synced with PathCompanion!');
+    } catch (error: any) {
+      console.error('Failed to sync PathCompanion data:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to sync character.';
+      alert(`Sync failed: ${errorMsg}`);
+    }
+  };
+
   const StatBlock = ({ stat, value, modifier }: { stat: string; value: number; modifier: number }) => {
     const Icon = statIcons[stat as keyof typeof statIcons];
     const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`;
@@ -695,7 +714,15 @@ export default function CharacterSheets() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                {!selectedSheet.isPathCompanion && (
+                {selectedSheet.isPathCompanion ? (
+                  <button
+                    className="icon-button secondary"
+                    onClick={() => syncPathCompanion(selectedSheet.id)}
+                    title="Update from PathCompanion"
+                  >
+                    <RefreshCw size={20} />
+                  </button>
+                ) : (
                   <button
                     className="icon-button secondary"
                     onClick={() => {

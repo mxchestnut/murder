@@ -84,6 +84,11 @@ export function initializeDiscordBot(token: string) {
           await handleCharacterMemoriesView(message, potentialName);
           return;
         }
+        // Check if this is "!CharName update" pattern
+        if (potentialStat.toLowerCase() === 'update') {
+          await handleCharacterUpdate(message, potentialName);
+          return;
+        }
         // Try to handle as name-based roll
         const handled = await handleNameRoll(message, potentialName, potentialStat);
         if (handled) return;
@@ -1128,7 +1133,84 @@ async function handleSyncAll(message: Message) {
 
   } catch (error) {
     console.error('Discord syncall error:', error);
-    await message.reply('❌ Failed to sync characters. Please try again or check your connection.');
+    await message.reply('❌ Failed to sync characters. Please try again later.');
+  }
+}
+
+async function handleCharacterUpdate(message: Message, characterName: string) {
+  try {
+    // Get user by Discord ID
+    const [user] = await db.select()
+      .from(users)
+      .where(eq(users.discordUserId, message.author.id));
+
+    if (!user) {
+      await message.reply('❌ **Discord account not linked to Murder.**\n\n' +
+        'Use `!connect <username> <password>` to link your account first.');
+      return;
+    }
+
+    // Find the character
+    const normalizeString = (str: string) => str.toLowerCase().trim();
+    const normalizedInput = normalizeString(characterName);
+
+    const characters = await db.select()
+      .from(characterSheets)
+      .where(eq(characterSheets.userId, user.id));
+
+    const character = characters.find(c => normalizeString(c.name) === normalizedInput);
+
+    if (!character) {
+      await message.reply(`❌ **Character "${characterName}" not found in your account.**\n\n` +
+        'Use `!syncall` to see your character list.');
+      return;
+    }
+
+    // Check if character is linked to PathCompanion
+    if (!character.isPathCompanion || !character.pathCompanionId) {
+      await message.reply(`❌ **${character.name} is not linked to PathCompanion.**\n\n` +
+        'To link this character:\n' +
+        '1. Visit https://murder.tech\n' +
+        '2. Open the character sheet\n' +
+        '3. Click the Link icon to connect to PathCompanion');
+      return;
+    }
+
+    await message.reply(`🔄 **Updating ${character.name} from PathCompanion...**`);
+
+    // Call the sync API
+    const axios = require('axios');
+    const API_URL = process.env.API_URL || 'http://localhost:3000';
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/characters/${character.id}/sync-pathcompanion`,
+        {},
+        {
+          headers: {
+            Cookie: `connect.sid=${character.pathCompanionSession}` // Use stored session
+          }
+        }
+      );
+
+      const updated = response.data;
+
+      await message.reply(`✅ **${updated.name} successfully updated!**\n\n` +
+        `**Stats:** Level ${updated.level} ${updated.characterClass || 'Character'}\n` +
+        `**HP:** ${updated.currentHp}/${updated.maxHp} • **AC:** ${updated.armorClass}\n` +
+        `**Saves:** Fort +${updated.fortitudeSave}, Ref +${updated.reflexSave}, Will +${updated.willSave}\n\n` +
+        `*Last synced: ${new Date().toLocaleString()}*`);
+
+    } catch (apiError: any) {
+      console.error('Failed to sync PathCompanion character:', apiError);
+      const errorMsg = apiError.response?.data?.error || 'Failed to sync character data.';
+      await message.reply(`❌ **Update failed:** ${errorMsg}\n\n` +
+        'Try reconnecting to PathCompanion at https://murder.tech');
+    }
+
+  } catch (error) {
+    console.error('Discord character update error:', error);
+    await message.reply('❌ Failed to update character. Please try again later.');
   }
 }
 
