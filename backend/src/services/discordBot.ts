@@ -876,10 +876,74 @@ async function handleProfile(message: Message, args: string[]) {
 
 async function handleRoll(message: Message, args: string[]) {
   if (args.length === 0) {
-    await message.reply('Usage: `!roll <stat/save/skill>`\nExamples: `!roll strength`, `!roll fortitude`, `!roll perception`');
+    await message.reply('Usage: `!roll <dice or stat>`\nExamples: `!roll d20`, `!roll 2d6+3`, `!roll strength`, `!roll perception`');
     return;
   }
 
+  const rollParam = args.join(' ').toLowerCase();
+
+  // Check if this is dice notation (e.g., d20, 1d20, 2d6+3, d20+5)
+  const dicePattern = /^(\d+)?d(\d+)([+-]\d+)?$/i;
+  const diceMatch = rollParam.match(dicePattern);
+
+  if (diceMatch) {
+    // Parse dice notation
+    const numDice = parseInt(diceMatch[1] || '1'); // Default to 1 if not specified
+    const dieSize = parseInt(diceMatch[2]);
+    const modifier = diceMatch[3] ? parseInt(diceMatch[3]) : 0;
+
+    if (numDice < 1 || numDice > 100) {
+      await message.reply('❌ Number of dice must be between 1 and 100');
+      return;
+    }
+
+    if (dieSize < 2 || dieSize > 1000) {
+      await message.reply('❌ Die size must be between 2 and 1000');
+      return;
+    }
+
+    // Roll the dice
+    const rolls: number[] = [];
+    for (let i = 0; i < numDice; i++) {
+      rolls.push(Math.floor(Math.random() * dieSize) + 1);
+    }
+
+    const rollSum = rolls.reduce((sum, roll) => sum + roll, 0);
+    const total = rollSum + modifier;
+
+    // Determine color based on results
+    let embedColor = 0x0099ff; // Default blue
+    if (numDice === 1) {
+      if (rolls[0] === dieSize) embedColor = 0x00ff00; // Max roll
+      else if (rolls[0] === 1) embedColor = 0xff0000; // Min roll
+    }
+
+    // Create embed
+    const embed = new EmbedBuilder()
+      .setColor(embedColor)
+      .setTitle(`🎲 Dice Roll`)
+      .setDescription(
+        `**${numDice}d${dieSize}${modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : ''}**\n` +
+        `Rolls: [${rolls.join(', ')}]${rolls.length > 1 ? ` = ${rollSum}` : ''}\n` +
+        `${modifier !== 0 ? `Modifier: ${modifier > 0 ? '+' : ''}${modifier}\n` : ''}` +
+        `**Total: ${total}**`
+      )
+      .setFooter({ text: `Rolled by ${message.author.username}` })
+      .setTimestamp();
+
+    if (numDice === 1) {
+      if (rolls[0] === dieSize) {
+        embed.addFields({ name: '🎉', value: `Natural ${dieSize}!`, inline: true });
+      } else if (rolls[0] === 1) {
+        embed.addFields({ name: '💀', value: 'Natural 1!', inline: true });
+      }
+    }
+
+    await message.reply({ embeds: [embed] });
+    return;
+  }
+
+  // Otherwise, treat as stat/save/skill roll for linked character
   const channelId = message.channel.id;
   const guildId = message.guild?.id || '';
 
@@ -901,7 +965,6 @@ async function handleRoll(message: Message, args: string[]) {
   }
 
   const character = mapping[0].character_sheets;
-  const rollParam = args.join(' ').toLowerCase();
 
   // Determine roll type and calculate
   let rollType: string;
