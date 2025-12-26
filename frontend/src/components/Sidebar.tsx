@@ -66,6 +66,11 @@ export default function Sidebar({ documents, onSelectDocument, onSelectCharacter
       alert(`✓ ${message}`);
     } catch (error: any) {
       console.error('Failed to import PathCompanion character:', error);
+      console.log('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        hasConflict: error.response?.data?.conflict
+      });
 
       // Handle conflict (duplicate name)
       if (error.response?.status === 409 && error.response?.data?.conflict) {

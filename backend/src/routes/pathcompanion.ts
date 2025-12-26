@@ -248,8 +248,16 @@ router.post('/import', isAuthenticated, async (req, res) => {
       )
     );
 
+    console.log(`Import check for "${character.characterName}":`, {
+      existingByPcId: existingByPcId.length,
+      existingByName: existingByName.length,
+      mergeWithId,
+      willConflict: existingByPcId.length === 0 && existingByName.length > 0 && !mergeWithId
+    });
+
     // If there's a name conflict and no merge decision, ask the user
     if (existingByPcId.length === 0 && existingByName.length > 0 && !mergeWithId) {
+      console.log('Returning 409 conflict for duplicate name');
       return res.status(409).json({
         conflict: true,
         message: `A character named "${character.characterName}" already exists. Would you like to merge the PathCompanion data into it?`,
