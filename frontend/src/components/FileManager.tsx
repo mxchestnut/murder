@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, Download, Trash2, Loader, CheckCircle, BookOpen, Image as ImageIcon, File, Search, X, Eye, FolderOpen, Grid, List } from 'lucide-react';
+import { Upload, FileText, Download, Trash2, Loader, BookOpen, Image as ImageIcon, File, Search, X, Eye, FolderOpen, Grid, List, CheckCircle } from 'lucide-react';
 import { api } from '../utils/api';
+import { useToast } from './ToastProvider';
+import LoadingSkeleton from './LoadingSkeleton';
 
 interface FileRecord {
   id: number;
@@ -16,8 +18,8 @@ interface FileRecord {
 
 export default function FileManager() {
   const [files, setFiles] = useState<FileRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [learning, setLearning] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -27,17 +29,21 @@ export default function FileManager() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
+  const { showToast, showError } = useToast();
 
   useEffect(() => {
     loadFiles();
   }, []);
 
   const loadFiles = async () => {
+    setLoading(true);
     try {
       const response = await api.get('/files');
       setFiles(response.data.files);
     } catch (error) {
-      console.error('Failed to load files:', error);
+      showError(error, 'Failed to load files');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,7 +86,6 @@ export default function FileManager() {
     if (!fileList || fileList.length === 0) return;
 
     setUploading(true);
-    setMessage(null);
 
     const filesArray = Array.from(fileList);
     let successCount = 0;
@@ -90,13 +95,11 @@ export default function FileManager() {
       if (success) successCount++;
     }
 
-    await loadFiles();
-    setUploading(false);
-
-    setMessage({
-      type: successCount === filesArray.length ? 'success' : 'error',
-      text: `Uploaded ${successCount} of ${filesArray.length} file(s)`
-    });
+    if (successCount === filesArray.length) {
+      showToast('success', `✅ Successfully uploaded ${successCount} file(s)`);
+    } else {
+      showToast('warning', `⚠️ Uploaded ${successCount} of ${filesArray.length} file(s)`);
+    }
 
     // Clear upload list after 3 seconds
     setTimeout(() => setUploadingFiles([]), 3000);
@@ -154,8 +157,9 @@ export default function FileManager() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      showToast('success', `Downloaded ${file.originalFileName}`);
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to download file' });
+      showError(error, 'Failed to download file');
     }
   };
 
@@ -164,10 +168,10 @@ export default function FileManager() {
 
     try {
       await api.delete(`/files/${file.id}`);
-      setMessage({ type: 'success', text: 'File deleted successfully' });
+      showToast('success', `Deleted ${file.originalFileName}`);
       await loadFiles();
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to delete file' });
+      showError(error, 'Failed to delete file');
     }
   };
 
@@ -175,9 +179,9 @@ export default function FileManager() {
     setLearning(file.id);
     try {
       await api.post(`/files/${file.id}/learn`);
-      setMessage({ type: 'success', text: 'PDF content learned successfully!' });
+      showToast('success', 'PDF content learned successfully!');
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to learn from PDF' });
+      showError(error, 'Failed to learn from PDF');
     } finally {
       setLearning(null);
     }
@@ -257,32 +261,6 @@ export default function FileManager() {
             </button>
           </div>
         </div>
-
-        {/* Message Banner */}
-        {message && (
-          <div style={{
-            padding: '1rem',
-            borderRadius: '6px',
-            background: message.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-            border: `1px solid ${message.type === 'success' ? '#10b981' : '#ef4444'}`,
-            color: message.type === 'success' ? '#10b981' : '#ef4444',
-            marginBottom: '1rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {message.type === 'success' ? <CheckCircle size={20} /> : <X size={20} />}
-              {message.text}
-            </div>
-            <button
-              onClick={() => setMessage(null)}
-              style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
-            >
-              <X size={18} />
-            </button>
-          </div>
-        )}
 
         {/* Upload Area */}
         <div style={{
@@ -403,7 +381,25 @@ export default function FileManager() {
       </div>
 
       {/* Files Display */}
-      {filteredFiles.length === 0 ? (
+      {loading ? (
+        viewMode === 'grid' ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '1rem'
+          }}>
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <LoadingSkeleton key={idx} height="250px" borderRadius="8px" />
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <LoadingSkeleton key={idx} height="60px" borderRadius="6px" />
+            ))}
+          </div>
+        )
+      ) : filteredFiles.length === 0 ? (
         <div style={{
           textAlign: 'center',
           padding: '4rem 2rem',

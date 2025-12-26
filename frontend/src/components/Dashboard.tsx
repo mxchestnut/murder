@@ -4,6 +4,8 @@ import Settings from './Settings';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
 import { FileText, X, Dices } from 'lucide-react';
+import { useToast } from './ToastProvider';
+import LoadingSpinner from './LoadingSpinner';
 
 // Lazy load heavy components
 const Editor = lazy(() => import('./Editor'));
@@ -23,13 +25,8 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
-const LoadingSpinner = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: '2rem' }}>
-    <div>Loading...</div>
-  </div>
-);
-
 export default function Dashboard({ user, onLogout }: DashboardProps) {
+  const { showToast, showError } = useToast();
   const [documents, setDocuments] = useState<any[]>([]);
   const [currentDocument, setCurrentDocument] = useState<any>(null);
   const [currentCharacter, setCurrentCharacter] = useState<any>(null);
@@ -58,9 +55,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         skillName
       });
       setRollResult(response.data);
+      showToast('info', `Rolled ${stat}: ${response.data.total}`);
       setTimeout(() => setRollResult(null), 5000);
     } catch (error) {
-      console.error('Error rolling dice:', error);
+      showError(error, 'Failed to roll dice');
     }
   };
 
@@ -95,7 +93,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       const response = await api.get(`/characters/${currentCharacter.id}`);
       setCurrentCharacter(response.data);
     } catch (error) {
-      console.error('Error reloading character:', error);
+      showError(error, 'Failed to reload character');
     }
   };
 

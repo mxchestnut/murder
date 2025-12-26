@@ -6,6 +6,7 @@ import {
 import { api } from '../utils/api';
 import TiptapField from './TiptapField';
 import ImageCropper from './ImageCropper';
+import { useToast } from './ToastProvider';
 
 interface CharacterBioProps {
   character: any;
@@ -14,6 +15,7 @@ interface CharacterBioProps {
 }
 
 export default function CharacterBio({ character, onUpdate, onDelete }: CharacterBioProps) {
+  const { showToast, showError } = useToast();
   const [bioData, setBioData] = useState({
     // Basic Identity
     fullName: character.fullName || '',
@@ -94,7 +96,6 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showPathCompanionLink, setShowPathCompanionLink] = useState(false);
@@ -172,16 +173,13 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
 
   const handleSave = async () => {
     setIsSaving(true);
-    setMessage(null);
 
     try {
       await api.put(`/characters/${character.id}`, bioData);
-      setMessage({ type: 'success', text: 'Bio saved successfully!' });
-      setTimeout(() => setMessage(null), 3000);
+      showToast('success', 'Bio saved successfully!');
       onUpdate();
     } catch (error) {
-      console.error('Error saving bio:', error);
-      setMessage({ type: 'error', text: 'Failed to save bio' });
+      showError(error, 'Failed to save bio');
     } finally {
       setIsSaving(false);
     }
@@ -189,24 +187,20 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
 
   const handleLinkPathCompanion = async () => {
     if (!characterKey.trim()) {
-      setMessage({ type: 'error', text: 'Please enter a character key' });
+      showToast('error', 'Please enter a character key');
       return;
     }
 
     setIsLinking(true);
-    setMessage(null);
 
     try {
       const response = await api.post(`/pathcompanion/link/${character.id}`, { characterKey });
-      setMessage({ type: 'success', text: response.data.message });
+      showToast('success', response.data.message);
       setShowPathCompanionLink(false);
       setCharacterKey('');
-      setTimeout(() => setMessage(null), 5000);
       onUpdate();
     } catch (error: any) {
-      console.error('Error linking PathCompanion:', error);
-      const errorMsg = error.response?.data?.error || 'Failed to link character';
-      setMessage({ type: 'error', text: errorMsg });
+      showError(error, 'Failed to link character');
     } finally {
       setIsLinking(false);
     }
@@ -214,17 +208,13 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
 
   const handleSyncPathCompanion = async () => {
     setIsSyncing(true);
-    setMessage(null);
 
     try {
       await api.post(`/pathcompanion/sync/${character.id}`);
-      setMessage({ type: 'success', text: 'Combat stats synced from PathCompanion!' });
-      setTimeout(() => setMessage(null), 3000);
+      showToast('success', 'Combat stats synced from PathCompanion!');
       await onUpdate();
     } catch (error: any) {
-      console.error('Error syncing PathCompanion:', error);
-      const errorMsg = error.response?.data?.error || 'Failed to sync character';
-      setMessage({ type: 'error', text: errorMsg });
+      showError(error, 'Failed to sync character');
     } finally {
       setIsSyncing(false);
     }
@@ -237,13 +227,12 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
 
     try {
       await api.delete(`/characters/${character.id}`);
-      setMessage({ type: 'success', text: 'Character deleted' });
+      showToast('success', `Deleted ${character.name}`);
       if (onDelete) {
         onDelete();
       }
     } catch (error: any) {
-      console.error('Error deleting character:', error);
-      setMessage({ type: 'error', text: 'Failed to delete character' });
+      showError(error, 'Failed to delete character');
     }
   };
 
@@ -437,12 +426,9 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
               onUpdate();
               setShowCropper(false);
               setSelectedImage(null);
-              setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
-              setTimeout(() => setMessage(null), 3000);
+              showToast('success', 'Avatar uploaded successfully!');
             } catch (error) {
-              console.error('Error uploading avatar:', error);
-              setMessage({ type: 'error', text: 'Failed to upload avatar' });
-              setTimeout(() => setMessage(null), 3000);
+              showError(error, 'Failed to upload avatar');
             }
           }}
           onCancel={() => {
@@ -613,20 +599,6 @@ export default function CharacterBio({ character, onUpdate, onDelete }: Characte
               Cancel
             </button>
           </div>
-        </div>
-      )}
-
-      {message && (
-        <div style={{
-          padding: '0.75rem',
-          marginBottom: '1rem',
-          borderRadius: '6px',
-          background: message.type === 'success' ? 'var(--accent-light)' : '#fee',
-          color: message.type === 'success' ? 'var(--accent-color)' : '#c33',
-          fontSize: '0.9rem',
-          border: `1px solid ${message.type === 'success' ? 'var(--accent-color)' : '#c33'}`
-        }}>
-          {message.text}
         </div>
       )}
 
