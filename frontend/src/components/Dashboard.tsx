@@ -1,25 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import HamburgerSidebar from './HamburgerSidebar';
-import Editor from './Editor';
 import Settings from './Settings';
-import DiscordCommands from './DiscordCommands';
-import CharacterBio from './CharacterBio';
-import CharacterMemories from './CharacterMemories';
-import CharacterAnalytics from './CharacterAnalytics';
-import FileManager from './FileManager';
-import KnowledgeBase from './KnowledgeBase';
-import PromptsTropes from './PromptsTropes';
-import StatsDashboard from './StatsDashboard';
-import HallOfFameGallery from './HallOfFameGallery';
-import AdminPanel from './AdminPanel';
 import PasswordRotationBanner from './PasswordRotationBanner';
 import { api } from '../utils/api';
 import { FileText, X, Dices } from 'lucide-react';
+
+// Lazy load heavy components
+const Editor = lazy(() => import('./Editor'));
+const FileManager = lazy(() => import('./FileManager'));
+const CharacterBio = lazy(() => import('./CharacterBio'));
+const CharacterMemories = lazy(() => import('./CharacterMemories'));
+const CharacterAnalytics = lazy(() => import('./CharacterAnalytics'));
+const DiscordCommands = lazy(() => import('./DiscordCommands'));
+const KnowledgeBase = lazy(() => import('./KnowledgeBase'));
+const PromptsTropes = lazy(() => import('./PromptsTropes'));
+const StatsDashboard = lazy(() => import('./StatsDashboard'));
+const HallOfFameGallery = lazy(() => import('./HallOfFameGallery'));
+const AdminPanel = lazy(() => import('./AdminPanel'));
 
 interface DashboardProps {
   user: any;
   onLogout: () => void;
 }
+
+const LoadingSpinner = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: '2rem' }}>
+    <div>Loading...</div>
+  </div>
+);
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -245,31 +253,45 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
           ) : showDiscordCommands ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
-              <DiscordCommands />
+              <Suspense fallback={<LoadingSpinner />}>
+                <DiscordCommands />
+              </Suspense>
             </div>
           ) : showFileManager ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
-              <FileManager />
+              <Suspense fallback={<LoadingSpinner />}>
+                <FileManager />
+              </Suspense>
             </div>
           ) : showKnowledgeBase ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
-              <KnowledgeBase />
+              <Suspense fallback={<LoadingSpinner />}>
+                <KnowledgeBase />
+              </Suspense>
             </div>
           ) : showPromptsTropes ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
-              <PromptsTropes />
+              <Suspense fallback={<LoadingSpinner />}>
+                <PromptsTropes />
+              </Suspense>
             </div>
           ) : showStats ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
-              <StatsDashboard />
+              <Suspense fallback={<LoadingSpinner />}>
+                <StatsDashboard />
+              </Suspense>
             </div>
           ) : showHallOfFame ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
-              <HallOfFameGallery />
+              <Suspense fallback={<LoadingSpinner />}>
+                <HallOfFameGallery />
+              </Suspense>
             </div>
           ) : showAdminPanel ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
-              <AdminPanel />
+              <Suspense fallback={<LoadingSpinner />}>
+                <AdminPanel />
+              </Suspense>
             </div>
           ) : (
             <>
@@ -385,25 +407,31 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
                       {/* Character Content Based on Tab */}
                       {characterTab === 'bio' ? (
-                        <CharacterBio
-                          character={currentCharacter}
-                          onUpdate={reloadCurrentCharacter}
-                          onDelete={() => {
-                            setCurrentCharacter(null);
-                            // Trigger sidebar refresh by calling onRefresh
-                            loadDocuments();
-                          }}
-                        />
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <CharacterBio
+                            character={currentCharacter}
+                            onUpdate={reloadCurrentCharacter}
+                            onDelete={() => {
+                              setCurrentCharacter(null);
+                              // Trigger sidebar refresh by calling onRefresh
+                              loadDocuments();
+                            }}
+                          />
+                        </Suspense>
                       ) : characterTab === 'memories' ? (
-                        <CharacterMemories
-                          characterId={currentCharacter.id}
-                          characterName={currentCharacter.name}
-                          guildId={currentCharacter.guildId}
-                        />
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <CharacterMemories
+                            characterId={currentCharacter.id}
+                            characterName={currentCharacter.name}
+                            guildId={currentCharacter.guildId}
+                          />
+                        </Suspense>
                       ) : (
-                        <CharacterAnalytics
-                          character={currentCharacter}
-                        />
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <CharacterAnalytics
+                            character={currentCharacter}
+                          />
+                        </Suspense>
                       )}
 
                       {/* Roll Result */}
@@ -818,16 +846,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
               {currentDocument && !currentDocument.isFolder ? (
                 <div style={{ flex: 1, overflow: 'auto' }}>
-                  <Editor
-                    document={currentDocument}
-                    onSave={(content) => {
-                      api.post('/documents/document', {
-                        id: currentDocument.id,
-                        name: currentDocument.name,
-                        content
-                      });
-                    }}
-                  />
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Editor
+                      document={currentDocument}
+                      onSave={(content) => {
+                        api.post('/documents/document', {
+                          id: currentDocument.id,
+                          name: currentDocument.name,
+                          content
+                        });
+                      }}
+                    />
+                  </Suspense>
                 </div>
               ) : !currentCharacter ? (
                 <div style={{

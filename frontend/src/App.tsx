@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
 import { api, fetchCsrfToken } from './utils/api';
 import { useTheme } from './utils/useTheme';
+
+const Dashboard = lazy(() => import('./components/Dashboard'));
 
 function App() {
   console.log('Murder v2.0.0 - Roleplay Platform');
@@ -48,7 +49,11 @@ function App() {
         />
         <Route
           path="/*"
-          element={user ? <Dashboard user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" />}
+          element={user ? (
+            <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>}>
+              <Dashboard user={user} onLogout={() => setUser(null)} />
+            </Suspense>
+          ) : <Navigate to="/login" />}
         />
       </Routes>
     </BrowserRouter>
