@@ -956,11 +956,11 @@ async function handleConnect(message: Message, args: string[]) {
     await message.author.send('❌ **Usage:** `!connect <username> <password>`\n\n' +
       '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only used for authentication.\n\n' +
       '**Example:** `!connect myusername mypassword`\n\n' +
-      '🔗 **Linking your Discord account** to Write Pretend will allow you to:\n' +
-      '• Use all your Write Pretend characters in Discord\n' +
+      '🔗 **Linking your Discord account** to Murder will allow you to:\n' +
+      '• Use all your Murder characters in Discord\n' +
       '• Roll dice with your character stats\n' +
       '• Proxy messages as your characters\n\n' +
-      '💡 Don\'t have a Write Pretend account? Create one at http://writepretend.com');
+      '💡 Don\'t have a Murder account? Create one at https://murder.tech');
     return;
   }
 
@@ -1005,7 +1005,7 @@ async function handleConnect(message: Message, args: string[]) {
       errorMsg = error.message;
     }
 
-    await message.author.send('❌ **Failed to connect to Write Pretend.**\n\n' +
+    await message.author.send('❌ **Failed to connect to Murder.**\n\n' +
       `Error: ${errorMsg}\n\n` +
       'Please check your username and password and try again.\n\n' +
       '💡 Need help? Visit https://murder.tech to manage your account.');
