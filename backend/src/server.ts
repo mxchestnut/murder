@@ -163,12 +163,12 @@ app.get('/api/csrf-token', (req, res) => {
   res.json({ csrfToken: token });
 });
 
-// Apply CSRF protection to all API routes except auth (login/register)
+// Apply CSRF protection to all API routes except auth (login/register) and discord (bot integration)
 // Auth routes handle their own CSRF for better UX
+// Discord routes are called by the bot, which can't send CSRF tokens
 app.use('/api/documents', doubleCsrfProtection);
 app.use('/api/characters', doubleCsrfProtection);
 app.use('/api/pathcompanion', doubleCsrfProtection);
-app.use('/api/discord', doubleCsrfProtection);
 app.use('/api/system', doubleCsrfProtection);
 app.use('/api/files', doubleCsrfProtection);
 app.use('/api/knowledge-base', doubleCsrfProtection);
