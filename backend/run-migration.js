@@ -19,7 +19,7 @@ async function runMigration() {
   await client.connect();
   console.log('✓ Connected to database');
 
-  const migrationPath = path.join(__dirname, 'migrations/add_guild_id_to_character_stats.sql');
+  const migrationPath = path.join(__dirname, 'migrations/drop_old_character_id_unique.sql');
   const migration = fs.readFileSync(migrationPath, 'utf8');
 
   const statements = migration.split(';').filter(s => s.trim());
