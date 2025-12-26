@@ -812,7 +812,12 @@ async function handleProfile(message: Message, args: string[]) {
           .setCustomId('tab_legacy')
           .setLabel('Legacy')
           .setStyle(currentTab === 'legacy' ? ButtonStyle.Primary : ButtonStyle.Secondary)
-          .setEmoji('🌟')
+          .setEmoji('🌟'),
+        new ButtonBuilder()
+          .setCustomId('refresh_profile')
+          .setLabel('Refresh')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('🔄')
       );
   };
 
@@ -823,15 +828,32 @@ async function handleProfile(message: Message, args: string[]) {
     components: [createButtons1(currentTab), createButtons2(currentTab), createButtons3(currentTab)]
   });
 
-  // Create collector for button interactions
+  // Try to pin the message (requires permissions)
+  try {
+    await reply.pin();
+  } catch (error) {
+    // Silently fail if bot doesn't have pin permissions
+    console.log('Could not pin profile message - missing permissions');
+  }
+
+  // Create collector for button interactions with longer timeout
   const collector = reply.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    time: 300000 // 5 minutes
+    time: 1800000 // 30 minutes
   });
 
   collector.on('collect', async (interaction) => {
     if (interaction.user.id !== message.author.id) {
       await interaction.reply({ content: '❌ Only the person who ran !profile can navigate tabs.', ephemeral: true });
+      return;
+    }
+
+    // Handle refresh button
+    if (interaction.customId === 'refresh_profile') {
+      await interaction.update({
+        embeds: [await buildEmbed(currentTab)],
+        components: [createButtons1(currentTab), createButtons2(currentTab), createButtons3(currentTab)]
+      });
       return;
     }
 
