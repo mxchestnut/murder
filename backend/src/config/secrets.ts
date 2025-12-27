@@ -40,10 +40,10 @@ export async function loadSecrets(): Promise<Secrets> {
 
   // Load required secrets
   const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey] = await Promise.all([
-    getSecret('murder/database-url'),
-    getSecret('murder/session-secret'),
-    getSecret('murder/discord-bot-token'),
-    getSecret('murder/gemini-api-key')
+    getSecret('my1eparty/database-url'),
+    getSecret('my1eparty/session-secret'),
+    getSecret('my1eparty/discord-bot-token'),
+    getSecret('my1eparty/gemini-api-key')
   ]);
 
   // Try to load optional Stripe secrets
@@ -56,10 +56,10 @@ export async function loadSecrets(): Promise<Secrets> {
 
   try {
     const [stripeSecretKey, stripePublishableKey, stripeWebhookSecret, stripeRpTierPriceId] = await Promise.all([
-      getSecret('murder/stripe-secret-key'),
-      getSecret('murder/stripe-publishable-key'),
-      getSecret('murder/stripe-webhook-secret'),
-      getSecret('murder/stripe-rp-tier-price-id')
+      getSecret('my1eparty/stripe-secret-key'),
+      getSecret('my1eparty/stripe-publishable-key'),
+      getSecret('my1eparty/stripe-webhook-secret'),
+      getSecret('my1eparty/stripe-rp-tier-price-id')
     ]);
 
     stripeSecrets = {

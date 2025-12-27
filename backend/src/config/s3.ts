@@ -9,7 +9,7 @@ export const s3Client = new S3Client({
   }
 });
 
-export const BUCKET_NAME = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET || 'murder-tech-documents';
+export const BUCKET_NAME = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET || 'my1eparty-documents';
 
 // Upload file to S3
 export async function uploadToS3(

@@ -119,7 +119,7 @@ app.use(helmet({
 }));
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://murder.tech', 'https://www.murder.tech']
+    ? ['https://my1e.party', 'https://www.my1e.party', 'https://murder.tech', 'https://www.murder.tech']
     : 'http://localhost:5173',
   credentials: true
 }));
@@ -148,7 +148,7 @@ app.use(cookieParser());
   app.use(session({
     store: new RedisStore({
       client: redisClient,
-      prefix: 'murder:sess:',
+      prefix: 'my1eparty:sess:',
       ttl: 86400 * 30 // 30 days absolute maximum in seconds
     }),
     secret: secrets.SESSION_SECRET,
@@ -174,7 +174,7 @@ setupPassport();
 const csrfProtection = doubleCsrf({
   getSecret: () => secrets.SESSION_SECRET,
   getSessionIdentifier: (req) => req.session?.id || '',
-  cookieName: 'murder.x-csrf-token',
+  cookieName: 'my1eparty.x-csrf-token',
   cookieOptions: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

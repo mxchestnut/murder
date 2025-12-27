@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Backend API for Murder Tech roleplay platform",
+  "description": "Backend API for My1e Party roleplay platform",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

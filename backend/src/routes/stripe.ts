@@ -68,8 +68,8 @@ router.post('/create-checkout-session', isAuthenticated, async (req, res) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${req.headers.origin || 'https://murder.tech'}/settings?upgrade=success`,
-      cancel_url: `${req.headers.origin || 'https://murder.tech'}/settings?upgrade=cancelled`,
+      success_url: `${req.headers.origin || 'https://my1e.party'}/settings?upgrade=success`,
+      cancel_url: `${req.headers.origin || 'https://my1e.party'}/settings?upgrade=cancelled`,
       metadata: {
         userId: user.id.toString(),
       },
@@ -93,7 +93,7 @@ router.post('/create-portal-session', isAuthenticated, async (req, res) => {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: `${req.headers.origin || 'https://murder.tech'}/settings`,
+      return_url: `${req.headers.origin || 'https://my1e.party'}/settings`,
     });
 
     res.json({ url: session.url });

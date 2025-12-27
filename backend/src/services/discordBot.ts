@@ -339,10 +339,10 @@ async function handleProfile(message: Message, args: string[]) {
     .where(eq(users.discordUserId, message.author.id));
 
   if (!user) {
-    await message.reply('❌ **Discord account not linked to Murder.**\n\n' +
+    await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
       '**To link your account:**\n' +
       '1. Use `!connect <username> <password>` in Discord, OR\n' +
-      '2. Visit murder.tech to create/manage your account');
+      '2. Visit my1e.party to create/manage your account');
     return;
   }
 
@@ -627,7 +627,7 @@ async function handleProfile(message: Message, args: string[]) {
     if (character.avatarUrl) {
       const avatarUrl = character.avatarUrl.startsWith('http')
         ? character.avatarUrl
-        : `https://murder.tech${character.avatarUrl}`;
+        : `https://my1e.party${character.avatarUrl}`;
       embed.setThumbnail(avatarUrl);
     }
 
@@ -1091,11 +1091,11 @@ async function handleConnect(message: Message, args: string[]) {
     await message.author.send('❌ **Usage:** `!connect <username> <password>`\n\n' +
       '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only used for authentication.\n\n' +
       '**Example:** `!connect myusername mypassword`\n\n' +
-      '🔗 **Linking your Discord account** to Murder will allow you to:\n' +
-      '• Use all your Murder characters in Discord\n' +
+      '🔗 **Linking your Discord account** to My1e Party will allow you to:\n' +
+      '• Use all your My1e Party characters in Discord\n' +
       '• Roll dice with your character stats\n' +
       '• Proxy messages as your characters\n\n' +
-      '💡 Don\'t have a Murder account? Create one at https://murder.tech');
+      '💡 Don\'t have a My1e Party account? Create one at https://my1e.party');
     return;
   }
 
@@ -1104,7 +1104,7 @@ async function handleConnect(message: Message, args: string[]) {
 
   try {
     // Send a DM to the user for privacy
-    await message.author.send('🔐 Connecting to Murder...');
+    await message.author.send('🔐 Connecting to My1e Party...');
 
     // Authenticate with Murder backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -1116,7 +1116,7 @@ async function handleConnect(message: Message, args: string[]) {
 
     const { user, characters } = response.data;
 
-    await message.author.send('✅ **Successfully connected to Murder!**\n\n' +
+    await message.author.send('✅ **Successfully connected to My1e Party!**\n\n' +
       `🎭 Account: **${user.username}**\n` +
       `🎲 Characters: **${characters.length}**\n` +
       (user.pathCompanionConnected ? '🔗 PathCompanion: **Connected**\n' : '') +
@@ -1131,7 +1131,7 @@ async function handleConnect(message: Message, args: string[]) {
     console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Murder user: ${username}`);
 
   } catch (error: any) {
-    console.error('Discord Murder connect error:', error);
+    console.error('Discord My1e Party connect error:', error);
 
     let errorMsg = 'Unknown error occurred';
     if (error.response?.data?.error) {
@@ -1140,15 +1140,15 @@ async function handleConnect(message: Message, args: string[]) {
       errorMsg = error.message;
     }
 
-    await message.author.send('❌ **Failed to connect to Murder.**\n\n' +
+    await message.author.send('❌ **Failed to connect to My1e Party.**\n\n' +
       `Error: ${errorMsg}\n\n` +
       'Please check your username and password and try again.\n\n' +
-      '💡 Need help? Visit https://murder.tech to manage your account.');
+      '💡 Need help? Visit https://my1e.party to manage your account.');
   }
 }
 
 async function handleSyncAll(message: Message) {
-  await message.reply('🔄 Refreshing your character list from Murder...');
+  await message.reply('🔄 Refreshing your character list from My1e Party...');
 
   try {
     // Get user by Discord ID
@@ -1157,10 +1157,10 @@ async function handleSyncAll(message: Message) {
       .where(eq(users.discordUserId, message.author.id));
 
     if (!user) {
-      await message.reply('❌ **Discord account not linked to Murder.**\n\n' +
+      await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
         '**To link your account:**\n' +
         '1. Use `!connect <username> <password>` in Discord, OR\n' +
-        '2. Visit murder.tech to create/manage your account\n\n' +
+        '2. Visit my1e.party to create/manage your account\n\n' +
         '💡 Once linked, all your Murder characters will be available!');
       return;
     }
@@ -1171,9 +1171,9 @@ async function handleSyncAll(message: Message) {
       .where(eq(characterSheets.userId, user.id));
 
     if (characters.length === 0) {
-      await message.reply('ℹ️ **No characters found in your Murder account.**\n\n' +
+      await message.reply('ℹ️ **No characters found in your My1e Party account.**\n\n' +
         '**Create characters:**\n' +
-        '• Visit https://murder.tech and create a character manually\n' +
+        '• Visit https://my1e.party and create a character manually\n' +
         (user.pathCompanionUsername ? '• Or import from PathCompanion in the web portal\n' : '') +
         '\n💡 Characters you create will automatically be available in Discord!');
       return;
@@ -1205,7 +1205,7 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
       .where(eq(users.discordUserId, message.author.id));
 
     if (!user) {
-      await message.reply('❌ **Discord account not linked to Murder.**\n\n' +
+      await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
         'Use `!connect <username> <password>` to link your account first.');
       return;
     }
@@ -1230,7 +1230,7 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
     if (!character.isPathCompanion || !character.pathCompanionId) {
       await message.reply(`❌ **${character.name} is not linked to PathCompanion.**\n\n` +
         'To link this character:\n' +
-        '1. Visit https://murder.tech\n' +
+        '1. Visit https://my1e.party\n' +
         '2. Open the character sheet\n' +
         '3. Click the Link icon to connect to PathCompanion');
       return;
@@ -1265,7 +1265,7 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
       console.error('Failed to sync PathCompanion character:', apiError);
       const errorMsg = apiError.response?.data?.error || 'Failed to sync character data.';
       await message.reply(`❌ **Update failed:** ${errorMsg}\n\n` +
-        'Try reconnecting to PathCompanion at https://murder.tech');
+        'Try reconnecting to PathCompanion at https://my1e.party');
     }
 
   } catch (error) {
@@ -1291,7 +1291,7 @@ async function handleHelp(message: Message) {
       { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
       { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false }
     )
-    .setFooter({ text: 'Visit murder.tech to manage characters!' });
+    .setFooter({ text: 'Visit my1e.party to manage characters!' });
 
   await message.reply({ embeds: [embed] });
 }
@@ -1620,7 +1620,7 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
           .setColor(embedColor)
           .setTitle(`🎲 ${character.name} - ${rollData.rollDescription}`)
           .setDescription(`**${rollData.diceRoll}** ${rollData.modifier >= 0 ? '+' : ''}${rollData.modifier} = **${rollData.total}**`)
-          .setFooter({ text: 'Rolled from Murder Tech Portal' })
+          .setFooter({ text: 'Rolled from My1e Party Tech Portal' })
           .setTimestamp();
 
         if (rollData.diceRoll === 20) {
@@ -2104,7 +2104,7 @@ async function handleStats(message: Message, args: string[]) {
     if (character[0].avatarUrl) {
       const avatarUrl = character[0].avatarUrl.startsWith('http')
         ? character[0].avatarUrl
-        : `https://murder.tech${character[0].avatarUrl}`;
+        : `https://my1e.party${character[0].avatarUrl}`;
       embed.setThumbnail(avatarUrl);
     }
 

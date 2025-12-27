@@ -1,4 +1,4 @@
-# Contributing to Murder
+# Contributing to My1e Party
 
 Thank you for your interest in contributing! This guide will help you get started.
 

@@ -217,7 +217,7 @@ router.post('/logout-all-devices', isAuthenticated, async (req, res) => {
     }
 
     // Get all session keys
-    const sessionKeys = await redisClient.keys('murder:sess:*');
+    const sessionKeys = await redisClient.keys('my1eparty:sess:*');
 
     let deletedCount = 0;
 

@@ -1,7 +1,7 @@
 {
-  "name": "murder-tech",
+  "name": "my1eparty",
   "version": "1.0.0",
-  "description": "Murder - Discord-integrated roleplay platform with character management and AI features",
+  "description": "My1e Party - Discord-integrated roleplay platform with character management and AI features",
   "private": true,
   "workspaces": [
     "backend",

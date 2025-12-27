@@ -7,7 +7,7 @@ import { useTheme } from './utils/useTheme';
 const Dashboard = lazy(() => import('./components/Dashboard'));
 
 function App() {
-  console.log('Murder v2.0.0 - Roleplay Platform');
+  console.log('My1e Party v2.0.0 - Roleplay Platform');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   useTheme(); // Initialize theme on app load

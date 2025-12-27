@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     sentryVitePlugin({
       org: 'mxchestnut',
-      project: 'murder-frontend',
+      project: 'my1e-party-frontend',
       authToken: process.env.SENTRY_AUTH_TOKEN,
       sourcemaps: {
         assets: './dist/**',

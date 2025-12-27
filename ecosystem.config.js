@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'murder-tech-backend',
+    name: 'my1eparty-backend',
     script: './backend/dist/server.js',
     instances: 1,
     exec_mode: 'fork',

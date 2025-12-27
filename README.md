@@ -1,6 +1,6 @@
-# Murder - Discord-Integrated Roleplay Platform
+# My1e Party - Discord-Integrated Roleplay Platform
 
-**Murder** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
+**My1e Party** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
 
 ## Features
 
@@ -53,7 +53,7 @@
 - **Hosting:** AWS EC2
 - **Storage:** AWS S3
 - **DNS:** AWS Route53
-- **Domain:** murder.tech
+- **Domain:** my1e.party
 - **SSL:** Let's Encrypt
 
 ---
@@ -61,7 +61,7 @@
 ## Project Structure
 
 ```
-murder-tech/
+my1e-party/
 ├── backend/
 │   ├── src/
 │   │   ├── routes/          # API endpoints
@@ -86,7 +86,7 @@ murder-tech/
 ### Discord Bot Commands -- Some Need Testing
 
 **Account Setup**
-- `!connect <username> <password>` - Link your Discord account to Murder (auto-deleted for security)
+- `!connect <username> <password>` - Link your Discord account to My1e Party (auto-deleted for security)
 - `!syncall` - Refresh character list from PathCompanion
 
 **Character Commands**
@@ -135,9 +135,9 @@ murder-tech/
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/mxchestnut/murder/issues)
+- **Issues:** [GitHub Issues](https://github.com/mxchestnut/my1e-party/issues)
 - **Discord:** [Join our server](https://discord.gg/FFQ4YP7DVf)
-- **Website:** [murder.tech](https://murder.tech)
+- **Website:** [my1e.party](https://my1e.party)
 
 ## License
 

@@ -143,7 +143,7 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
     return new Promise((resolve, reject) => {
       // First, login anonymously
       PlayFabClient.LoginWithCustomID({
-        CustomId: `murder_tech_import_${Date.now()}`,
+        CustomId: `my1eparty_import_${Date.now()}`,
         CreateAccount: true,
         TitleId: TITLE_ID
       }, (error: any, result: any) => {

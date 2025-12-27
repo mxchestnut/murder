@@ -41,7 +41,7 @@ router.post('/login', async (req, res) => {
 
       if (existingLink && existingLink.id !== user.id) {
         return res.status(400).json({
-          error: `This Discord account is already linked to another Murder account (${existingLink.username})`
+          error: `This Discord account is already linked to another My1e Party account (${existingLink.username})`
         });
       }
 
@@ -91,7 +91,7 @@ router.get('/user/:discordUserId', async (req, res) => {
       .where(eq(users.discordUserId, discordUserId));
 
     if (!user) {
-      return res.status(404).json({ error: 'Discord account not linked to Murder Tech' });
+      return res.status(404).json({ error: 'Discord account not linked to My1e Party' });
     }
 
     // Get user's characters
