@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bot, ExternalLink, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { Bot, ExternalLink, CheckCircle, Info } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface UserProfile {
@@ -10,7 +10,6 @@ interface UserProfile {
 export default function DiscordBotInvite() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
 
   // Write Pretend bot OAuth2 invite URL with proper permissions
   const WRITE_PRETEND_CLIENT_ID = '1324581405509091341'; // Your Write Pretend bot application ID
@@ -36,13 +35,7 @@ export default function DiscordBotInvite() {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const hasActiveSubscription = profile?.subscriptionTier === 'rp' &&
-    (profile?.stripeSubscriptionStatus === 'active' || profile?.stripeSubscriptionStatus === 'trialing');
+    navifile?.stripeSubscriptionStatus === 'active' || profile?.stripeSubscriptionStatus === 'trialing');
 
   if (loading) {
     return (

@@ -965,7 +965,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               <button
                 onClick={() => {
                   onShowBotInvite();
-                  setDiscordMenuExpanded(false);
                 }}
                 style={{
                   width: '100%',
