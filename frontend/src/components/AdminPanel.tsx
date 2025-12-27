@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Shield, Trash2, Database, Loader } from 'lucide-react';
+import { Users, Shield, Trash2, Database, Loader, Gift, X } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface UserWithStats {
@@ -26,11 +26,18 @@ interface PlatformStats {
   admins: number;
 }
 
+interface SubscriptionModalState {
+  user: UserWithStats | null;
+  status: string;
+  endsAt: string;
+}
+
 export default function AdminPanel() {
   const [users, setUsers] = useState<UserWithStats[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [subscriptionModal, setSubscriptionModal] = useState<SubscriptionModalState | null>(null);
 
   useEffect(() => {
     loadData();
@@ -76,6 +83,51 @@ export default function AdminPanel() {
       loadData();
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to delete user' });
+    }
+  };
+
+  const handleOpenSubscriptionModal = (user: UserWithStats) => {
+    const defaultEndsAt = user.subscriptionEndsAt
+      ? new Date(user.subscriptionEndsAt).toISOString().split('T')[0]
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 30 days from now
+
+    setSubscriptionModal({
+      user,
+      status: user.stripeSubscriptionStatus || 'active',
+      endsAt: defaultEndsAt
+    });
+  };
+
+  const handleSaveSubscription = async () => {
+    if (!subscriptionModal?.user) return;
+
+    try {
+      await api.post(`/admin/users/${subscriptionModal.user.id}/subscription`, {
+        status: subscriptionModal.status,
+        endsAt: subscriptionModal.endsAt
+      });
+      setMessage({ type: 'success', text: 'Subscription updated successfully' });
+      setSubscriptionModal(null);
+      loadData();
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to update subscription' });
+    }
+  };
+
+  const handleRemoveSubscription = async () => {
+    if (!subscriptionModal?.user) return;
+
+    if (!confirm(`Remove subscription for ${subscriptionModal.user.username}?`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/users/${subscriptionModal.user.id}/subscription`);
+      setMessage({ type: 'success', text: 'Subscription removed' });
+      setSubscriptionModal(null);
+      loadData();
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to remove subscription' });
     }
   };
 
@@ -203,23 +255,45 @@ export default function AdminPanel() {
                   </td>
                   <td style={tableCellStyle}>{user.email || '-'}</td>
                   <td style={tableCellStyle}>
-                    {user.stripeSubscriptionStatus ? (
-                      <span style={{
-                        padding: '2px 8px',
-                        fontSize: '0.75rem',
-                        background: user.stripeSubscriptionStatus === 'active' ? '#10b98120' : '#ef444420',
-                        color: user.stripeSubscriptionStatus === 'active' ? '#10b981' : '#ef4444',
-                        borderRadius: '4px',
-                        textTransform: 'uppercase'
-                      }}>
-                        {user.stripeSubscriptionStatus}
-                      </span>
-                    ) : '-'}
-                    {user.subscriptionEndsAt && (
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        {new Date(user.subscriptionEndsAt).toLocaleDateString()}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div>
+                        {user.stripeSubscriptionStatus ? (
+                          <span style={{
+                            padding: '2px 8px',
+                            fontSize: '0.75rem',
+                            background: user.stripeSubscriptionStatus === 'active' ? '#10b98120' : '#ef444420',
+                            color: user.stripeSubscriptionStatus === 'active' ? '#10b981' : '#ef4444',
+                            borderRadius: '4px',
+                            textTransform: 'uppercase'
+                          }}>
+                            {user.stripeSubscriptionStatus}
+                          </span>
+                        ) : '-'}
+                        {user.subscriptionEndsAt && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            {new Date(user.subscriptionEndsAt).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <button
+                        onClick={() => handleOpenSubscriptionModal(user)}
+                        style={{
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.875rem',
+                          background: 'var(--accent-color)',
+                          color: 'var(--accent-text)',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title="Gift/Edit Subscription"
+                      >
+                        <Gift size={14} />
+                      </button>
+                    </div>
                   </td>
                   <td style={tableCellStyle}>{user.discordUserId ? '✓' : '-'}</td>
                   <td style={tableCellStyle}>{user.pathCompanionUsername || '-'}</td>
@@ -266,6 +340,129 @@ export default function AdminPanel() {
           </table>
         </div>
       </div>
+
+      {/* Subscription Modal */}
+      {subscriptionModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'var(--bg-secondary)',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Gift size={24} color="var(--accent-color)" />
+                Manage Subscription: {subscriptionModal.user.username}
+              </h2>
+              <button
+                onClick={() => setSubscriptionModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                Status
+              </label>
+              <select
+                value={subscriptionModal.status}
+                onChange={(e) => setSubscriptionModal({ ...subscriptionModal, status: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-primary)',
+                  fontSize: '1rem'
+                }}
+              >
+                <option value="active">Active</option>
+                <option value="canceled">Canceled</option>
+                <option value="past_due">Past Due</option>
+                <option value="unpaid">Unpaid</option>
+                <option value="trialing">Trialing</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                Expires At
+              </label>
+              <input
+                type="date"
+                value={subscriptionModal.endsAt}
+                onChange={(e) => setSubscriptionModal({ ...subscriptionModal, endsAt: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-primary)',
+                  fontSize: '1rem'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={handleSaveSubscription}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: 'var(--accent-color)',
+                  color: 'var(--accent-text)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                Save Subscription
+              </button>
+              {subscriptionModal.user.stripeSubscriptionStatus && (
+                <button
+                  onClick={handleRemoveSubscription}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    background: '#ef444420',
+                    color: '#ef4444',
+                    border: '1px solid #ef4444',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

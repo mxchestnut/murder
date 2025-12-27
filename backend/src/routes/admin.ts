@@ -187,4 +187,52 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// Update user subscription (gift/edit)
+router.post('/users/:userId/subscription', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const { status, endsAt } = req.body;
+
+    if (!status || !endsAt) {
+      return res.status(400).json({ error: 'Status and endsAt are required' });
+    }
+
+    // Update user subscription
+    await db
+      .update(users)
+      .set({
+        stripeSubscriptionStatus: status,
+        subscriptionEndsAt: new Date(endsAt),
+      })
+      .where(eq(users.id, userId));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating subscription:', error);
+    res.status(500).json({ error: 'Failed to update subscription' });
+  }
+});
+
+// Remove user subscription
+router.delete('/users/:userId/subscription', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    // Clear subscription fields
+    await db
+      .update(users)
+      .set({
+        stripeSubscriptionStatus: null,
+        subscriptionEndsAt: null,
+        stripeSubscriptionId: null,
+      })
+      .where(eq(users.id, userId));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error removing subscription:', error);
+    res.status(500).json({ error: 'Failed to remove subscription' });
+  }
+});
+
 export default router;
