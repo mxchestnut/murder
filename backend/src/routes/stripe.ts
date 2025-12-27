@@ -14,7 +14,7 @@ let stripe: Stripe;
 export async function initializeStripe() {
   const secrets = await getSecretsWithFallback();
   stripe = new Stripe(secrets.STRIPE_SECRET_KEY, {
-    apiVersion: '2024-12-18.acacia',
+    apiVersion: '2025-01-27.acacia',
   });
   return stripe;
 }
@@ -171,7 +171,7 @@ router.post('/webhook', async (req, res) => {
             .set({
               subscriptionTier: 'free',
               stripeSubscriptionStatus: 'canceled',
-              subscriptionEndsAt: new Date(subscription.current_period_end * 1000),
+              subscriptionEndsAt: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
             })
             .where(eq(users.id, user.id));
 
@@ -208,7 +208,7 @@ async function updateUserSubscription(userId: number, subscription: Stripe.Subsc
       subscriptionTier: isActive ? 'rp' : 'free',
       stripeSubscriptionId: subscription.id,
       stripeSubscriptionStatus: subscription.status,
-      subscriptionEndsAt: new Date(subscription.current_period_end * 1000),
+      subscriptionEndsAt: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
     })
     .where(eq(users.id, userId));
 
