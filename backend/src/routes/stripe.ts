@@ -14,7 +14,7 @@ let stripe: Stripe;
 export async function initializeStripe() {
   const secrets = await getSecretsWithFallback();
   stripe = new Stripe(secrets.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-01-27.acacia',
+    apiVersion: '2024-11-20.acacia',
   });
   return stripe;
 }
