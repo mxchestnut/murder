@@ -1700,7 +1700,7 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
 export async function sendRollToDiscord(characterId: number, rollData: any) {
   console.log(`[sendRollToDiscord] Called for character ${characterId}`, rollData);
 
-  if (!botClient) {
+  if (!my1epartyClient) {
     console.log('[sendRollToDiscord] Discord bot not initialized');
     return false;
   }
@@ -1725,7 +1725,7 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
   for (const mapping of mappings) {
     console.log(`[sendRollToDiscord] Attempting to send to channel ${mapping.channel_character_mappings.channelId}`);
     try {
-      const channel = await botClient.channels.fetch(mapping.channel_character_mappings.channelId);
+      const channel = await my1epartyClient.channels.fetch(mapping.channel_character_mappings.channelId);
       if (channel && channel.isTextBased() && 'send' in channel) {
         // Determine embed color
         let embedColor = 0x0099ff;
@@ -3147,7 +3147,7 @@ async function trackCharacterActivity(
  */
 export async function postWeeklyCharacterReport(guildId: string) {
   try {
-    if (!botClient) {
+    if (!my1epartyClient) {
       console.log('Bot client not initialized');
       return;
     }
@@ -3162,7 +3162,7 @@ export async function postWeeklyCharacterReport(guildId: string) {
       return;
     }
 
-    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    const channel = await my1epartyClient.channels.fetch(settings[0].announcementChannelId);
     if (!channel?.isTextBased() || !('send' in channel)) {
       console.log(`Announcement channel ${settings[0].announcementChannelId} is not text-based`);
       return;
@@ -3217,7 +3217,7 @@ export async function postWeeklyCharacterReport(guildId: string) {
  */
 export async function postMonthlyCharacterSummary(guildId: string) {
   try {
-    if (!botClient) {
+    if (!my1epartyClient) {
       console.log('Bot client not initialized');
       return;
     }
@@ -3232,7 +3232,7 @@ export async function postMonthlyCharacterSummary(guildId: string) {
       return;
     }
 
-    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    const channel = await my1epartyClient.channels.fetch(settings[0].announcementChannelId);
     if (!channel?.isTextBased() || !('send' in channel)) {
       console.log(`Announcement channel ${settings[0].announcementChannelId} is not text-based`);
       return;
@@ -3289,7 +3289,7 @@ export async function postMonthlyCharacterSummary(guildId: string) {
  */
 export async function announceCharacterMilestone(characterId: number, milestoneType: string, details: any) {
   try {
-    if (!botClient) {
+    if (!my1epartyClient) {
       console.log('Bot client not initialized');
       return;
     }
@@ -3318,7 +3318,7 @@ export async function announceCharacterMilestone(characterId: number, milestoneT
       return;
     }
 
-    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    const channel = await my1epartyClient.channels.fetch(settings[0].announcementChannelId);
     if (!channel?.isTextBased() || !('send' in channel)) {
       return;
     }
@@ -3384,7 +3384,7 @@ export async function announceCharacterMilestone(characterId: number, milestoneT
  */
 export async function postLeaderboardToChannel(guildId: string, category: string = 'messages') {
   try {
-    if (!botClient) {
+    if (!my1epartyClient) {
       console.log('Bot client not initialized');
       return;
     }
@@ -3399,7 +3399,7 @@ export async function postLeaderboardToChannel(guildId: string, category: string
       return;
     }
 
-    const channel = await botClient.channels.fetch(settings[0].announcementChannelId);
+    const channel = await my1epartyClient.channels.fetch(settings[0].announcementChannelId);
     if (!channel?.isTextBased() || !('send' in channel)) {
       console.log(`Announcement channel ${settings[0].announcementChannelId} is not text-based`);
       return;
@@ -3743,5 +3743,5 @@ async function handlePromptSettings(message: Message, args: string[]) {
 }
 
 export function getDiscordBot() {
-  return botClient;
+  return my1epartyClient;
 }
