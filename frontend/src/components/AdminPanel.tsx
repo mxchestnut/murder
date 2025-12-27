@@ -366,7 +366,7 @@ export default function AdminPanel() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Gift size={24} color="var(--accent-color)" />
-                Manage Subscription: {subscriptionModal.user.username}
+                Manage Subscription: {subscriptionModal.user?.username}
               </h2>
               <button
                 onClick={() => setSubscriptionModal(null)}
@@ -443,7 +443,7 @@ export default function AdminPanel() {
               >
                 Save Subscription
               </button>
-              {subscriptionModal.user.stripeSubscriptionStatus && (
+              {subscriptionModal.user?.stripeSubscriptionStatus && (
                 <button
                   onClick={handleRemoveSubscription}
                   style={{
