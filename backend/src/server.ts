@@ -158,9 +158,9 @@ app.use(cookieParser());
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days, refreshed on activity
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // Changed from 'none' - same domain means we can use 'lax'
-      domain: undefined, // Remove domain restriction - let browser handle it
+      secure: 'auto', // Auto-detect based on connection (HTTP vs HTTPS)
+      sameSite: 'lax',
+      domain: undefined,
       path: '/'
     }
   }));
@@ -177,9 +177,9 @@ const csrfProtection = doubleCsrf({
   cookieName: 'murder.x-csrf-token',
   cookieOptions: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax', // Changed from 'none' - same domain
-    domain: undefined, // Remove domain restriction
+    secure: false, // Allow HTTP access for Tailscale - CSRF provides sufficient protection
+    sameSite: 'lax',
+    domain: undefined,
     path: '/'
   },
   size: 64,
