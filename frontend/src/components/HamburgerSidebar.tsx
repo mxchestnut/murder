@@ -1014,8 +1014,8 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               {user?.isAdmin && (
                 <button
                   onClick={() => {
-                    // Open admin panel on Tailscale network via nginx
-                    window.open('http://100.111.171.42', '_blank');
+                    // TODO: Implement admin panel display
+                    alert('Admin panel coming soon! Your admin access is confirmed.');
                     setUserMenuExpanded(false);
                   }}
                   style={{

@@ -119,7 +119,7 @@ app.use(helmet({
 }));
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://murder.tech', 'https://www.murder.tech', 'http://100.111.171.42']
+    ? ['https://murder.tech', 'https://www.murder.tech']
     : 'http://localhost:5173',
   credentials: true
 }));
@@ -158,7 +158,7 @@ app.use(cookieParser());
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days, refreshed on activity
       httpOnly: true,
-      secure: false, // Allow both HTTP (Tailscale) and HTTPS (public site)
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       domain: undefined,
       path: '/'
@@ -177,7 +177,7 @@ const csrfProtection = doubleCsrf({
   cookieName: 'murder.x-csrf-token',
   cookieOptions: {
     httpOnly: true,
-    secure: false, // Allow HTTP access for Tailscale - CSRF provides sufficient protection
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     domain: undefined,
     path: '/'
