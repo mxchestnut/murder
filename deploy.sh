@@ -11,6 +11,10 @@ ssh -i ~/.ssh/murder-tech-key.pem ubuntu@44.210.148.206 'cd my1eparty && git pul
 echo "📦 Installing frontend dependencies..."
 ssh -i ~/.ssh/murder-tech-key.pem ubuntu@44.210.148.206 'cd my1eparty/frontend && npm install'
 
+# Build frontend
+echo "🎨 Building frontend..."
+ssh -i ~/.ssh/murder-tech-key.pem ubuntu@44.210.148.206 'cd my1eparty/frontend && npm run build'
+
 # Build backend
 echo "🔨 Building backend..."
 ssh -i ~/.ssh/murder-tech-key.pem ubuntu@44.210.148.206 'cd my1eparty/backend && npm run build'
