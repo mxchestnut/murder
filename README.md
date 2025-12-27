@@ -141,7 +141,7 @@ murder-tech/
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/mxchestnut/murder/issues)
-- **Discord:** [Join our server] (https://discord.gg/FFQ4YP7DVf)
+- **Discord:** [Join our server](https://discord.gg/FFQ4YP7DVf)
 - **Website:** [murder.tech](https://murder.tech)
 
 ## License
