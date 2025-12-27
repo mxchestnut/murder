@@ -23,6 +23,10 @@ router.get('/users', async (req, res) => {
         discordUserId: users.discordUserId,
         pathCompanionUsername: users.pathCompanionUsername,
         pathCompanionConnectedAt: users.pathCompanionConnectedAt,
+        stripeCustomerId: users.stripeCustomerId,
+        stripeSubscriptionId: users.stripeSubscriptionId,
+        stripeSubscriptionStatus: users.stripeSubscriptionStatus,
+        subscriptionEndsAt: users.subscriptionEndsAt,
         createdAt: users.createdAt,
       })
       .from(users)
