@@ -10,7 +10,11 @@ import axios from 'axios';
 import wiki from 'wikipedia';
 import { getUserTierFromDiscord } from '../middleware/tier.js';
 
-let botClient: Client | null = null;
+// Support for two bots: My1e Party (free) and Write Pretend (premium)
+type BotType = 'my1eparty' | 'writepretend';
+
+let my1epartyClient: Client | null = null;
+let writepretendClient: Client | null = null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
 
 // Normalize string by removing accents and converting to lowercase
@@ -28,13 +32,13 @@ function isAdmin(message: Message): boolean {
   return message.member.permissions.has('Administrator');
 }
 
-export function initializeDiscordBot(token: string) {
+export function initializeDiscordBot(token: string, botType: BotType = 'my1eparty') {
   if (!token) {
-    console.log('No Discord bot token provided, skipping bot initialization');
+    console.log(`No Discord bot token provided for ${botType}, skipping bot initialization`);
     return;
   }
 
-  botClient = new Client({
+  const botClient = new Client({
     intents: [
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
@@ -44,21 +48,274 @@ export function initializeDiscordBot(token: string) {
     partials: [Partials.Message, Partials.Reaction, Partials.Channel],
   });
 
-  botClient.on('ready', () => {
-    console.log(`Discord bot logged in as ${botClient?.user?.tag}`);
+  // Store the client based on bot type
+  if (botType === 'my1eparty') {
+    my1epartyClient = botClient;
+  } else {
+    writepretendClient = botClient;
+  }
 
-    // Start the daily prompt scheduler (RP tier feature)
-    import('./promptScheduler.js').then(({ startPromptScheduler }) => {
-      startPromptScheduler(botClient as Client);
-    }).catch(error => {
-      console.error('Failed to start prompt scheduler:', error);
-    });
+  botClient.on('ready', () => {
+    console.log(`${botType === 'my1eparty' ? 'My1e Party' : 'Write Pretend'} bot logged in as ${botClient?.user?.tag}`);
+
+    // Only start prompt scheduler for My1e Party bot (free tier gets this feature)
+    if (botType === 'my1eparty') {
+      import('./promptScheduler.js').then(({ startPromptScheduler }) => {
+        startPromptScheduler(botClient as Client);
+      }).catch(error => {
+        console.error('Failed to start prompt scheduler:', error);
+      });
+    }
   });
 
   botClient.on('messageCreate', async (message: Message) => {
     if (message.author.bot) return;
 
     const content = message.content.trim();
+
+    // Handle commands based on bot type
+    if (botType === 'my1eparty') {
+      await handleMy1ePartyCommands(message, content, botClient);
+    } else {
+      await handleWritePretendCommands(message, content, botClient);
+    }
+  });
+
+  // Hall of Fame - Star Reaction Handler (both bots support this)
+  botClient.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot) return;
+
+    // Fetch partial reactions
+    if (reaction.partial) {
+      try {
+        await reaction.fetch();
+      } catch (error) {
+        console.error('Error fetching reaction:', error);
+        return;
+      }
+    }
+
+    // Check if it's a star reaction
+    if (reaction.emoji.name === '⭐') {
+      await handleStarReaction(reaction);
+    }
+  });
+
+  botClient.on('messageReactionRemove', async (reaction, user) => {
+    if (user.bot) return;
+
+    if (reaction.partial) {
+      try {
+        await reaction.fetch();
+      } catch (error) {
+        console.error('Error fetching reaction:', error);
+        return;
+      }
+    }
+
+    if (reaction.emoji.name === '⭐') {
+      await handleStarReaction(reaction);
+    }
+  });
+
+  botClient.login(token).catch(error => {
+    console.error(`Failed to login ${botType} Discord bot:`, error);
+  });
+}
+
+// ============ MY1E PARTY BOT (FREE TIER) ============
+// Basic features: character sheets, dice rolls, stats, profiles
+async function handleMy1ePartyCommands(message: Message, content: string, botClient: Client) {
+  // Check for character proxying patterns: "CharName: message" or "!CharName: message"
+  const proxyRegex = /^!?([\p{L}\p{N}\s]+):\s*(.+)$/u;
+  const proxyMatch = proxyRegex.exec(content);
+  if (proxyMatch) {
+    const characterName = proxyMatch[1].trim();
+    const messageContent = proxyMatch[2];
+    await handleProxy(message, characterName, messageContent);
+    return;
+  }
+
+  // Check for name-based rolling: "!CharName stat"
+  const nameRollRegex = /^!([\p{L}\p{N}\s]+)\s+(.+)$/u;
+  const nameRollMatch = nameRollRegex.exec(content);
+  if (nameRollMatch) {
+    const potentialName = nameRollMatch[1].trim();
+    const potentialStat = nameRollMatch[2].trim();
+
+    // Check if this is a known command first
+    const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'stats', 'leaderboard', 'session', 'scene', 'time', 'note', 'npc', 'music', 'hall', 'botset', 'hc', 'weeklyreport', 'monthlyreport', 'postleaderboard', 'prompt', 'trope', 'promptsettings'];
+    const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
+    if (!isKnownCommand) {
+      // Check if this is "!CharName update" pattern
+      if (potentialStat.toLowerCase() === 'update') {
+        await handleCharacterUpdate(message, potentialName);
+        return;
+      }
+      // Try to handle as name-based roll
+      const handled = await handleNameRoll(message, potentialName, potentialStat);
+      if (handled) return;
+    }
+  }
+
+  // Standard command handling
+  if (!content.startsWith('!')) return;
+
+  const args = content.slice(1).trim().split(/ +/);
+  const command = args.shift()?.toLowerCase();
+
+  try {
+    switch (command) {
+      // RP Tier commands (prompts/tropes)
+      case 'prompt':
+        await handlePrompt(message, args);
+        break;
+      case 'trope':
+        await handleTrope(message, args);
+        break;
+      case 'promptsettings':
+        await handlePromptSettings(message, args);
+        break;
+      // Basic character management
+      case 'setchar':
+        await handleSetChar(message, args);
+        break;
+      case 'char':
+        await handleShowChar(message);
+        break;
+      case 'profile':
+        await handleProfile(message, args);
+        break;
+      case 'roll':
+        await handleRoll(message, args);
+        break;
+      case 'connect':
+        await handleConnect(message, args);
+        break;
+      case 'syncall':
+        await handleSyncAll(message);
+        break;
+      // Stats and leaderboards
+      case 'stats':
+        await handleStats(message, args);
+        break;
+      case 'leaderboard':
+        await handleLeaderboard(message, args);
+        break;
+      // GM tools
+      case 'time':
+        await handleTime(message, args);
+        break;
+      case 'note':
+        await handleNote(message, args);
+        break;
+      case 'npc':
+        await handleNPC(message, args);
+        break;
+      case 'music':
+        await handleMusic(message);
+        break;
+      case 'hall':
+        await handleHall(message, args);
+        break;
+      case 'botset':
+        await handleBotSet(message, args);
+        break;
+      case 'hc':
+        await handleHC(message, args);
+        break;
+      case 'weeklyreport':
+        await handleWeeklyReport(message);
+        break;
+      case 'monthlyreport':
+        await handleMonthlyReport(message);
+        break;
+      case 'postleaderboard':
+        await handlePostLeaderboard(message, args);
+        break;
+      case 'help':
+        await handleHelp(message, 'free');
+        break;
+      // Premium commands - redirect to upgrade
+      case 'ask':
+      case 'learn':
+      case 'learnurl':
+      case 'feat':
+      case 'spell':
+      case 'memory':
+        await message.reply('🔒 This is a **Write Pretend** premium feature!\n\nUpgrade to RP tier at https://my1e.party to unlock:\n• AI knowledge base with !ask\n• Web scraping with !learnurl\n• Character memories with !memory\n• D&D lookups (!feat, !spell)\n\nThen invite the Write Pretend bot to your server!');
+        break;
+      default:
+        // Unknown command, no response
+        break;
+    }
+  } catch (error) {
+    console.error('Error handling My1e Party command:', error);
+    await message.reply('❌ An error occurred processing your command.');
+  }
+}
+
+// ============ WRITE PRETEND BOT (PREMIUM TIER) ============
+// Advanced features: AI, knowledge base, web search, character memories
+async function handleWritePretendCommands(message: Message, content: string, botClient: Client) {
+  // Check for character memory viewing: "!CharName Memories"
+  const nameRollRegex = /^!([\p{L}\p{N}\s]+)\s+(.+)$/u;
+  const nameRollMatch = nameRollRegex.exec(content);
+  if (nameRollMatch) {
+    const potentialName = nameRollMatch[1].trim();
+    const potentialStat = nameRollMatch[2].trim();
+
+    // Check if this is a known command first
+    const knownCommands = ['ask', 'learn', 'learnurl', 'feat', 'spell', 'memory', 'help'];
+    const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
+    if (!isKnownCommand) {
+      // Check if this is "!CharName Memories" pattern
+      if (potentialStat.toLowerCase() === 'memories') {
+        await handleCharacterMemoriesView(message, potentialName);
+        return;
+      }
+    }
+  }
+
+  // Standard command handling
+  if (!content.startsWith('!')) return;
+
+  const args = content.slice(1).trim().split(/ +/);
+  const command = args.shift()?.toLowerCase();
+
+  try {
+    switch (command) {
+      // Premium AI & Knowledge commands
+      case 'ask':
+        await handleAsk(message, args);
+        break;
+      case 'learn':
+        await handleLearn(message, args);
+        break;
+      case 'learnurl':
+        await handleLearnUrl(message, args);
+        break;
+      case 'feat':
+        await handleFeat(message, args);
+        break;
+      case 'spell':
+        await handleSpell(message, args);
+        break;
+      case 'memory':
+        await handleMemory(message, args);
+        break;
+      case 'help':
+        await handleHelp(message, 'premium');
+        break;
+      default:
+        // Unknown command, no response
+        break;
+    }
+  } catch (error) {
+    console.error('Error handling Write Pretend command:', error);
+    await message.reply('❌ An error occurred processing your command.');
+  }
+}
 
     // Check for character proxying patterns: "CharName: message" or "!CharName: message"
     const proxyRegex = /^!?([\p{L}\p{N}\s]+):\s*(.+)$/u;
@@ -1274,26 +1531,43 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
   }
 }
 
-async function handleHelp(message: Message) {
-  const embed = new EmbedBuilder()
-    .setColor(0x9b59b6)
-    .setTitle('🎭 Cyar\'ika Bot Commands')
-    .setDescription('Your complete RP companion!')
-    .addFields(
-      { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
-      { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
-      { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
-      { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
-      { name: '🎬 RP Tools', value: '`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
-      { name: '🔒 RP Tier Features', value: '`!prompt [random <category>]` - Get RP prompts\n`!trope [category]` - Get story tropes\n`!promptsettings` - Daily prompt settings (admin)\n*Requires RP tier subscription*', inline: false },
-      { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
-      { name: '📝 Character Memories', value: '`!Memory <Character> | <memory>` - Add memory\n`!<Character> Memories` - View all memories\nExample: `!Memory Ogun | Had a dream`', inline: false },
-      { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
-      { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false }
-    )
-    .setFooter({ text: 'Visit my1e.party to manage characters!' });
+async function handleHelp(message: Message, botType: 'free' | 'premium' = 'free') {
+  if (botType === 'free') {
+    // My1e Party (free tier) help
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle('🎭 My1e Party Bot Commands')
+      .setDescription('Your roleplay companion!')
+      .addFields(
+        { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
+        { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
+        { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
+        { name: '🎬 RP Tools', value: '`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
+        { name: '🔒 RP Tier Features', value: '`!prompt [random <category>]` - Get RP prompts\n`!trope [category]` - Get story tropes\n`!promptsettings` - Daily prompt settings (admin)\n*Requires RP tier subscription*', inline: false },
+        { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
+        { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion', inline: false },
+        { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false },
+        { name: '✨ Want More?', value: '**Upgrade to RP tier** to unlock **Write Pretend** bot with:\n• AI knowledge base (!ask)\n• Web scraping (!learnurl)\n• Character memories (!memory)\n• D&D lookups (!feat, !spell)\n\nVisit https://my1e.party to upgrade!', inline: false }
+      )
+      .setFooter({ text: 'Visit my1e.party to manage characters!' });
 
-  await message.reply({ embeds: [embed] });
+    await message.reply({ embeds: [embed] });
+  } else {
+    // Write Pretend (premium tier) help
+    const embed = new EmbedBuilder()
+      .setColor(0xff6b6b)
+      .setTitle('✨ Write Pretend Bot Commands')
+      .setDescription('Premium AI-powered RP tools!')
+      .addFields(
+        { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
+        { name: '📚 D&D Lookups', value: '`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information', inline: false },
+        { name: '📝 Character Memories', value: '`!Memory <Character> | <memory>` - Add memory\n`!<Character> Memories` - View all memories\nExample: `!Memory Ogun | Had a dream`', inline: false },
+        { name: 'ℹ️ About', value: 'This is your premium **Write Pretend** bot with advanced AI features!\n\nFor basic RP features (dice, characters, stats), use the **My1e Party** bot.', inline: false }
+      )
+      .setFooter({ text: 'Powered by my1e.party | writepretend.com' });
+
+    await message.reply({ embeds: [embed] });
+  }
 }
 
 async function handleProxy(message: Message, characterName: string, messageText: string) {
@@ -1337,13 +1611,13 @@ async function handleProxy(message: Message, characterName: string, messageText:
     if (!webhook) {
       // Check if a webhook already exists
       const webhooks = await webhookChannel.fetchWebhooks();
-      webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
+      webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === my1epartyClient?.user?.id && wh.name === 'My1e Party Proxy');
 
       if (!webhook) {
         // Create new webhook
         webhook = await webhookChannel.createWebhook({
-          name: 'Murder Proxy',
-          reason: 'Character proxying for Murder Tech Portal'
+          name: 'My1e Party Proxy',
+          reason: 'Character proxying for My1e Party'
         });
       }
 
@@ -1403,12 +1677,12 @@ async function handleProxy(message: Message, characterName: string, messageText:
 
         // Recreate webhook
         const webhooks = await webhookChannel.fetchWebhooks();
-        webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === botClient?.user?.id && wh.name === 'Murder Proxy');
+        webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === my1epartyClient?.user?.id && wh.name === 'My1e Party Proxy');
 
         if (!webhook) {
           webhook = await webhookChannel.createWebhook({
-            name: 'Murder Proxy',
-            reason: 'Character proxying for Murder Tech Portal'
+            name: 'My1e Party Proxy',
+            reason: 'Character proxying for My1e Party'
           });
         }
 

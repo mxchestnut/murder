@@ -6,6 +6,7 @@ interface Secrets {
   DATABASE_URL: string;
   SESSION_SECRET: string;
   DISCORD_BOT_TOKEN: string;
+  WRITEPRETEND_BOT_TOKEN?: string; // Premium bot (optional - may not exist yet)
   GEMINI_API_KEY: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_PUBLISHABLE_KEY?: string;
@@ -46,6 +47,15 @@ export async function loadSecrets(): Promise<Secrets> {
     getSecret('my1eparty/gemini-api-key')
   ]);
 
+  // Try to load optional Write Pretend bot token
+  let writePretendBotToken: string | undefined;
+  try {
+    writePretendBotToken = await getSecret('my1eparty/writepretend-bot-token');
+    console.log('✓ Write Pretend bot token loaded');
+  } catch (error) {
+    console.warn('⚠ Write Pretend bot token not available - premium bot disabled');
+  }
+
   // Try to load optional Stripe secrets
   let stripeSecrets: {
     STRIPE_SECRET_KEY?: string;
@@ -77,6 +87,7 @@ export async function loadSecrets(): Promise<Secrets> {
     DATABASE_URL: databaseUrl,
     SESSION_SECRET: sessionSecret,
     DISCORD_BOT_TOKEN: discordBotToken,
+    WRITEPRETEND_BOT_TOKEN: writePretendBotToken,
     GEMINI_API_KEY: geminiApiKey,
     ...stripeSecrets
   };
@@ -93,6 +104,7 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
       DATABASE_URL: process.env.DATABASE_URL || '',
       SESSION_SECRET: process.env.SESSION_SECRET || '',
       DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
+      WRITEPRETEND_BOT_TOKEN: process.env.WRITEPRETEND_BOT_TOKEN,
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
       STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
       STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
@@ -110,6 +122,7 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
       DATABASE_URL: process.env.DATABASE_URL || '',
       SESSION_SECRET: process.env.SESSION_SECRET || '',
       DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
+      WRITEPRETEND_BOT_TOKEN: process.env.WRITEPRETEND_BOT_TOKEN,
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
       STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
       STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
