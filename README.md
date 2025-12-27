@@ -2,91 +2,6 @@
 
 **Murder** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
 
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- PostgreSQL database (AWS RDS)
-- Discord bot token
-- AWS S3 credentials
-- Google Gemini API key *(optional)*
-
-### Local Development Setup
-
-1. **Clone and install**
-   ```bash
-   git clone https://github.com/mxchestnut/murder.git
-   cd murder
-   npm install
-   cd backend && npm install
-   cd ../frontend && npm install
-   ```
-
-2. **Configure environment** - Create `backend/.env`:
-   ```env
-   DATABASE_URL=postgresql://user:password@host/database
-   SESSION_SECRET=your_random_secret_here
-   DISCORD_BOT_TOKEN=your_bot_token
-   AWS_ACCESS_KEY_ID=your_aws_key
-   AWS_SECRET_ACCESS_KEY=your_aws_secret
-   AWS_S3_BUCKET=your_bucket_name
-   GEMINI_API_KEY=your_gemini_key  # Optional
-   ```
-
-3. **Initialize database**
-   ```bash
-   cd backend
-   npm run db:push
-   ```
-
-4. **Start development**
-   ```bash
-   # Terminal 1 - Backend
-   cd backend && npm run dev
-
-   # Terminal 2 - Frontend
-   cd frontend && npm run dev
-   ```
-
-5. **Access the app**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:3000
-
-### Production Deployment
-
-**Recommended Stack:**
-- **Server:** AWS EC2, DigitalOcean, or similar
-- **Database:** AWS RDS PostgreSQL, or managed PostgreSQL
-- **Storage:** AWS S3 or compatible object storage
-- **Process Manager:** PM2
-- **Web Server:** nginx
-- **SSL:** Let's Encrypt (certbot)
-
-**Deploy Steps:**
-```bash
-# On your server
-git clone https://github.com/mxchestnut/murder.git
-cd murder
-
-# Install dependencies
-npm install
-cd backend && npm install && npm run build
-cd ../frontend && npm install && npm run build
-
-# Set up PM2
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
-
-# Configure nginx (see nginx.conf for example)
-```
-
-See `deploy.sh` for automated deployment script example.
-
----
-
 ## Features
 
 ### 🎭 Character Management
@@ -99,10 +14,8 @@ See `deploy.sh` for automated deployment script example.
 ### 🤖 Discord Bot Integration
 - **Character Proxying** - Speak as your character with custom avatars
 - **Dice Rolling** - Roll with character stats, saves, and skills
-- **AI FAQ System** *(coming soon)* - AI-powered knowledge base
-- **Session Logging** *(coming soon)* - Automatic session transcripts
-- **Relationship Tracking** *(coming soon)* - Track PC relationships
-- **Hall of Fame** *(coming soon)* - Star messages for best moments
+- **AI FAQ System** - AI-powered knowledge base
+- **Hall of Fame** - Star messages for best moments
 
 ### ✨ Web Portal
 - Secure authentication with username/password
@@ -112,11 +25,11 @@ See `deploy.sh` for automated deployment script example.
 - Real-time activity feed *(coming soon)*
 - User statistics and leaderboards *(coming soon)*
 
-### 🧠 AI Features *(coming soon)*
-- Natural language FAQ system
-- Learn from URLs and documents
+### 🧠 AI Features
+- Natural language FAQ system powered by Google Gemini
+- Learn from URLs and documents (`!learnurl`)
 - Save helpful AI responses to knowledge base
-- Semantic search across your content
+- Semantic search across your content with `!ask`
 
 ---
 
@@ -127,55 +40,21 @@ See `deploy.sh` for automated deployment script example.
 - **Database:** PostgreSQL (AWS RDS)
 - **Authentication:** Passport.js
 - **Discord:** Discord.js v14
-- **AI:** Google Gemini 2.5 Flash *(optional)*
+- **AI:** Google Gemini 2.5 Flash
 - **Storage:** AWS S3
 
 ### Frontend
 - **Framework:** React, TypeScript
 - **Build Tool:** Vite
 - **Editor:** Tiptap 3.0
-- **Styling:** Custom CSS with dark theme
+- **Styling:** Custom CSS with light or dark theme
 
 ### Infrastructure
-- **Hosting:** AWS EC2 (free tier)
+- **Hosting:** AWS EC2
 - **Storage:** AWS S3
 - **DNS:** AWS Route53
 - **Domain:** murder.tech
 - **SSL:** Let's Encrypt
-
----
-
-## Discord Bot Setup
-
-1. **Create Discord Application**
-   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
-   - Create new application named "Murder Bot"
-   - Go to Bot section, create bot, copy token to `.env`
-
-2. **Set Bot Permissions**
-   - View Channels
-   - Send Messages
-   - Manage Messages
-   - Manage Webhooks
-   - Read Message History
-
-3. **Invite Bot to Server**
-   ```
-   https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=155156081664&scope=bot
-   ```
-
-4. **Link Your Account**
-   ```
-   !connect <username> <password>
-   ```
-
-5. **Test Commands**
-   ```
-   !help          # Show all commands
-   !syncall       # Refresh character list
-   !setchar Test  # Link channel to character
-   Test: hello!   # Proxy as character
-   ```
 
 ---
 
@@ -198,97 +77,78 @@ murder-tech/
 │   │   ├── utils/           # API client
 │   │   └── App.tsx
 │   └── package.json
-├── kit's docs/              # Project documentation
 └── README.md                # This file
 ```
 
 ## Roadmap
 
-See [kit's docs/MURDER_ROADMAP.md](kit's%20docs/MURDER_ROADMAP.md) for the complete feature roadmap.
-
 ### Current Focus
-**Phase 1.1** - AI-Powered FAQ System
-- Natural language question answering
-- Learn from URLs and documents
-- Save AI responses to knowledge base
-- Discord commands: `!ask`, `!learn`, `!teach`
 
 ### Upcoming Features
-- **Phase 1.2** - User stats and activity feed
-- **Phase 1.3** - Daily RP prompts
-- **Phase 2** - Hall of Fame (starboard)
-- **Phase 3** - Session logging, relationship tracking, scene management
 
 ## Commands Reference
 
-### Discord Bot Commands
+### Discord Bot Commands -- Some Need Testing
 
-**Account Setup:**
-- `!connect <username> <password>` - Link Discord to Murder
-- `!syncall` - Refresh character list
+**Account Setup**
+- `!connect <username> <password>` - Link your Discord account to Murder (auto-deleted for security)
+- `!syncall` - Refresh character list from PathCompanion
 
-**Character Commands:**
-- `!setchar <name>` - Link channel to character
-- `!char` - Show linked character
-- `CharName: message` - Proxy as character
-- `!CharName <stat>` - Roll for any character
+**Character Commands**
+- `!setchar <character name>` - Link a character to this channel for quick rolling
+- `!char` - Show which character is linked to this channel
+- `!profile [character name]` - View full character profile with stats, skills, and backstory
+- `CharName: <message>` - Proxy as a character (sends message with character's name/avatar)
+- `!CharName <stat>` - Roll for any character by name (e.g., `!Aria perception`)
 
-**Dice Rolling:**
-- `!roll <stat>` - Roll ability check
-- `!roll <save>` - Roll saving throw
-- `!roll <skill>` - Roll skill check
+**Dice Rolling & Stats**
+- `!roll <dice>` - Roll dice with modifiers (e.g., `!roll 1d20+5`, `!roll 2d6`)
+- `!roll <stat/save/skill>` - Roll for channel's linked character (e.g., `!roll strength`, `!roll acrobatics`)
+- `!stats [character name]` - View character stats (messages, rolls, crits, fails, damage)
+- `!leaderboard <type>` - Top characters by: messages, rolls, crits, or fails
 
-**Help:**
-- `!help` - Show all commands
+**AI & Knowledge Base**
+- `!ask <question>` - Ask AI about D&D, Pathfinder, or your campaign
+- `!feat <name>` - Look up feat information
+- `!spell <name>` - Look up spell information
+- `!learn <question> | <answer> [| category]` - **(Admin)** Add entry to knowledge base
+- `!learnurl <url> [category]` - **(Admin)** Scrape webpage and add to knowledge base (wrap URLs in `< >`)
 
-## Security
+**Tip:** React with ⭐ to AI answers to save them to your knowledge base!
 
-### 🔒 Protecting Secrets
+**Character Memories**
+- `!Memory <Character> | <memory>` - Add a memory to a character
+- `!<Character> Memories` - View all memories for a character
+- Example: `!Memory Ogun | Had a dream about the forest`
 
-This project uses [git-secrets](https://github.com/awslabs/git-secrets) to prevent accidentally committing sensitive information.
+**Hall of Fame**
+- React with ⭐ to any message - 10+ stars posts it to the Hall of Fame channel
+- `!hall` - View recent Hall of Fame entries
+- `!hall top` - View top 20 most-starred messages
 
-**Setup (Required for Contributors):**
-```bash
-./.git-secrets-setup.sh
-```
+**Utility Commands**
+- `!time [set <date>]` - View or set in-game time/date
+- `!note add <text>` - Add private GM note
+- `!note list` - List all your GM notes
+- `!hc <add|list|edit|delete>` - Manage headcanon list
+- `!npc <name>` - Generate NPC stat block using AI
+- `!music` - Get mood music suggestion for current scene
+- `!recap` - Generate session recap
 
-**What's Protected:**
-- Database connection strings
-- API tokens and secrets
-- Discord bot tokens
-- AWS credentials
-- Session secrets
-
-**Before Committing:**
-```bash
-git secrets --scan
-```
-
-The `.gitallowed` file contains approved patterns for example/template values in documentation.
-
-**Never commit:**
-- Real `.env` files
-- Private keys (`.pem`, `.key`)
-- Real database passwords
-- Production tokens
-
-## Contributing
-
-Contributions are welcome! Please ensure:
-1. git-secrets is installed and configured
-2. All tests pass
-3. No secrets are committed
-4. Code follows the existing style
+**Admin Commands**
+- `!botset` - **(Admin)** Set channel as bot announcement channel
 
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/mxchestnut/murder/issues)
-- **Discord:** Join our server (link coming soon)
+- **Discord:** [Join our server] (https://discord.gg/FFQ4YP7DVf)
 - **Website:** [murder.tech](https://murder.tech)
 
 ## License
 
-Proprietary - All rights reserved
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+You are free to use, modify, and distribute this software. Contributions are welcome and will be licensed under the same terms.
 
 ---
 

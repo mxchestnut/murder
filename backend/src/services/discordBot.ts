@@ -70,7 +70,7 @@ export function initializeDiscordBot(token: string) {
       const potentialStat = nameRollMatch[2].trim();
 
       // Check if this is a known command first
-      const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'learnurl', 'kink', 'feat', 'spell', 'stats', 'leaderboard', 'prompt', 'trope', 'session', 'scene', 'time', 'note', 'npc', 'music', 'recap', 'hall', 'botset', 'hc', 'memory'];
+      const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'ask', 'learn', 'learnurl', 'kink', 'feat', 'spell', 'stats', 'leaderboard', 'session', 'scene', 'time', 'note', 'npc', 'music', 'recap', 'hall', 'botset', 'hc', 'memory'];
       const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
       if (!isKnownCommand) {
         // Check if this is "!CharName Memories" pattern
@@ -1266,7 +1266,7 @@ async function handleHelp(message: Message) {
       { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
       { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
       { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
-      { name: '🎬 RP Tools', value: '`!prompt [random <category>]` - Get RP prompt\n`!trope [category]` - Random trope inspiration\n`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
+      { name: '🎬 RP Tools', value: '`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
       { name: '� Character Memories', value: '`!Memory <Character> | <memory>` - Add memory\n`!<Character> Memories` - View all memories\nExample: `!Memory Ogun | Had a dream`', inline: false },
       { name: '�🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
