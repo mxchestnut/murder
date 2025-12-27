@@ -34,8 +34,8 @@ export default function DiscordBotInvite() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navifile?.stripeSubscriptionStatus === 'active' || profile?.stripeSubscriptionStatus === 'trialing');
+  const hasActiveSubscription = profile?.subscriptionTier === 'rp' &&
+    (profile?.stripeSubscriptionStatus === 'active' || profile?.stripeSubscriptionStatus === 'trialing');
 
   if (loading) {
     return (
