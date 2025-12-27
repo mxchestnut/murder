@@ -2,8 +2,6 @@
 
 **Murder** is a comprehensive roleplay platform featuring a Discord bot, web portal for character management, document editing, and PathCompanion integration for tabletop RPG communities.
 
-🌐 **Website:** [murder.tech](https://murder.tech)
-
 ---
 
 ## 🚀 Quick Start
@@ -26,12 +24,7 @@
    cd ../frontend && npm install
    ```
 
-2. **Set up git-secrets** (IMPORTANT)
-   ```bash
-   ./.git-secrets-setup.sh
-   ```
-
-3. **Configure environment** - Create `backend/.env`:
+2. **Configure environment** - Create `backend/.env`:
    ```env
    DATABASE_URL=postgresql://user:password@host/database
    SESSION_SECRET=your_random_secret_here
@@ -39,15 +32,16 @@
    AWS_ACCESS_KEY_ID=your_aws_key
    AWS_SECRET_ACCESS_KEY=your_aws_secret
    AWS_S3_BUCKET=your_bucket_name
+   GEMINI_API_KEY=your_gemini_key  # Optional
    ```
 
-4. **Initialize database**
+3. **Initialize database**
    ```bash
    cd backend
    npm run db:push
    ```
 
-5. **Start development**
+4. **Start development**
    ```bash
    # Terminal 1 - Backend
    cd backend && npm run dev
@@ -56,37 +50,40 @@
    cd frontend && npm run dev
    ```
 
-6. **Access the app**
+5. **Access the app**
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3000
 
-### Production Deployment (AWS)
+### Production Deployment
 
-**Current Production:**
-- **URL:** https://murder.tech
-- **Server:** AWS EC2 (t2.micro free tier)
-- **Database:** AWS RDS PostgreSQL
-- **Storage:** AWS S3
-- **DNS:** Route53
+**Recommended Stack:**
+- **Server:** AWS EC2, DigitalOcean, or similar
+- **Database:** AWS RDS PostgreSQL, or managed PostgreSQL
+- **Storage:** AWS S3 or compatible object storage
+- **Process Manager:** PM2
+- **Web Server:** nginx
+- **SSL:** Let's Encrypt (certbot)
 
-**Deploy Updates:**
+**Deploy Steps:**
 ```bash
-# From your local machine
-git push origin main
+# On your server
+git clone https://github.com/mxchestnut/murder.git
+cd murder
 
-# SSH to server
-ssh -i ~/.ssh/murder-tech-key.pem ubuntu@44.210.148.206
+# Install dependencies
+npm install
+cd backend && npm install && npm run build
+cd ../frontend && npm install && npm run build
 
-# Pull and rebuild
-cd murder-tech
-git pull
-cd backend && npm run build
-pm2 restart murder-tech-backend
+# Set up PM2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
 
-# Update frontend if needed
-cd ../frontend && npm run build
-sudo cp -r dist/* /var/www/html/
+# Configure nginx (see nginx.conf for example)
 ```
+
+See `deploy.sh` for automated deployment script example.
 
 ---
 
