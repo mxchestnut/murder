@@ -17,12 +17,13 @@ interface HamburgerSidebarProps {
   onShowDiscordCommands: () => void;
   onShowPromptsTropes: () => void;
   onShowHallOfFame: () => void;
+  onShowAdminPanel: () => void;
   onLogout: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onLogout, theme, toggleTheme }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onShowAdminPanel, onLogout, theme, toggleTheme }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -1014,8 +1015,7 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               {user?.isAdmin && (
                 <button
                   onClick={() => {
-                    // TODO: Implement admin panel display
-                    alert('Admin panel coming soon! Your admin access is confirmed.');
+                    onShowAdminPanel();
                     setUserMenuExpanded(false);
                   }}
                   style={{

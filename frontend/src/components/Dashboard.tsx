@@ -223,6 +223,18 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
+        onShowAdminPanel={() => {
+          setShowAdminPanel(true);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowPromptsTropes(false);
+          setShowStats(false);
+          setShowKnowledgeBase(false);
+          setShowFileManager(false);
+          setShowHallOfFame(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
         onLogout={handleLogout}
         theme={theme}
         toggleTheme={toggleTheme}
