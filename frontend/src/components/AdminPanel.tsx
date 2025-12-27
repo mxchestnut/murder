@@ -10,6 +10,10 @@ interface UserWithStats {
   discordUserId: string | null;
   pathCompanionUsername: string | null;
   pathCompanionConnectedAt: Date | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripeSubscriptionStatus: string | null;
+  subscriptionEndsAt: Date | null;
   createdAt: Date;
   characterCount: number;
   documentCount: number;
@@ -163,6 +167,7 @@ export default function AdminPanel() {
                 <th style={tableHeaderStyle}>ID</th>
                 <th style={tableHeaderStyle}>Username</th>
                 <th style={tableHeaderStyle}>Email</th>
+                <th style={tableHeaderStyle}>Subscription</th>
                 <th style={tableHeaderStyle}>Discord</th>
                 <th style={tableHeaderStyle}>PathCompanion</th>
                 <th style={tableHeaderStyle}>Characters</th>
@@ -197,6 +202,25 @@ export default function AdminPanel() {
                     )}
                   </td>
                   <td style={tableCellStyle}>{user.email || '-'}</td>
+                  <td style={tableCellStyle}>
+                    {user.stripeSubscriptionStatus ? (
+                      <span style={{
+                        padding: '2px 8px',
+                        fontSize: '0.75rem',
+                        background: user.stripeSubscriptionStatus === 'active' ? '#10b98120' : '#ef444420',
+                        color: user.stripeSubscriptionStatus === 'active' ? '#10b981' : '#ef4444',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase'
+                      }}>
+                        {user.stripeSubscriptionStatus}
+                      </span>
+                    ) : '-'}
+                    {user.subscriptionEndsAt && (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        {new Date(user.subscriptionEndsAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </td>
                   <td style={tableCellStyle}>{user.discordUserId ? '✓' : '-'}</td>
                   <td style={tableCellStyle}>{user.pathCompanionUsername || '-'}</td>
                   <td style={tableCellStyle}>{user.characterCount}</td>
