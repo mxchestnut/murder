@@ -47,6 +47,8 @@ export async function loadSecrets(): Promise<Secrets> {
     getSecret('my1eparty/gemini-api-key')
   ]);
 
+  console.log(`✓ My1e Party Discord bot token loaded: ${discordBotToken ? discordBotToken.substring(0, 20) + '...' : 'EMPTY'}`);
+
   // Try to load optional Write Pretend bot token
   let writePretendBotToken: string | undefined;
   try {
