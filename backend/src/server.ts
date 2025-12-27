@@ -29,6 +29,8 @@ import statsRoutes from './routes/stats';
 import hallOfFameRoutes from './routes/hall-of-fame';
 import memoriesRoutes from './routes/memories';
 import publicRoutes from './routes/public';
+import promptsRoutes from './routes/prompts'; // RP tier feature
+import stripeRoutes, { initializeStripe } from './routes/stripe'; // Stripe billing
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -81,6 +83,9 @@ async function startServer() {
   // Initialize Discord bot with secret from AWS
   initializeDiscordBot(secrets.DISCORD_BOT_TOKEN);
 
+  // Initialize Stripe
+  await initializeStripe();
+
   // Trust proxy (nginx)
   app.set('trust proxy', 1);
 
@@ -109,7 +114,7 @@ app.use(helmet({
 }));
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://murder.tech', 'https://www.murder.tech']
+    ? ['https://murder.tech', 'https://www.murder.tech', 'http://100.111.171.42']
     : 'http://localhost:5173',
   credentials: true
 }));
@@ -125,6 +130,14 @@ app.use(limiter);
 
 // Body parsing and cookie middleware
 app.use(cookieParser());
+
+  // Stripe webhook needs raw body - must be BEFORE express.json()
+  app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
+    // Store raw body for Stripe signature verification
+    (req as any).rawBody = req.body;
+    next();
+  });
+
   app.use(express.json({ limit: '10mb' })); // Prevent DoS with large payloads
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(session({
@@ -179,6 +192,7 @@ app.get('/api/csrf-token', (req, res) => {
 // Apply CSRF protection to all API routes except auth (login/register) and discord (bot integration)
 // Auth routes handle their own CSRF for better UX
 // Discord routes are called by the bot, which can't send CSRF tokens
+// Stripe webhook doesn't need CSRF (verified by signature)
 app.use('/api/documents', doubleCsrfProtection);
 app.use('/api/characters', doubleCsrfProtection);
 app.use('/api/pathcompanion', doubleCsrfProtection);
@@ -189,6 +203,8 @@ app.use('/api/admin', doubleCsrfProtection);
 app.use('/api/stats', doubleCsrfProtection);
 app.use('/api/hall-of-fame', doubleCsrfProtection);
 app.use('/api/memories', doubleCsrfProtection);
+app.use('/api/prompts', doubleCsrfProtection); // RP tier feature
+app.use('/api/stripe', doubleCsrfProtection); // Stripe billing (except webhook)
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -204,6 +220,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/hall-of-fame', hallOfFameRoutes);
 app.use('/api/memories', memoriesRoutes);
 app.use('/api/public', publicRoutes); // No auth required for public profiles
+app.use('/api/prompts', promptsRoutes); // RP tier feature
+app.use('/api/stripe', stripeRoutes); // Stripe billing
 
 // Health check
 app.get('/health', (req, res) => {
