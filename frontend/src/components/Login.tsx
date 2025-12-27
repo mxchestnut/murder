@@ -50,7 +50,7 @@ export default function Login({ onLogin }: LoginProps) {
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
       }}>
         <h1 style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--text-primary)' }}>
-          {isRegister ? 'Register' : 'Login'} to Murder
+          {isRegister ? 'Register' : 'Login'} Adventurer!
         </h1>
 
         {error && (
