@@ -415,8 +415,6 @@ export const characterMemories = pgTable('character_memories', {
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-expo
-
 // ===== RP TIER FEATURES =====
 // All features below require 'rp' subscription tier
 
