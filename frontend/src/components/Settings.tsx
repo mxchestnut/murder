@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Link, Unlink, Loader, Sun, Moon, Palette, Shield, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, Link, Unlink, Loader, Sun, Moon, Palette, Shield, LogOut, CreditCard } from 'lucide-react';
 import { api } from '../utils/api';
 import { useTheme } from '../utils/useTheme';
 
@@ -11,6 +11,7 @@ interface PathCompanionConnectionStatus {
 export default function Settings() {
   const { theme, setThemeMode, setAccentColor } = useTheme();
 
+  const [user, setUser] = useState<any>(null);
   const [pathCompanion, setPathCompanion] = useState<PathCompanionConnectionStatus>({
     connected: false
   });
@@ -18,6 +19,7 @@ export default function Settings() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isLoggingOutAllDevices, setIsLoggingOutAllDevices] = useState(false);
+  const [isManagingBilling, setIsManagingBilling] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -27,6 +29,7 @@ export default function Settings() {
   const loadConnectionStatus = async () => {
     try {
       const response = await api.get('/auth/me');
+      setUser(response.data.user);
       setPathCompanion({
         connected: response.data.user.pathCompanionConnected || false,
         username: response.data.user.pathCompanionUsername
@@ -98,6 +101,36 @@ export default function Settings() {
         text: error.response?.data?.error || 'Failed to logout all devices'
       });
       setIsLoggingOutAllDevices(false);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setIsManagingBilling(true);
+    setMessage(null);
+
+    try {
+      const response = await api.post('/stripe/create-portal-session');
+      window.location.href = response.data.url;
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to open billing portal'
+      });
+      setIsManagingBilling(false);
+    }
+  };
+
+  const handleUpgradeToRpTier = async () => {
+    setMessage(null);
+
+    try {
+      const response = await api.post('/stripe/create-checkout-session');
+      window.location.href = response.data.url;
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to start checkout'
+      });
     }
   };
 
@@ -287,6 +320,75 @@ export default function Settings() {
               </form>
             </div>
           )}
+        </section>
+
+        {/* Billing & Subscription */}
+        <section className="settings-section">
+          <h2>
+            <CreditCard size={24} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            Billing & Subscription
+          </h2>
+          <p className="section-description">
+            Manage your subscription tier and billing details.
+          </p>
+
+          {message && (
+            <div className={`message ${message.type}`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="subscription-info">
+            <div className="tier-badge" style={{ background: user?.subscriptionTier === 'rp' ? 'linear-gradient(135deg, #9333ea, #ec4899)' : '#64748b' }}>
+              <span style={{ fontSize: '1.5rem' }}>{user?.subscriptionTier === 'rp' ? '⭐' : '🎯'}</span>
+              <div>
+                <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>Current Tier</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{user?.subscriptionTier === 'rp' ? 'RP Tier' : 'Free Tier'}</div>
+              </div>
+            </div>
+
+            {user?.subscriptionTier === 'rp' ? (
+              <div className="billing-actions">
+                <p style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)' }}>
+                  Status: <strong>{user?.stripeSubscriptionStatus === 'active' ? '✓ Active' : user?.stripeSubscriptionStatus || 'Unknown'}</strong>
+                </p>
+                <button
+                  className="button primary"
+                  onClick={handleManageBilling}
+                  disabled={isManagingBilling || !user?.stripeCustomerId}
+                >
+                  {isManagingBilling ? (
+                    <>
+                      <Loader size={18} className="spinner" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={18} />
+                      Manage Subscription
+                    </>
+                  )}
+                </button>
+                <p style={{ margin: '1rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Update payment method, view invoices, or cancel your subscription
+                </p>
+              </div>
+            ) : (
+              <div className="billing-actions">
+                <p style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)' }}>
+                  Upgrade to unlock RP Prompts, Tropes, Daily Scheduling, and Discord Commands
+                </p>
+                <button
+                  className="button primary"
+                  onClick={handleUpgradeToRpTier}
+                  style={{ background: 'linear-gradient(135deg, #9333ea, #ec4899)' }}
+                >
+                  <CreditCard size={18} />
+                  Upgrade to RP Tier
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Security Settings */}
@@ -585,6 +687,30 @@ export default function Settings() {
 
         .action-info {
           flex: 1;
+        }
+
+        /* Billing Section */
+        .subscription-info {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .tier-badge {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1.5rem;
+          border-radius: 12px;
+          color: white;
+          font-weight: 600;
+        }
+
+        .billing-actions {
+          padding: 1.5rem;
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          background: var(--bg-primary);
         }
       `}</style>
     </div>

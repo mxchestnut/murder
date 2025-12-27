@@ -80,13 +80,8 @@ murder-tech/
 └── README.md                # This file
 ```
 
-## Roadmap
+---
 
-### Current Focus
-
-### Upcoming Features
-
-## Commands Reference
 
 ### Discord Bot Commands -- Some Need Testing
 

@@ -7,6 +7,10 @@ interface Secrets {
   SESSION_SECRET: string;
   DISCORD_BOT_TOKEN: string;
   GEMINI_API_KEY: string;
+  STRIPE_SECRET_KEY: string;
+  STRIPE_PUBLISHABLE_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+  STRIPE_RP_TIER_PRICE_ID: string;
 }
 
 let cachedSecrets: Secrets | null = null;
@@ -34,18 +38,26 @@ export async function loadSecrets(): Promise<Secrets> {
 
   console.log('Loading secrets from AWS Secrets Manager...');
 
-  const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey] = await Promise.all([
+  const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey, stripeSecretKey, stripePublishableKey, stripeWebhookSecret, stripeRpTierPriceId] = await Promise.all([
     getSecret('murder/database-url'),
     getSecret('murder/session-secret'),
     getSecret('murder/discord-bot-token'),
-    getSecret('murder/gemini-api-key')
+    getSecret('murder/gemini-api-key'),
+    getSecret('murder/stripe-secret-key'),
+    getSecret('murder/stripe-publishable-key'),
+    getSecret('murder/stripe-webhook-secret'),
+    getSecret('murder/stripe-rp-tier-price-id')
   ]);
 
   cachedSecrets = {
     DATABASE_URL: databaseUrl,
     SESSION_SECRET: sessionSecret,
     DISCORD_BOT_TOKEN: discordBotToken,
-    GEMINI_API_KEY: geminiApiKey
+    GEMINI_API_KEY: geminiApiKey,
+    STRIPE_SECRET_KEY: stripeSecretKey,
+    STRIPE_PUBLISHABLE_KEY: stripePublishableKey,
+    STRIPE_WEBHOOK_SECRET: stripeWebhookSecret,
+    STRIPE_RP_TIER_PRICE_ID: stripeRpTierPriceId
   };
 
   console.log('✓ Secrets loaded successfully');
@@ -60,7 +72,11 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
       DATABASE_URL: process.env.DATABASE_URL || '',
       SESSION_SECRET: process.env.SESSION_SECRET || '',
       DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
-      GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+      STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
+      STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+      STRIPE_RP_TIER_PRICE_ID: process.env.STRIPE_RP_TIER_PRICE_ID || ''
     };
   }
 
@@ -73,7 +89,11 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
       DATABASE_URL: process.env.DATABASE_URL || '',
       SESSION_SECRET: process.env.SESSION_SECRET || '',
       DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
-      GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+      STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
+      STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+      STRIPE_RP_TIER_PRICE_ID: process.env.STRIPE_RP_TIER_PRICE_ID || ''
     };
   }
 }

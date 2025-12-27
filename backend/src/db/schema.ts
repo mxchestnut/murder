@@ -7,8 +7,13 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   email: text('email'),
   isAdmin: boolean('is_admin').default(false).notNull(),
-  // Subscription tier: free (1GB), pro (10GB), premium (50GB)
+  // Subscription tier: 'free' (basic features), 'rp' (RP tools + prompts/tropes)
   subscriptionTier: text('subscription_tier').default('free').notNull(),
+  // Stripe integration
+  stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  stripeSubscriptionStatus: text('stripe_subscription_status'), // active, canceled, past_due, etc.
+  subscriptionEndsAt: timestamp('subscription_ends_at'),
   // PathCompanion account binding (optional)
   pathCompanionUsername: text('path_companion_username'),
   pathCompanionPassword: text('path_companion_password'), // Encrypted
@@ -375,6 +380,11 @@ export const botSettings = pgTable('bot_settings', {
   id: serial('id').primaryKey(),
   guildId: text('guild_id').notNull().unique(),
   announcementChannelId: text('announcement_channel_id'),
+  // Daily prompt settings (RP tier feature)
+  dailyPromptEnabled: boolean('daily_prompt_enabled').default(false),
+  dailyPromptChannelId: text('daily_prompt_channel_id'),
+  dailyPromptTime: text('daily_prompt_time').default('09:00:00'),
+  lastPromptPosted: timestamp('last_prompt_posted'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
@@ -403,6 +413,45 @@ export const characterMemories = pgTable('character_memories', {
   memory: text('memory').notNull(),
   addedBy: text('added_by').notNull(), // Discord user ID who added the memory
   createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+expo
+
+// ===== RP TIER FEATURES =====
+// All features below require 'rp' subscription tier
+
+// RP Prompts (RP tier only)
+export const prompts = pgTable('prompts', {
+  id: serial('id').primaryKey(),
+  category: text('category').notNull(), // 'character', 'world', 'combat', 'social', 'plot'
+  promptText: text('prompt_text').notNull(),
+  useCount: integer('use_count').default(0),
+  lastUsed: timestamp('last_used'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Tropes for RP inspiration (RP tier only)
+export const tropes = pgTable('tropes', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  category: text('category').notNull(), // 'archetype', 'dynamic', 'situation', 'plot'
+  useCount: integer('use_count').default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Prompt Schedule - for automated daily prompts (RP tier only)
+export const promptSchedule = pgTable('prompt_schedule', {
+  id: serial('id').primaryKey(),
+  guildId: text('guild_id').notNull(),
+  channelId: text('channel_id').notNull(),
+  time: text('time').notNull(), // HH:MM format
+  category: text('category'), // Optional: specific category for scheduled prompts
+  active: boolean('active').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const characterMemoriesRelations = relations(characterMemories, ({ one }) => ({

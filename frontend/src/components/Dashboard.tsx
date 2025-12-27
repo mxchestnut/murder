@@ -139,16 +139,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         currentDocument={currentDocument}
         currentCharacter={currentCharacter}
         user={user}
-        onShowAdminPanel={() => {
-          setShowAdminPanel(!showAdminPanel);
-          setShowSettings(false);
-          setShowDiscordCommands(false);
-          setShowFileManager(false);
-          setShowPromptsTropes(false);
-          setShowKnowledgeBase(false);
-          setCurrentDocument(null);
-          setCurrentCharacter(null);
-        }}
         onShowFileManager={() => {
           setShowFileManager(true);
           setShowSettings(false);
@@ -270,7 +260,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           ) : showPromptsTropes ? (
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Suspense fallback={<LoadingSpinner />}>
-                <PromptsTropes />
+                <PromptsTropes user={user} />
               </Suspense>
             </div>
           ) : showStats ? (

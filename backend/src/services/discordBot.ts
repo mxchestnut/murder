@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories, prompts, tropes } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -8,6 +8,7 @@ import { learnFromUrl } from './gemini';
 import node_crypto from 'node:crypto';
 import axios from 'axios';
 import wiki from 'wikipedia';
+import { getUserTierFromDiscord } from '../middleware/tier.js';
 
 let botClient: Client | null = null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
@@ -45,6 +46,13 @@ export function initializeDiscordBot(token: string) {
 
   botClient.on('ready', () => {
     console.log(`Discord bot logged in as ${botClient?.user?.tag}`);
+
+    // Start the daily prompt scheduler (RP tier feature)
+    import('./promptScheduler.js').then(({ startPromptScheduler }) => {
+      startPromptScheduler(botClient as Client);
+    }).catch(error => {
+      console.error('Failed to start prompt scheduler:', error);
+    });
   });
 
   botClient.on('messageCreate', async (message: Message) => {
@@ -97,6 +105,16 @@ export function initializeDiscordBot(token: string) {
 
     try {
       switch (command) {
+        // RP Tier commands
+        case 'prompt':
+          await handlePrompt(message, args);
+          break;
+        case 'trope':
+          await handleTrope(message, args);
+          break;
+        case 'promptsettings':
+          await handlePromptSettings(message, args);
+          break;
         case 'setchar':
           await handleSetChar(message, args);
           break;
@@ -1267,9 +1285,10 @@ async function handleHelp(message: Message) {
       { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards\n  Types: messages, rolls, crits, fails', inline: false },
       { name: '💭 AI & Knowledge', value: '`!ask <question>` - Ask the AI anything\n`!feat <name>` - D&D feat details\n`!spell <name>` - Spell information\n`!learn <question> | <answer> [| category]` - Teach AI (admin)\n`!learnurl <url> [category]` - Scrape webpage into knowledge base (wrap URL in <>)', inline: false },
       { name: '🎬 RP Tools', value: '`!session <start|end|pause|resume|list>` - Track sessions\n`!scene <start|end|tag|location|list>` - Manage scenes', inline: false },
+      { name: '🔒 RP Tier Features', value: '`!prompt [random <category>]` - Get RP prompts\n`!trope [category]` - Get story tropes\n`!promptsettings` - Daily prompt settings (admin)\n*Requires RP tier subscription*', inline: false },
       { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
-      { name: '� Character Memories', value: '`!Memory <Character> | <memory>` - Add memory\n`!<Character> Memories` - View all memories\nExample: `!Memory Ogun | Had a dream`', inline: false },
-      { name: '�🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
+      { name: '📝 Character Memories', value: '`!Memory <Character> | <memory>` - Add memory\n`!<Character> Memories` - View all memories\nExample: `!Memory Ogun | Had a dream`', inline: false },
+      { name: '🛠️ Utilities', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion\n`!recap` - Session recap', inline: false },
       { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel (admin)', inline: false }
     )
     .setFooter({ text: 'Visit murder.tech to manage characters!' });
@@ -3344,6 +3363,266 @@ export async function postLeaderboardToChannel(guildId: string, category: string
     await channel.send({ embeds: [embed] });
   } catch (error) {
     console.error('Error posting leaderboard to channel:', error);
+  }
+}
+
+// ===== RP TIER COMMANDS =====
+// All commands below require RP tier subscription
+
+async function handlePrompt(message: Message, args: string[]) {
+  try {
+    // Check if user has RP tier access
+    const userTier = await getUserTierFromDiscord(db, message.author.id);
+    if (userTier !== 'rp') {
+      await message.reply('🔒 This feature requires an **RP tier** subscription. Upgrade to access prompts, tropes, and advanced RP tools!');
+      return;
+    }
+
+    const subcmd = args[0]?.toLowerCase();
+
+    if (subcmd === 'random' && args.length > 1) {
+      // !prompt random <category>
+      const category = args.slice(1).join(' ').toLowerCase();
+      const validCategories = ['character', 'world', 'combat', 'social', 'plot'];
+
+      if (!validCategories.includes(category)) {
+        await message.reply(`❌ Invalid category. Valid categories: ${validCategories.join(', ')}`);
+        return;
+      }
+
+      const categoryPrompts = await db
+        .select()
+        .from(prompts)
+        .where(eq(prompts.category, category));
+
+      if (categoryPrompts.length === 0) {
+        await message.reply(`❌ No prompts found for category "${category}".`);
+        return;
+      }
+
+      const randomPrompt = categoryPrompts[Math.floor(Math.random() * categoryPrompts.length)];
+
+      // Update use count
+      await db.update(prompts)
+        .set({
+          useCount: (randomPrompt.useCount || 0) + 1,
+          lastUsed: new Date()
+        })
+        .where(eq(prompts.id, randomPrompt.id));
+
+      const embed = new EmbedBuilder()
+        .setColor('#9b59b6')
+        .setTitle(`💭 ${category.charAt(0).toUpperCase() + category.slice(1)} Prompt`)
+        .setDescription(randomPrompt.promptText)
+        .setFooter({ text: `Prompt #${randomPrompt.id} • RP Tier Feature` });
+
+      await message.reply({ embeds: [embed] });
+    } else {
+      // !prompt - Random from any category
+      const allPrompts = await db.select().from(prompts);
+
+      if (allPrompts.length === 0) {
+        await message.reply('❌ No prompts available. Add some prompts to the database!');
+        return;
+      }
+
+      const randomPrompt = allPrompts[Math.floor(Math.random() * allPrompts.length)];
+
+      // Update use count
+      await db.update(prompts)
+        .set({
+          useCount: (randomPrompt.useCount || 0) + 1,
+          lastUsed: new Date()
+        })
+        .where(eq(prompts.id, randomPrompt.id));
+
+      const embed = new EmbedBuilder()
+        .setColor('#9b59b6')
+        .setTitle(`💭 ${randomPrompt.category.charAt(0).toUpperCase() + randomPrompt.category.slice(1)} Prompt`)
+        .setDescription(randomPrompt.promptText)
+        .setFooter({ text: `Prompt #${randomPrompt.id} • RP Tier Feature` });
+
+      await message.reply({ embeds: [embed] });
+    }
+  } catch (error) {
+    console.error('Error in !prompt command:', error);
+    await message.reply('❌ Failed to retrieve prompt.');
+  }
+}
+
+async function handleTrope(message: Message, args: string[]) {
+  try {
+    // Check if user has RP tier access
+    const userTier = await getUserTierFromDiscord(db, message.author.id);
+    if (userTier !== 'rp') {
+      await message.reply('🔒 This feature requires an **RP tier** subscription. Upgrade to access prompts, tropes, and advanced RP tools!');
+      return;
+    }
+
+    const category = args.join(' ').toLowerCase();
+    let tropeList = [];
+
+    if (category && category !== '') {
+      const validCategories = ['archetype', 'dynamic', 'situation', 'plot'];
+      if (!validCategories.includes(category)) {
+        await message.reply(`❌ Invalid category. Valid categories: ${validCategories.join(', ')}`);
+        return;
+      }
+
+      tropeList = await db
+        .select()
+        .from(tropes)
+        .where(eq(tropes.category, category));
+    } else {
+      tropeList = await db.select().from(tropes);
+    }
+
+    if (tropeList.length === 0) {
+      await message.reply('❌ No tropes available.');
+      return;
+    }
+
+    const randomTrope = tropeList[Math.floor(Math.random() * tropeList.length)];
+
+    // Update use count
+    await db.update(tropes)
+      .set({ useCount: (randomTrope.useCount || 0) + 1, updatedAt: new Date() })
+      .where(eq(tropes.id, randomTrope.id));
+
+    const embed = new EmbedBuilder()
+      .setColor('#e74c3c')
+      .setTitle(`🎭 ${randomTrope.name}`)
+      .setDescription(randomTrope.description)
+      .setFooter({ text: `${randomTrope.category.charAt(0).toUpperCase() + randomTrope.category.slice(1)} Trope • RP Tier Feature` });
+
+    await message.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error in !trope command:', error);
+    await message.reply('❌ Failed to retrieve trope.');
+  }
+}
+
+async function handlePromptSettings(message: Message, args: string[]) {
+  // Check if user has admin permissions
+  if (!isAdmin(message)) {
+    await message.reply('❌ Only administrators can modify prompt settings.');
+    return;
+  }
+
+  // Check if user has RP tier access
+  const userTier = await getUserTierFromDiscord(db, message.author.id);
+  if (userTier !== 'rp') {
+    await message.reply('🔒 This feature requires an **RP tier** subscription. Upgrade to access daily prompts and advanced RP tools!');
+    return;
+  }
+
+  const guildId = message.guild?.id;
+  if (!guildId) {
+    await message.reply('❌ This command can only be used in a server.');
+    return;
+  }
+
+  const subcmd = args[0]?.toLowerCase();
+
+  try {
+    switch (subcmd) {
+      case 'enable': {
+        // !promptsettings enable <channel_id> <time>
+        if (args.length < 3) {
+          await message.reply('Usage: `!promptsettings enable <#channel> <HH:MM>`\nExample: `!promptsettings enable #rp-prompts 09:00`');
+          return;
+        }
+
+        const channelMention = args[1];
+        const time = args[2];
+
+        // Parse channel ID from mention
+        const channelIdMatch = channelMention.match(/<#(\d+)>/);
+        if (!channelIdMatch) {
+          await message.reply('❌ Invalid channel mention. Use #channel format.');
+          return;
+        }
+        const channelId = channelIdMatch[1];
+
+        // Validate time format (HH:MM)
+        const timeMatch = time.match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
+        if (!timeMatch) {
+          await message.reply('❌ Invalid time format. Use HH:MM (e.g., 09:00, 14:30)');
+          return;
+        }
+
+        const formattedTime = `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}:00`;
+
+        // Get or create bot settings for this guild
+        const existing = await db.select()
+          .from(botSettings)
+          .where(eq(botSettings.guildId, guildId))
+          .limit(1);
+
+        if (existing.length > 0) {
+          await db.update(botSettings)
+            .set({
+              dailyPromptEnabled: true,
+              dailyPromptChannelId: channelId,
+              dailyPromptTime: formattedTime,
+              updatedAt: new Date()
+            })
+            .where(eq(botSettings.guildId, guildId));
+        } else {
+          await db.insert(botSettings).values({
+            guildId,
+            dailyPromptEnabled: true,
+            dailyPromptChannelId: channelId,
+            dailyPromptTime: formattedTime
+          });
+        }
+
+        await message.reply(`✅ Daily prompts enabled!\n📍 Channel: <#${channelId}>\n⏰ Time: ${time} (server time)`);
+        break;
+      }
+
+      case 'disable': {
+        await db.update(botSettings)
+          .set({ dailyPromptEnabled: false, updatedAt: new Date() })
+          .where(eq(botSettings.guildId, guildId));
+
+        await message.reply('✅ Daily prompts disabled.');
+        break;
+      }
+
+      case 'status': {
+        const settings = await db.select()
+          .from(botSettings)
+          .where(eq(botSettings.guildId, guildId))
+          .limit(1);
+
+        if (settings.length === 0 || !settings[0].dailyPromptEnabled) {
+          await message.reply('❌ Daily prompts are not enabled. Use `!promptsettings enable` to set up.');
+          return;
+        }
+
+        const setting = settings[0];
+        await message.reply(
+          `📊 Daily Prompt Settings:\n` +
+          `Status: ${setting.dailyPromptEnabled ? '✅ Enabled' : '❌ Disabled'}\n` +
+          `Channel: <#${setting.dailyPromptChannelId}>\n` +
+          `Time: ${setting.dailyPromptTime}\n` +
+          `Last Posted: ${setting.lastPromptPosted ? new Date(setting.lastPromptPosted).toLocaleString() : 'Never'}`
+        );
+        break;
+      }
+
+      default:
+        await message.reply(
+          '**Prompt Settings Commands:**\n' +
+          '`!promptsettings enable <#channel> <HH:MM>` - Enable daily prompts\n' +
+          '`!promptsettings disable` - Disable daily prompts\n' +
+          '`!promptsettings status` - View current settings'
+        );
+    }
+  } catch (error) {
+    console.error('Error in !promptsettings command:', error);
+    await message.reply('❌ Failed to update prompt settings.');
   }
 }
 

@@ -10,7 +10,6 @@ interface HamburgerSidebarProps {
   currentDocument: any;
   currentCharacter: any;
   user: any;
-  onShowAdminPanel: () => void;
   onShowFileManager: () => void;
   onShowKnowledgeBase: () => void;
   onShowStats: () => void;
@@ -23,7 +22,7 @@ interface HamburgerSidebarProps {
   toggleTheme: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowAdminPanel, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onLogout, theme, toggleTheme }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onLogout, theme, toggleTheme }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -915,34 +914,6 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
           </button>
         </div>
 
-        {/* Admin Panel (only for admins) */}
-        {user?.isAdmin && (
-          <div style={{ padding: '1rem', borderTop: `1px solid var(--border-color)` }}>
-            <button
-              onClick={() => {
-                onShowAdminPanel();
-              }}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: 'var(--accent-color)',
-                color: 'var(--accent-text)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                fontWeight: 500
-              }}
-            >
-              🛡️ Admin Panel
-            </button>
-          </div>
-        )}
-
         {/* Help Accordion Menu */}
         <div style={{ marginTop: 'auto', borderTop: `2px solid var(--border-color)` }}>
           <div
@@ -1040,6 +1011,32 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
                 <Settings size={18} />
                 Settings
               </button>
+              {user?.isAdmin && (
+                <button
+                  onClick={() => {
+                    // Open admin panel on Tailscale network via nginx
+                    window.open('http://100.111.171.42', '_blank');
+                    setUserMenuExpanded(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '4px',
+                    border: 'none',
+                    background: 'var(--bg-tertiary)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '1rem',
+                    marginBottom: '0.5rem',
+                    textAlign: 'left'
+                  }}
+                >
+                  🛡️ Admin Panel
+                </button>
+              )}
               <button
                 onClick={toggleTheme}
                 style={{
