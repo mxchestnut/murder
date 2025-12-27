@@ -8,7 +8,7 @@ import { learnFromUrl } from './gemini';
 import node_crypto from 'node:crypto';
 import axios from 'axios';
 import wiki from 'wikipedia';
-import { getUserTierFromDiscord } from '../middleware/tier.js';
+import { getUserTierFromDiscord, checkGuildPremiumAccess } from '../middleware/tier.js';
 
 // Support for two bots: My1e Party (free) and Write Pretend (premium)
 type BotType = 'my1eparty' | 'writepretend';
@@ -258,6 +258,27 @@ async function handleMy1ePartyCommands(message: Message, content: string, botCli
 // ============ WRITE PRETEND BOT (PREMIUM TIER) ============
 // Advanced features: AI, knowledge base, web search, character memories
 async function handleWritePretendCommands(message: Message, content: string, botClient: Client) {
+  // Check if guild has premium access (RP subscription)
+  if (!message.guild) {
+    await message.reply('❌ This bot can only be used in servers, not in DMs.');
+    return;
+  }
+
+  const premiumCheck = await checkGuildPremiumAccess(db, message.guild);
+  if (!premiumCheck.hasAccess) {
+    await message.reply(
+      `🔒 **Premium Access Required**\n\n` +
+      `${premiumCheck.reason}\n\n` +
+      `**Write Pretend** is a premium bot with AI-powered features:\n` +
+      `• AI knowledge base with !ask\n` +
+      `• Web scraping with !learnurl\n` +
+      `• Character memories with !memory\n` +
+      `• D&D lookups (!feat, !spell)\n\n` +
+      `Upgrade to RP tier at https://my1e.party to unlock these features!`
+    );
+    return;
+  }
+
   // Check for character memory viewing: "!CharName Memories"
   const nameRollRegex = /^!([\p{L}\p{N}\s]+)\s+(.+)$/u;
   const nameRollMatch = nameRollRegex.exec(content);

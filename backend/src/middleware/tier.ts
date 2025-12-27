@@ -55,3 +55,35 @@ export async function getUserTierFromDiscord(db: any, discordUserId: string): Pr
 
   return result[0].subscriptionTier || 'free';
 }
+
+/**
+ * Check if a Discord guild has access to premium features (Write Pretend bot)
+ * Returns true if the guild owner or any admin member has an active RP subscription
+ */
+export async function checkGuildPremiumAccess(db: any, guild: any): Promise<{ hasAccess: boolean; reason?: string }> {
+  try {
+    const { users } = await import('../db/schema.js');
+    const { eq, or, and } = await import('drizzle-orm');
+
+    // Get guild owner
+    const ownerId = guild.ownerId;
+
+    // Check if owner has RP tier
+    const ownerTier = await getUserTierFromDiscord(db, ownerId);
+    if (ownerTier === 'rp') {
+      return { hasAccess: true };
+    }
+
+    // If owner doesn't have it, check if any admins have RP tier
+    // Note: This requires fetching members, which we'll do in the bot itself
+    // For now, we'll just check the owner
+    return {
+      hasAccess: false,
+      reason: 'Server owner needs an active RP subscription at my1e.party to use Write Pretend bot features.'
+    };
+
+  } catch (error) {
+    console.error('Error checking guild premium access:', error);
+    return { hasAccess: false, reason: 'Error verifying subscription status.' };
+  }
+}
