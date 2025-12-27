@@ -83,8 +83,13 @@ async function startServer() {
   // Initialize Discord bot with secret from AWS
   initializeDiscordBot(secrets.DISCORD_BOT_TOKEN);
 
-  // Initialize Stripe
-  await initializeStripe();
+  // Initialize Stripe (optional - only if secrets are available)
+  try {
+    await initializeStripe();
+    console.log('✓ Stripe initialized');
+  } catch (error) {
+    console.warn('⚠ Stripe initialization failed - subscription features disabled:', (error as Error).message);
+  }
 
   // Trust proxy (nginx)
   app.set('trust proxy', 1);
