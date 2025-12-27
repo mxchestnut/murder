@@ -125,10 +125,8 @@ app.use(limiter);
 
 // Body parsing and cookie middleware
 app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-  // Session configuration with Redis
+  app.use(express.json({ limit: '10mb' })); // Prevent DoS with large payloads
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(session({
     store: new RedisStore({
       client: redisClient,

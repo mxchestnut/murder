@@ -75,10 +75,11 @@ router.post('/register', registerLimiter, async (req, res) => {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
       return res.status(400).json({
-        error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+        error: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
       });
     }
 
@@ -130,49 +131,65 @@ router.post('/login', loginLimiter, (req, res, next) => {
         return res.status(500).json({ error: 'Login failed' });
       }
 
-      // Save session explicitly to ensure persistence
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.status(500).json({ error: 'Session save failed' });
+      // Regenerate session ID to prevent session fixation attacks
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          console.error('Session regeneration error:', regenerateErr);
+          return res.status(500).json({ error: 'Login failed' });
         }
 
-        console.log('Login successful for user:', user.username);
-        console.log('Session ID:', req.sessionID);
-        console.log('Session:', req.session);
-        console.log('Cookies being sent:', res.getHeader('Set-Cookie'));
+        // Re-establish user in new session
+        req.logIn(user, (reLoginErr) => {
+          if (reLoginErr) {
+            console.error('Re-login error:', reLoginErr);
+            return res.status(500).json({ error: 'Login failed' });
+          }
 
-        // Auto-refresh PathCompanion session if connected
-        if (user.pathCompanionUsername && user.pathCompanionPassword) {
-          (async () => {
-            try {
-              const PlayFabService = await import('../services/playfab');
-              const decryptedPassword = decryptPassword(user.pathCompanionPassword);
-              const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, decryptedPassword);
-
-              // Update session ticket silently
-              await db.update(users)
-                .set({
-                  pathCompanionSessionTicket: auth.sessionTicket,
-                  pathCompanionConnectedAt: new Date()
-                })
-                .where(eq(users.id, user.id));
-
-              console.log('Auto-refreshed PathCompanion session for user:', user.username);
-            } catch (error) {
-              console.error('Failed to auto-refresh PathCompanion session:', error);
-              // Don't fail the login if PathCompanion refresh fails
+          // Save session explicitly to ensure persistence
+          req.session.save((err) => {
+            if (err) {
+              console.error('Session save error:', err);
+              return res.status(500).json({ error: 'Session save failed' });
             }
-          })();
-        }
 
-        res.json({
-          message: 'Login successful',
-          user: {
-            id: user.id,
-            username: user.username
-          },
-          sessionId: req.sessionID // Send session ID to frontend for debugging
+            console.log('Login successful for user:', user.username);
+            console.log('Session ID:', req.sessionID);
+            console.log('Session:', req.session);
+            console.log('Cookies being sent:', res.getHeader('Set-Cookie'));
+
+            // Auto-refresh PathCompanion session if connected
+            if (user.pathCompanionUsername && user.pathCompanionPassword) {
+              (async () => {
+                try {
+                  const PlayFabService = await import('../services/playfab');
+                  const decryptedPassword = decryptPassword(user.pathCompanionPassword);
+                  const auth = await PlayFabService.loginToPlayFab(user.pathCompanionUsername, decryptedPassword);
+
+                  // Update session ticket silently
+                  await db.update(users)
+                    .set({
+                      pathCompanionSessionTicket: auth.sessionTicket,
+                      pathCompanionConnectedAt: new Date()
+                    })
+                    .where(eq(users.id, user.id));
+
+                  console.log('Auto-refreshed PathCompanion session for user:', user.username);
+                } catch (error) {
+                  console.error('Failed to auto-refresh PathCompanion session:', error);
+                  // Don't fail the login if PathCompanion refresh fails
+                }
+              })();
+            }
+
+            res.json({
+              message: 'Login successful',
+              user: {
+                id: user.id,
+                username: user.username
+              },
+              sessionId: req.sessionID // Send session ID to frontend for debugging
+            });
+          });
         });
       });
     });
