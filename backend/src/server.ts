@@ -158,7 +158,7 @@ app.use(cookieParser());
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days, refreshed on activity
       httpOnly: true,
-      secure: 'auto', // Auto-detect based on connection (HTTP vs HTTPS)
+      secure: false, // Allow both HTTP (Tailscale) and HTTPS (public site)
       sameSite: 'lax',
       domain: undefined,
       path: '/'
