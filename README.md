@@ -4,20 +4,20 @@
 
 ## Features
 
-### 🎭 Character Management
+### Character Management
 - Create and manage characters via web portal
 - Full Pathfinder character sheets with stats, skills, weapons, spells
 - Import characters from PathCompanion (optional)
 - Character avatar upload for Discord proxying
 - Export and share character sheets
 
-### 🤖 Discord Bot Integration
+### Discord Bot Integration
 - **Character Proxying** - Speak as your character with custom avatars
 - **Dice Rolling** - Roll with character stats, saves, and skills
 - **AI FAQ System** - AI-powered knowledge base
 - **Hall of Fame** - Star messages for best moments
 
-### ✨ Web Portal
+### Web Portal
 - Secure authentication with username/password
 - Rich text document editor with Tiptap 3.0
 - Character sheet management and editing
@@ -25,7 +25,7 @@
 - Real-time activity feed *(coming soon)*
 - User statistics and leaderboards *(coming soon)*
 
-### 🧠 AI Features
+### AI Features
 - Natural language FAQ system powered by Google Gemini
 - Learn from URLs and documents (`!learnurl`)
 - Save helpful AI responses to knowledge base
