@@ -19,7 +19,7 @@ export async function initializeStripe() {
   }
 
   stripe = new Stripe(secrets.STRIPE_SECRET_KEY, {
-    apiVersion: '2024-11-20.acacia',
+    apiVersion: '2024-11-20.acacia' as any,
   });
   return stripe;
 }
@@ -122,7 +122,7 @@ router.post('/webhook', async (req, res) => {
     event = stripe.webhooks.constructEvent(
       rawBody,
       sig,
-      secrets.STRIPE_WEBHOOK_SECRET
+      secrets.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
@@ -176,7 +176,7 @@ router.post('/webhook', async (req, res) => {
             .set({
               subscriptionTier: 'free',
               stripeSubscriptionStatus: 'canceled',
-              subscriptionEndsAt: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
+              subscriptionEndsAt: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000) : null,
             })
             .where(eq(users.id, user.id));
 
@@ -213,7 +213,7 @@ async function updateUserSubscription(userId: number, subscription: Stripe.Subsc
       subscriptionTier: isActive ? 'rp' : 'free',
       stripeSubscriptionId: subscription.id,
       stripeSubscriptionStatus: subscription.status,
-      subscriptionEndsAt: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
+      subscriptionEndsAt: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000) : null,
     })
     .where(eq(users.id, userId));
 
