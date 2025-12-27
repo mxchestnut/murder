@@ -18,12 +18,13 @@ interface HamburgerSidebarProps {
   onShowPromptsTropes: () => void;
   onShowHallOfFame: () => void;
   onShowAdminPanel: () => void;
+  onShowBotInvite: () => void;
   onLogout: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
 }
 
-export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onShowAdminPanel, onLogout, theme, toggleTheme }: HamburgerSidebarProps) {
+export default function HamburgerSidebar({ documents, onSelectDocument, onSelectCharacter, onRefresh, currentDocument, currentCharacter, user, onShowFileManager, onShowKnowledgeBase, onShowStats, onShowSettings, onShowDiscordCommands, onShowPromptsTropes, onShowHallOfFame, onShowAdminPanel, onShowBotInvite, onLogout, theme, toggleTheme }: HamburgerSidebarProps) {
   const [newItemName, setNewItemName] = useState('');
   const [showNewItem, setShowNewItem] = useState<'folder' | 'document' | null>(null);
   const [characters, setCharacters] = useState<any[]>([]);
@@ -960,6 +961,30 @@ export default function HamburgerSidebar({ documents, onSelectDocument, onSelect
               >
                 <MessageCircle size={18} />
                 Discord Commands
+              </button>
+              <button
+                onClick={() => {
+                  onShowBotInvite();
+                  setDiscordMenuExpanded(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1rem',
+                  marginTop: '0.5rem',
+                  textAlign: 'left'
+                }}
+              >
+                <Bird size={18} />
+                Discord Bots
               </button>
             </div>
           )}

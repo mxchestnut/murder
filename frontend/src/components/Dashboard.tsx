@@ -19,6 +19,7 @@ const PromptsTropes = lazy(() => import('./PromptsTropes'));
 const StatsDashboard = lazy(() => import('./StatsDashboard'));
 const HallOfFameGallery = lazy(() => import('./HallOfFameGallery'));
 const AdminPanel = lazy(() => import('./AdminPanel'));
+const DiscordBotInvite = lazy(() => import('./DiscordBotInvite'));
 
 interface DashboardProps {
   user: any;
@@ -38,6 +39,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [showStats, setShowStats] = useState(false);
   const [showHallOfFame, setShowHallOfFame] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showBotInvite, setShowBotInvite] = useState(false);
   const [characterTab, setCharacterTab] = useState<'bio' | 'memories' | 'analytics'>('bio');
   const [characterPanelCollapsed, setCharacterPanelCollapsed] = useState(false);
   const [rollResult, setRollResult] = useState<any>(null);
@@ -72,6 +74,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setShowStats(false);
     setShowHallOfFame(false);
     setShowAdminPanel(false);
+          setShowBotInvite(false);
+    setShowBotInvite(false);
   };
 
   const handleSelectCharacter = (character: any) => {
@@ -84,6 +88,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setShowStats(false);
     setShowHallOfFame(false);
     setShowKnowledgeBase(false);
+    setShowBotInvite(false);
     setCharacterPanelCollapsed(false);
   };
 
@@ -148,6 +153,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowHallOfFame(false);
           setShowKnowledgeBase(false);
           setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -160,6 +166,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowHallOfFame(false);
           setShowFileManager(false);
           setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -172,6 +179,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowHallOfFame(false);
           setShowFileManager(false);
           setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -184,6 +192,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowKnowledgeBase(false);
           setShowFileManager(false);
           setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -196,6 +205,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowKnowledgeBase(false);
           setShowFileManager(false);
           setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -208,6 +218,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowKnowledgeBase(false);
           setShowFileManager(false);
           setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -220,6 +231,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowKnowledgeBase(false);
           setShowFileManager(false);
           setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -232,6 +244,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           setShowKnowledgeBase(false);
           setShowFileManager(false);
           setShowHallOfFame(false);
+          setShowBotInvite(false);
+          setCurrentDocument(null);
+          setCurrentCharacter(null);
+        }}
+        onShowBotInvite={() => {
+          setShowBotInvite(true);
+          setShowSettings(false);
+          setShowDiscordCommands(false);
+          setShowPromptsTropes(false);
+          setShowStats(false);
+          setShowKnowledgeBase(false);
+          setShowFileManager(false);
+          setShowHallOfFame(false);
+          setShowAdminPanel(false);
+          setShowBotInvite(false);
           setCurrentDocument(null);
           setCurrentCharacter(null);
         }}
@@ -291,6 +318,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <div style={{ flex: 1, overflow: 'auto' }}>
               <Suspense fallback={<LoadingSpinner />}>
                 <AdminPanel />
+              </Suspense>
+            </div>
+          ) : showBotInvite ? (
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <Suspense fallback={<LoadingSpinner />}>
+                <DiscordBotInvite />
               </Suspense>
             </div>
           ) : (
