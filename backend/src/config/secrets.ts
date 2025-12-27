@@ -7,10 +7,10 @@ interface Secrets {
   SESSION_SECRET: string;
   DISCORD_BOT_TOKEN: string;
   GEMINI_API_KEY: string;
-  STRIPE_SECRET_KEY: string;
-  STRIPE_PUBLISHABLE_KEY: string;
-  STRIPE_WEBHOOK_SECRET: string;
-  STRIPE_RP_TIER_PRICE_ID: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_PUBLISHABLE_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_RP_TIER_PRICE_ID?: string;
 }
 
 let cachedSecrets: Secrets | null = null;
@@ -38,26 +38,47 @@ export async function loadSecrets(): Promise<Secrets> {
 
   console.log('Loading secrets from AWS Secrets Manager...');
 
-  const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey, stripeSecretKey, stripePublishableKey, stripeWebhookSecret, stripeRpTierPriceId] = await Promise.all([
+  // Load required secrets
+  const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey] = await Promise.all([
     getSecret('murder/database-url'),
     getSecret('murder/session-secret'),
     getSecret('murder/discord-bot-token'),
-    getSecret('murder/gemini-api-key'),
-    getSecret('murder/stripe-secret-key'),
-    getSecret('murder/stripe-publishable-key'),
-    getSecret('murder/stripe-webhook-secret'),
-    getSecret('murder/stripe-rp-tier-price-id')
+    getSecret('murder/gemini-api-key')
   ]);
+
+  // Try to load optional Stripe secrets
+  let stripeSecrets: {
+    STRIPE_SECRET_KEY?: string;
+    STRIPE_PUBLISHABLE_KEY?: string;
+    STRIPE_WEBHOOK_SECRET?: string;
+    STRIPE_RP_TIER_PRICE_ID?: string;
+  } = {};
+
+  try {
+    const [stripeSecretKey, stripePublishableKey, stripeWebhookSecret, stripeRpTierPriceId] = await Promise.all([
+      getSecret('murder/stripe-secret-key'),
+      getSecret('murder/stripe-publishable-key'),
+      getSecret('murder/stripe-webhook-secret'),
+      getSecret('murder/stripe-rp-tier-price-id')
+    ]);
+
+    stripeSecrets = {
+      STRIPE_SECRET_KEY: stripeSecretKey,
+      STRIPE_PUBLISHABLE_KEY: stripePublishableKey,
+      STRIPE_WEBHOOK_SECRET: stripeWebhookSecret,
+      STRIPE_RP_TIER_PRICE_ID: stripeRpTierPriceId
+    };
+    console.log('✓ Stripe secrets loaded');
+  } catch (error) {
+    console.warn('⚠ Stripe secrets not available - subscription features disabled');
+  }
 
   cachedSecrets = {
     DATABASE_URL: databaseUrl,
     SESSION_SECRET: sessionSecret,
     DISCORD_BOT_TOKEN: discordBotToken,
     GEMINI_API_KEY: geminiApiKey,
-    STRIPE_SECRET_KEY: stripeSecretKey,
-    STRIPE_PUBLISHABLE_KEY: stripePublishableKey,
-    STRIPE_WEBHOOK_SECRET: stripeWebhookSecret,
-    STRIPE_RP_TIER_PRICE_ID: stripeRpTierPriceId
+    ...stripeSecrets
   };
 
   console.log('✓ Secrets loaded successfully');

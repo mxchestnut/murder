@@ -13,6 +13,11 @@ let stripe: Stripe;
 
 export async function initializeStripe() {
   const secrets = await getSecretsWithFallback();
+
+  if (!secrets.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY not available');
+  }
+
   stripe = new Stripe(secrets.STRIPE_SECRET_KEY, {
     apiVersion: '2024-11-20.acacia',
   });
