@@ -13,9 +13,25 @@ import { getUserTierFromDiscord, checkGuildPremiumAccess } from '../middleware/t
 // Support for two bots: My1e Party (free) and Write Pretend (premium)
 type BotType = 'my1eparty' | 'writepretend';
 
-let my1epartyClient: Client | null = null;
-let writepretendClient: Client | null = null;
+// Global guards to persist across module reloads
+declare global {
+  // Clients
+  var __MY1E_CLIENT__: Client | null | undefined;
+  var __WRITEPRETEND_CLIENT__: Client | null | undefined;
+  // Init flags
+  var __MY1E_INIT__: boolean | undefined;
+  var __WRITEPRETEND_INIT__: boolean | undefined;
+  // Message dedupe set
+  var __PROCESSED_MESSAGE_IDS__: Set<string> | undefined;
+}
+
+let my1epartyClient: Client | null = global.__MY1E_CLIENT__ ?? null;
+let writepretendClient: Client | null = global.__WRITEPRETEND_CLIENT__ ?? null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
+
+// Track initialization to prevent duplicates (persisted globally)
+let my1epartyInitialized = global.__MY1E_INIT__ ?? false;
+let writepretendInitialized = global.__WRITEPRETEND_INIT__ ?? false;
 
 // Normalize string by removing accents and converting to lowercase
 function normalizeString(str: string): string {
@@ -33,9 +49,46 @@ function isAdmin(message: Message): boolean {
 }
 
 export function initializeDiscordBot(token: string, botType: BotType = 'my1eparty') {
+  console.log(`[BOT DEBUG] initializeDiscordBot called for ${botType} (PID: ${process.pid})`);
+  console.log(`[BOT DEBUG] global.__MY1E_INIT__ = ${global.__MY1E_INIT__}, global.__WRITEPRETEND_INIT__ = ${global.__WRITEPRETEND_INIT__}`);
+
+  // Prevent duplicate initialization with a strong guard
+  if (botType === 'my1eparty') {
+    if (global.__MY1E_INIT__) {
+      console.log(`[BOT DEBUG] My1e Party ALREADY initialized (PID: ${process.pid}), returning existing client`);
+      return global.__MY1E_CLIENT__ ?? my1epartyClient;
+    }
+    console.log(`[BOT DEBUG] Setting my1epartyInitialized = true (PID: ${process.pid})`);
+    my1epartyInitialized = true;
+    global.__MY1E_INIT__ = true;
+  } else {
+    if (global.__WRITEPRETEND_INIT__) {
+      console.log(`[BOT DEBUG] Write Pretend ALREADY initialized (PID: ${process.pid}), returning existing client`);
+      return global.__WRITEPRETEND_CLIENT__ ?? writepretendClient;
+    }
+    console.log(`[BOT DEBUG] Setting writepretendInitialized = true (PID: ${process.pid})`);
+    writepretendInitialized = true;
+    global.__WRITEPRETEND_INIT__ = true;
+  }
+
+  console.log(`[BOT DEBUG] Current my1epartyClient:`, my1epartyClient?.user?.tag || 'null');
+  console.log(`[BOT DEBUG] Current writepretendClient:`, writepretendClient?.user?.tag || 'null');
+
   if (!token) {
     console.log(`No Discord bot token provided for ${botType}, skipping bot initialization`);
     return;
+  }
+
+  // Prevent re-initialization - destroy old client if exists
+  if (botType === 'my1eparty' && my1epartyClient) {
+    console.log(`[BOT DEBUG] My1e Party bot already initialized, destroying old client`);
+    my1epartyClient.destroy();
+    my1epartyClient = null;
+  }
+  if (botType === 'writepretend' && writepretendClient) {
+    console.log(`[BOT DEBUG] Write Pretend bot already initialized, destroying old client`);
+    writepretendClient.destroy();
+    writepretendClient = null;
   }
 
   const botClient = new Client({
@@ -51,11 +104,14 @@ export function initializeDiscordBot(token: string, botType: BotType = 'my1epart
   // Store the client based on bot type
   if (botType === 'my1eparty') {
     my1epartyClient = botClient;
+    global.__MY1E_CLIENT__ = botClient;
   } else {
     writepretendClient = botClient;
+    global.__WRITEPRETEND_CLIENT__ = botClient;
   }
 
   botClient.on('ready', () => {
+    console.log(`[BOT DEBUG] Ready event fired for ${botType === 'my1eparty' ? 'My1e Party' : 'Write Pretend'} bot`);
     console.log(`${botType === 'my1eparty' ? 'My1e Party' : 'Write Pretend'} bot logged in as ${botClient?.user?.tag}`);
 
     // Only start prompt scheduler for My1e Party bot (free tier gets this feature)
@@ -69,15 +125,46 @@ export function initializeDiscordBot(token: string, botType: BotType = 'my1epart
   });
 
   botClient.on('messageCreate', async (message: Message) => {
+    const listenerCount = botClient.listenerCount('messageCreate');
+    console.log(`[BOT DEBUG] messageCreate fired for ${botType} bot (PID: ${process.pid}, listeners: ${listenerCount}), message: "${message.content.substring(0, 50)}"`);
     if (message.author.bot) return;
 
+    // Per-message dedupe guard to avoid double handling
+    if (!global.__PROCESSED_MESSAGE_IDS__) {
+      global.__PROCESSED_MESSAGE_IDS__ = new Set<string>();
+    }
+    const processed = global.__PROCESSED_MESSAGE_IDS__;
+    if (processed!.has(message.id)) {
+      return;
+    }
+    processed!.add(message.id);
+    // Auto-clean after 10 minutes to avoid unbounded growth
+    setTimeout(() => processed!.delete(message.id), 10 * 60 * 1000);
+
     const content = message.content.trim();
+    const isCommand = content.startsWith('!');
+
+    // Cross-restart idempotency: if bot already reacted ✅ to this command message, skip
+    if (isCommand) {
+      try {
+        await message.fetch();
+        const alreadyProcessed = message.reactions.cache.some(r => r.emoji.name === '✅' && r.me);
+        if (alreadyProcessed) {
+          return;
+        }
+      } catch {}
+    }
 
     // Handle commands based on bot type
     if (botType === 'my1eparty') {
       await handleMy1ePartyCommands(message, content, botClient);
     } else {
       await handleWritePretendCommands(message, content, botClient);
+    }
+
+    // Mark command message as processed to avoid duplicate handling across restarts
+    if (isCommand) {
+      try { await message.react('✅'); } catch {}
     }
   });
 
@@ -132,7 +219,7 @@ async function handleMy1ePartyCommands(message: Message, content: string, botCli
   if (proxyMatch) {
     const characterName = proxyMatch[1].trim();
     const messageContent = proxyMatch[2];
-    await handleProxy(message, characterName, messageContent);
+    await handleProxy(message, characterName, messageContent, botClient);
     return;
   }
 
@@ -258,7 +345,7 @@ async function handleMy1ePartyCommands(message: Message, content: string, botCli
 // ============ WRITE PRETEND BOT (PREMIUM TIER) ============
 // Advanced features: AI, knowledge base, web search, character memories
 async function handleWritePretendCommands(message: Message, content: string, botClient: Client) {
-  // Check if guild has premium access (RP subscription)
+  // Check if guild has premium access (RP subscription) for premium features
   if (!message.guild) {
     await message.reply('❌ This bot can only be used in servers, not in DMs.');
     return;
@@ -287,7 +374,7 @@ async function handleWritePretendCommands(message: Message, content: string, bot
     const potentialStat = nameRollMatch[2].trim();
 
     // Check if this is a known command first
-    const knownCommands = ['ask', 'learn', 'learnurl', 'feat', 'spell', 'memory', 'help'];
+    const knownCommands = ['ask', 'learn', 'learnurl', 'feat', 'spell', 'memory'];
     const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
     if (!isKnownCommand) {
       // Check if this is "!CharName Memories" pattern
@@ -306,7 +393,7 @@ async function handleWritePretendCommands(message: Message, content: string, bot
 
   try {
     switch (command) {
-      // Premium AI & Knowledge commands
+      // Premium AI & Knowledge commands (exclusive to Write Pretend)
       case 'ask':
         await handleAsk(message, args);
         break;
@@ -324,9 +411,6 @@ async function handleWritePretendCommands(message: Message, content: string, bot
         break;
       case 'memory':
         await handleMemory(message, args);
-        break;
-      case 'help':
-        await handleHelp(message, 'premium');
         break;
       default:
         // Unknown command, no response
@@ -430,6 +514,8 @@ async function handleShowChar(message: Message) {
 }
 
 async function handleProfile(message: Message, args: string[]) {
+  console.log(`[PROFILE DEBUG] handleProfile called with args:`, args, `from bot:`, message.client.user?.tag);
+
   let character: any;
 
   // Get user by Discord ID first
@@ -438,6 +524,7 @@ async function handleProfile(message: Message, args: string[]) {
     .where(eq(users.discordUserId, message.author.id));
 
   if (!user) {
+    console.log(`[PROFILE DEBUG] Sending reply: user not linked`);
     await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
       '**To link your account:**\n' +
       '1. Use `!connect <username> <password>` in Discord, OR\n' +
@@ -876,10 +963,12 @@ async function handleProfile(message: Message, args: string[]) {
 
   // Send initial message
   let currentTab = 'identity';
+  console.log(`[PROFILE DEBUG] About to send profile reply for ${character.name}`);
   const reply = await message.reply({
     embeds: [await buildEmbed(currentTab)],
     components: [createButtons1(currentTab), createButtons2(currentTab), createButtons3(currentTab)]
   });
+  console.log(`[PROFILE DEBUG] Profile reply sent successfully for ${character.name}`);
 
   // Try to pin the message (requires permissions)
   try {
@@ -1278,13 +1367,20 @@ async function handleSyncAll(message: Message) {
       return;
     }
 
-    // Build response with character list
-    const charList = characters.map(c =>
+    // Build response with character list (limit to avoid Discord's 2000 char limit)
+    const MAX_CHARS_TO_SHOW = 25;
+    const charsToShow = characters.slice(0, MAX_CHARS_TO_SHOW);
+    const charList = charsToShow.map(c =>
       `• **${c.name}** - Level ${c.level} ${c.characterClass || 'Character'}${c.isPathCompanion ? ' (PathCompanion)' : ''}`
     ).join('\n');
 
+    const moreText = characters.length > MAX_CHARS_TO_SHOW
+      ? `\n\n...and ${characters.length - MAX_CHARS_TO_SHOW} more! View all at https://my1e.party`
+      : '';
+
     await message.reply(`✅ **Synced ${characters.length} character${characters.length !== 1 ? 's' : ''}!**\n\n` +
       charList +
+      moreText +
       '\n\n**Usage:**\n' +
       '• `!setchar <name>` - Link a channel to a character\n' +
       '• `!roll <stat>` - Roll dice for your character\n' +
@@ -1412,7 +1508,7 @@ async function handleHelp(message: Message, botType: 'free' | 'premium' = 'free'
   }
 }
 
-async function handleProxy(message: Message, characterName: string, messageText: string) {
+async function handleProxy(message: Message, characterName: string, messageText: string, botClient: Client) {
   try {
     // Find character by name (fuzzy matching - normalize accents)
     const normalizedInput = normalizeString(characterName);
@@ -1447,23 +1543,30 @@ async function handleProxy(message: Message, characterName: string, messageText:
       return;
     }
 
+    // Determine webhook name based on bot
+    const webhookName = botClient.user?.id === my1epartyClient?.user?.id ? 'My1e Party Proxy' : 'Write Pretend Proxy';
+
     // Get or create webhook for this channel
-    let webhook = webhookCache.get(webhookChannel.id);
+    let webhook: Webhook | undefined;
+
+    // Check if a webhook already exists
+    const webhooks = await webhookChannel.fetchWebhooks();
+
+    // Clean up any Write Pretend Proxy webhooks (no longer used)
+    const writePretendWebhooks = webhooks.filter(wh => wh.name === 'Write Pretend Proxy');
+    for (const oldWebhook of writePretendWebhooks.values()) {
+      await oldWebhook.delete('Write Pretend no longer handles proxying').catch(() => {});
+    }
+
+    // Find existing webhook for this bot
+    webhook = webhooks.find((wh: Webhook) => wh.owner?.id === botClient.user?.id && wh.name === webhookName);
 
     if (!webhook) {
-      // Check if a webhook already exists
-      const webhooks = await webhookChannel.fetchWebhooks();
-      webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === my1epartyClient?.user?.id && wh.name === 'My1e Party Proxy');
-
-      if (!webhook) {
-        // Create new webhook
-        webhook = await webhookChannel.createWebhook({
-          name: 'My1e Party Proxy',
-          reason: 'Character proxying for My1e Party'
-        });
-      }
-
-      webhookCache.set(webhookChannel.id, webhook);
+      // Create new webhook
+      webhook = await webhookChannel.createWebhook({
+        name: webhookName,
+        reason: `Character proxying for ${webhookName.replace(' Proxy', '')}`
+      });
     }
 
     // Delete the original message
@@ -1508,27 +1611,23 @@ async function handleProxy(message: Message, characterName: string, messageText:
       );
 
     } catch (webhookError: any) {
-      // If webhook fails (e.g., Unknown Webhook error), clear cache and retry once
+      // If webhook fails (e.g., Unknown Webhook error), fetch fresh webhook and retry once
       if (webhookError.code === 10015) {
-        console.log('Webhook became invalid, clearing cache and retrying...');
-        webhookCache.delete(webhookChannel.id);
 
         if (!('fetchWebhooks' in webhookChannel)) {
           throw new Error('Channel does not support webhooks');
         }
 
-        // Recreate webhook
+        // Fetch fresh webhook
         const webhooks = await webhookChannel.fetchWebhooks();
-        webhook ??= webhooks.find((wh: Webhook) => wh.owner?.id === my1epartyClient?.user?.id && wh.name === 'My1e Party Proxy');
+        webhook = webhooks.find((wh: Webhook) => wh.owner?.id === botClient.user?.id && wh.name === webhookName);
 
         if (!webhook) {
           webhook = await webhookChannel.createWebhook({
-            name: 'My1e Party Proxy',
-            reason: 'Character proxying for My1e Party'
+            name: webhookName,
+            reason: `Character proxying for ${webhookName.replace(' Proxy', '')}`
           });
         }
-
-        webhookCache.set(webhookChannel.id, webhook);
 
         // Retry send
         const retryOptions: any = {

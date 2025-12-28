@@ -38,6 +38,11 @@ import { reinitializeDatabase, db } from './db';
 import { sql } from 'drizzle-orm';
 import { initializePasswordRotationTracking } from './db/passwordRotation';
 
+// Prevent multiple server starts using global variable
+declare global {
+  var __SERVER_STARTED__: boolean | undefined;
+}
+
 // Initialize Sentry
 Sentry.init({
   dsn: 'https://3703aff1185c87a288fbe6470adcd55e@o4510280685977605.ingest.us.sentry.io/4510601564913664',
@@ -53,26 +58,47 @@ Sentry.init({
 });
 
 async function startServer() {
+  console.log('[SERVER DEBUG] startServer() called');
+
   // Load secrets from AWS Secrets Manager (or .env in development)
   const secrets = await getSecretsWithFallback();
 
-  // Reinitialize database connection with secret from AWS (in production)
-  if (process.env.NODE_ENV === 'production') {
+  // Reinitialize database connection with secret from AWS (only in production deployment, not local)
+  // Skip if running locally - we want to use the initial DATABASE_URL from .env that was loaded at module init
+  const isRunningOnEC2 = process.env.AWS_EXECUTION_ENV || process.env.EC2_INSTANCE_ID;
+  if (process.env.NODE_ENV === 'production' && isRunningOnEC2) {
     await reinitializeDatabase(secrets.DATABASE_URL);
+  } else {
+    console.log('Using database from .env file (loaded at module initialization)');
   }
 
-  // Initialize Redis client
-  const redisClient = createClient({
-    socket: {
-      host: '127.0.0.1',
-      port: 6379
+  // Initialize Redis client (optional)
+  let redisClient: any = null;
+  const useRedis = process.env.USE_REDIS !== 'false'; // Default to true unless explicitly disabled
+
+  if (useRedis) {
+    try {
+      redisClient = createClient({
+        socket: {
+          host: '127.0.0.1',
+          port: 6379,
+          connectTimeout: 3000 // 3 second timeout
+        }
+      });
+
+      redisClient.on('error', (err: any) => {
+        console.error('Redis Client Error:', err.message);
+      });
+      redisClient.on('connect', () => console.log('✓ Connected to Redis for session storage'));
+
+      await redisClient.connect();
+    } catch (error: any) {
+      console.warn('⚠ Redis not available - using in-memory session storage:', error.message);
+      redisClient = null;
     }
-  });
-
-  redisClient.on('error', (err) => console.error('Redis Client Error', err));
-  redisClient.on('connect', () => console.log('✓ Connected to Redis for session storage'));
-
-  await redisClient.connect();
+  } else {
+    console.log('Redis disabled - using in-memory session storage');
+  }
 
   const app = express();
   const PORT = process.env.PORT || 3000;
@@ -152,12 +178,9 @@ app.use(cookieParser());
 
   app.use(express.json({ limit: '10mb' })); // Prevent DoS with large payloads
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-  app.use(session({
-    store: new RedisStore({
-      client: redisClient,
-      prefix: 'my1eparty:sess:',
-      ttl: 86400 * 30 // 30 days absolute maximum in seconds
-    }),
+
+  // Session configuration - use Redis if available, otherwise in-memory
+  const sessionConfig: any = {
     secret: secrets.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -170,7 +193,17 @@ app.use(cookieParser());
       domain: undefined,
       path: '/'
     }
-  }));
+  };
+
+  if (redisClient) {
+    sessionConfig.store = new RedisStore({
+      client: redisClient,
+      prefix: 'my1eparty:sess:',
+      ttl: 86400 * 30 // 30 days absolute maximum in seconds
+    });
+  }
+
+  app.use(session(sessionConfig));
 
 // Passport middleware
 app.use(passport.initialize());
@@ -339,7 +372,13 @@ app.get('*', (req, res) => {
 }
 
 // Start the server
-startServer().catch(error => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+if (!global.__SERVER_STARTED__) {
+  global.__SERVER_STARTED__ = true;
+  console.log('[SERVER DEBUG] Starting server (first time)');
+  startServer().catch(error => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
+} else {
+  console.log('[SERVER DEBUG] Server already started, skipping duplicate execution');
+}
