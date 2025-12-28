@@ -178,8 +178,6 @@ export function initializeDiscordBot(token: string) {
   });
 }
 
-// ============ MY1E PARTY BOT (FREE TIER) ============
-// Basic features: character sheets, dice rolls, stats, profiles
 // ============ UNIFIED COMMAND HANDLER ============
 // All commands in one bot with tier-based access control
 
@@ -1234,11 +1232,11 @@ async function handleConnect(message: Message, args: string[]) {
     await message.author.send('❌ **Usage:** `!connect <username> <password>`\n\n' +
       '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only used for authentication.\n\n' +
       '**Example:** `!connect myusername mypassword`\n\n' +
-      '🔗 **Linking your Discord account** to My1e Party will allow you to:\n' +
-      '• Use all your My1e Party characters in Discord\n' +
+      '🔗 **Linking your Discord account** will allow you to:\n' +
+      '• Use all your characters in Discord\n' +
       '• Roll dice with your character stats\n' +
       '• Proxy messages as your characters\n\n' +
-      '💡 Don\'t have a My1e Party account? Create one at https://my1e.party');
+      '💡 Don\'t have an account? Create one at https://my1e.party');
     return;
   }
 
@@ -1247,7 +1245,7 @@ async function handleConnect(message: Message, args: string[]) {
 
   try {
     // Send a DM to the user for privacy
-    await message.author.send('🔐 Connecting to My1e Party...');
+    await message.author.send('🔐 Connecting to my1e.party...');
 
     // Authenticate with Murder backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -1259,7 +1257,7 @@ async function handleConnect(message: Message, args: string[]) {
 
     const { user, characters } = response.data;
 
-    await message.author.send('✅ **Successfully connected to My1e Party!**\n\n' +
+    await message.author.send('✅ **Successfully connected!**\n\n' +
       `🎭 Account: **${user.username}**\n` +
       `🎲 Characters: **${characters.length}**\n` +
       (user.pathCompanionConnected ? '🔗 PathCompanion: **Connected**\n' : '') +
@@ -1274,7 +1272,7 @@ async function handleConnect(message: Message, args: string[]) {
     console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Murder user: ${username}`);
 
   } catch (error: any) {
-    console.error('Discord My1e Party connect error:', error);
+    console.error('Discord connect error:', error);
 
     let errorMsg = 'Unknown error occurred';
     if (error.response?.data?.error) {
@@ -1283,7 +1281,7 @@ async function handleConnect(message: Message, args: string[]) {
       errorMsg = error.message;
     }
 
-    await message.author.send('❌ **Failed to connect to My1e Party.**\n\n' +
+    await message.author.send('❌ **Failed to connect.**\n\n' +
       `Error: ${errorMsg}\n\n` +
       'Please check your username and password and try again.\n\n' +
       '💡 Need help? Visit https://my1e.party to manage your account.');
@@ -1291,7 +1289,7 @@ async function handleConnect(message: Message, args: string[]) {
 }
 
 async function handleSyncAll(message: Message) {
-  await message.reply('🔄 Refreshing your character list from My1e Party...');
+  await message.reply('🔄 Refreshing your character list...');
 
   try {
     // Get user by Discord ID
@@ -1300,11 +1298,11 @@ async function handleSyncAll(message: Message) {
       .where(eq(users.discordUserId, message.author.id));
 
     if (!user) {
-      await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
+      await message.reply('❌ **Discord account not linked.**\n\n' +
         '**To link your account:**\n' +
         '1. Use `!connect <username> <password>` in Discord, OR\n' +
         '2. Visit my1e.party to create/manage your account\n\n' +
-        '💡 Once linked, all your Murder characters will be available!');
+        '💡 Once linked, all your characters will be available!');
       return;
     }
 
@@ -1314,7 +1312,7 @@ async function handleSyncAll(message: Message) {
       .where(eq(characterSheets.userId, user.id));
 
     if (characters.length === 0) {
-      await message.reply('ℹ️ **No characters found in your My1e Party account.**\n\n' +
+      await message.reply('ℹ️ **No characters found in your account.**\n\n' +
         '**Create characters:**\n' +
         '• Visit https://my1e.party and create a character manually\n' +
         (user.pathCompanionUsername ? '• Or import from PathCompanion in the web portal\n' : '') +
@@ -1355,7 +1353,7 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
       .where(eq(users.discordUserId, message.author.id));
 
     if (!user) {
-      await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
+      await message.reply('❌ **Discord account not linked.**\n\n' +
         'Use `!connect <username> <password>` to link your account first.');
       return;
     }
@@ -1773,7 +1771,7 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
           .setColor(embedColor)
           .setTitle(`🎲 ${character.name} - ${rollData.rollDescription}`)
           .setDescription(`**${rollData.diceRoll}** ${rollData.modifier >= 0 ? '+' : ''}${rollData.modifier} = **${rollData.total}**`)
-          .setFooter({ text: 'Rolled from My1e Party Tech Portal' })
+          .setFooter({ text: 'Rolled from my1e.party' })
           .setTimestamp();
 
         if (rollData.diceRoll === 20) {
