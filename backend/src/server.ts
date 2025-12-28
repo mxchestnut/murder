@@ -106,14 +106,13 @@ async function startServer() {
   // Set Gemini API key as environment variable for Gemini service
   process.env.GEMINI_API_KEY = secrets.GEMINI_API_KEY;
 
-  // Initialize My1e Party Discord bot (free tier) with secret from AWS
-  initializeDiscordBot(secrets.DISCORD_BOT_TOKEN, 'my1eparty');
-
-  // Initialize Write Pretend Discord bot (premium tier) if token is available
+  // Initialize Write Pretend Discord bot (unified with tier-based features)
   if (secrets.WRITEPRETEND_BOT_TOKEN) {
-    initializeDiscordBot(secrets.WRITEPRETEND_BOT_TOKEN, 'writepretend');
+    initializeDiscordBot(secrets.WRITEPRETEND_BOT_TOKEN);
+    console.log('✓ Write Pretend bot initializing...');
   } else {
-    console.warn('⚠ Write Pretend bot token not available - premium bot disabled');
+    console.error('❌ WRITEPRETEND_BOT_TOKEN not available - bot cannot start!');
+    process.exit(1);
   }
 
   // Initialize Stripe (optional - only if secrets are available)
