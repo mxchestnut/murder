@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories, prompts, tropes, loreEntries, channelLoreTags } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories, prompts, tropes, loreEntries, channelLoreTags, characterRelationships } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -204,6 +204,14 @@ async function handleCommands(message: Message, content: string, client: Client)
       if (potentialStat.toLowerCase() === 'memories') {
         await handleCharacterMemoriesView(message, potentialName);
         return;
+      }
+      // Check for relationship pattern: !CharName is OtherName's relationship. | Description
+      if (potentialStat.toLowerCase().includes(' is ')) {
+        const tier = await getUserTierFromDiscord(db, message.author.id);
+        if (tier === 'rp') {
+          await handleRelationship(message, potentialName, potentialStat);
+          return;
+        }
       }
       // Try to handle as name-based roll
       const handled = await handleNameRoll(message, potentialName, potentialStat);
@@ -720,7 +728,49 @@ async function handleProfile(message: Message, args: string[]) {
     }
   };
 
+  const buildRelationshipsTab = async (embed: EmbedBuilder) => {
+    // Fetch relationships from database
+    const relationships = await db.select()
+      .from(characterRelationships)
+      .where(eq(characterRelationships.characterId, character.id))
+      .orderBy(characterRelationships.createdAt);
 
+    if (relationships.length > 0) {
+      const relationshipList = relationships.map(rel => {
+        let text = `• **${character.name}** is **${rel.relatedCharacterName}'s ${rel.relationshipType}**`;
+        if (rel.description) {
+          text += `\n  *${rel.description}*`;
+        }
+        return text;
+      }).join('\n\n');
+
+      embed.addFields({ name: '👥 Relationships', value: truncate(relationshipList, 1024), inline: false });
+    }
+
+    // Also show character sheet relationships if they exist
+    const sheetRelationships = [];
+    if (character.importantRelationships) {
+      sheetRelationships.push(`**Important:** ${stripHtml(character.importantRelationships)}`);
+    }
+    if (character.protectedRelationship) {
+      sheetRelationships.push(`**Protected:** ${stripHtml(character.protectedRelationship)}`);
+    }
+    if (character.avoidedRelationship) {
+      sheetRelationships.push(`**Avoided:** ${stripHtml(character.avoidedRelationship)}`);
+    }
+
+    if (sheetRelationships.length > 0) {
+      embed.addFields({ name: '📝 Character Sheet Notes', value: truncate(sheetRelationships.join('\n\n'), 1024), inline: false });
+    }
+
+    if (relationships.length === 0 && sheetRelationships.length === 0) {
+      embed.addFields({
+        name: '👥 Relationships',
+        value: `No relationships recorded yet.\n\nAdd one with: \`!${character.name} is <name>'s <relationship>. | <description>\``,
+        inline: false
+      });
+    }
+  };
 
   const buildBeliefsTab = (embed: EmbedBuilder) => {
     if (character.beliefsPhilosophy) {
@@ -804,6 +854,10 @@ async function handleProfile(message: Message, args: string[]) {
       }
       case 'backstory': {
         buildBackstoryTab(embed);
+        break;
+      }
+      case 'relationships': {
+        await buildRelationshipsTab(embed);
         break;
       }
       case 'beliefs': {
@@ -2721,6 +2775,68 @@ async function handleCharacterMemoriesView(message: Message, characterName: stri
   } catch (error) {
     console.error('Error viewing character memories:', error);
     await message.reply('❌ Failed to retrieve memories.');
+  }
+}
+
+// === CHARACTER RELATIONSHIPS (RP Tier) ===
+
+async function handleRelationship(message: Message, characterName: string, relationshipText: string) {
+  try {
+    const guildId = message.guild?.id || '';
+
+    // Parse: "is OtherName's relationship. | Description"
+    // Example: "is Natasha's spouse. | They're married."
+    const parts = relationshipText.split('|').map(p => p.trim());
+    const relationshipPart = parts[0]; // "is Natasha's spouse."
+    const description = parts[1] || ''; // "They're married."
+
+    // Extract: "is <name>'s <type>"
+    const relationshipMatch = relationshipPart.match(/is\s+(.+?)['']s\s+(.+?)\.?$/i);
+    if (!relationshipMatch) {
+      await message.reply(
+        'Usage: `!<CharName> is <OtherChar>\'s <relationship>. | <description>`\n\n' +
+        'Examples:\n' +
+        '• `!Bucky is Natasha\'s spouse. | They\'re married.`\n' +
+        '• `!Elara is Theron\'s friend. | Met in the war.`\n' +
+        '• `!Zara is Kael\'s enemy. | Betrayed her trust.`'
+      );
+      return;
+    }
+
+    const relatedCharacterName = relationshipMatch[1].trim();
+    const relationshipType = relationshipMatch[2].trim();
+
+    // Find the character
+    const [character] = await db.select()
+      .from(characterSheets)
+      .where(
+        sql`LOWER(${characterSheets.name}) = LOWER(${characterName})`
+      )
+      .limit(1);
+
+    if (!character) {
+      await message.reply(`❌ Character "${characterName}" not found.`);
+      return;
+    }
+
+    // Add relationship
+    await db.insert(characterRelationships).values({
+      characterId: character.id,
+      relatedCharacterName,
+      relationshipType,
+      description,
+      guildId
+    });
+
+    await message.reply(
+      `✅ Relationship added for **${character.name}**:\n` +
+      `**${character.name}** is **${relatedCharacterName}'s ${relationshipType}**` +
+      (description ? `\n*${description}*` : '')
+    );
+
+  } catch (error) {
+    console.error('Error in relationship command:', error);
+    await message.reply('❌ Failed to add relationship.');
   }
 }
 

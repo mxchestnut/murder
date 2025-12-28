@@ -473,6 +473,17 @@ export const channelLoreTags = pgTable('channel_lore_tags', {
   uniqueChannelTag: unique().on(table.guildId, table.channelId) // One tag per channel
 }));
 
+// Character Relationships - Track relationships between characters (RP tier)
+export const characterRelationships = pgTable('character_relationships', {
+  id: serial('id').primaryKey(),
+  characterId: integer('character_id').notNull().references(() => characterSheets.id),
+  relatedCharacterName: text('related_character_name').notNull(), // Name of the other character
+  relationshipType: text('relationship_type').notNull(), // e.g. 'spouse', 'friend', 'enemy', 'sibling'
+  description: text('description'), // Optional description
+  guildId: text('guild_id').notNull(), // Server context
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const characterMemoriesRelations = relations(characterMemories, ({ one }) => ({
   character: one(characterSheets, {
     fields: [characterMemories.characterId],
