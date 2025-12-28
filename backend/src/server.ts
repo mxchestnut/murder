@@ -63,13 +63,13 @@ async function startServer() {
   // Load secrets from AWS Secrets Manager (or .env in development)
   const secrets = await getSecretsWithFallback();
 
-  // Reinitialize database connection with secret from AWS (only in production deployment, not local)
-  // Skip if running locally - we want to use the initial DATABASE_URL from .env that was loaded at module init
-  const isRunningOnEC2 = process.env.AWS_EXECUTION_ENV || process.env.EC2_INSTANCE_ID;
-  if (process.env.NODE_ENV === 'production' && isRunningOnEC2) {
+  // Reinitialize database connection with secret from AWS in production
+  // Skip if running locally - we want to use the initial DATABASE_URL from .env
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Production mode detected - loading DATABASE_URL from AWS Secrets Manager');
     await reinitializeDatabase(secrets.DATABASE_URL);
   } else {
-    console.log('Using database from .env file (loaded at module initialization)');
+    console.log('Development mode - using database from .env file (loaded at module initialization)');
   }
 
   // Initialize Redis client (optional)
