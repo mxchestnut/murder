@@ -427,7 +427,7 @@ export const prompts = pgTable('prompts', {
   lastUsed: timestamp('last_used'),
   createdBy: integer('created_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  // updatedAt: timestamp('updated_at').defaultNow().notNull(), // Column doesn't exist in production DB
 });
 
 // Tropes for RP inspiration (RP tier only)
@@ -438,7 +438,7 @@ export const tropes = pgTable('tropes', {
   category: text('category').notNull(), // 'archetype', 'dynamic', 'situation', 'plot'
   useCount: integer('use_count').default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  // updatedAt: timestamp('updated_at').defaultNow().notNull(), // Column doesn't exist in production DB
 });
 
 // Prompt Schedule - for automated daily prompts (RP tier only)

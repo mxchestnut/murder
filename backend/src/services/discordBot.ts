@@ -3649,7 +3649,7 @@ async function handleTrope(message: Message, args: string[]) {
 
     // Update use count
     await db.update(tropes)
-      .set({ useCount: (randomTrope.useCount || 0) + 1, updatedAt: new Date() })
+      .set({ useCount: (randomTrope.useCount || 0) + 1 })
       .where(eq(tropes.id, randomTrope.id));
 
     const embed = new EmbedBuilder()

@@ -137,7 +137,7 @@ router.put('/prompts/:id', isAuthenticated, async (req, res) => {
     }
 
     const [updated] = await db.update(prompts)
-      .set({ category, promptText, updatedAt: new Date() })
+      .set({ category, promptText })
       .where(eq(prompts.id, parseInt(id)))
       .returning();
 
@@ -271,7 +271,7 @@ router.put('/tropes/:id', isAuthenticated, async (req, res) => {
     }
 
     const [updated] = await db.update(tropes)
-      .set({ category, name, description, updatedAt: new Date() })
+      .set({ category, name, description })
       .where(eq(tropes.id, parseInt(id)))
       .returning();
 
