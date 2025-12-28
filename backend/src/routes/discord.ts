@@ -77,7 +77,8 @@ router.post('/login', async (req, res) => {
 
   } catch (error) {
     console.error('Discord auth error:', error);
-    res.status(500).json({ error: 'Authentication failed' });
+    const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+    res.status(500).json({ error: `Authentication failed: ${errorMessage}` });
   }
 });
 

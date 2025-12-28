@@ -1247,14 +1247,18 @@ async function handleConnect(message: Message, args: string[]) {
     // Send a DM to the user for privacy
     await message.author.send('🔐 Connecting to my1e.party...');
 
-    // Authenticate with Murder backend
+    // Authenticate with backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
+    console.log(`[CONNECT] Attempting authentication for user: ${username}, Discord ID: ${message.author.id}`);
+    console.log(`[CONNECT] API URL: ${API_URL}`);
+
     const response = await axios.post(`${API_URL}/api/discord/login`, {
       username,
       password,
       discordUserId: message.author.id
     });
 
+    console.log(`[CONNECT] Authentication successful for ${username}`);
     const { user, characters } = response.data;
 
     await message.author.send('✅ **Successfully connected!**\n\n' +
@@ -1272,7 +1276,9 @@ async function handleConnect(message: Message, args: string[]) {
     console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Murder user: ${username}`);
 
   } catch (error: any) {
-    console.error('Discord connect error:', error);
+    console.error('[CONNECT] Discord connect error:', error);
+    console.error('[CONNECT] Error response:', error.response?.data);
+    console.error('[CONNECT] Error status:', error.response?.status);
 
     let errorMsg = 'Unknown error occurred';
     if (error.response?.data?.error) {
