@@ -452,6 +452,27 @@ export const promptSchedule = pgTable('prompt_schedule', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Lore Entries - World building notes for RP tier
+export const loreEntries = pgTable('lore_entries', {
+  id: serial('id').primaryKey(),
+  guildId: text('guild_id').notNull(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  tag: text('tag').notNull(), // e.g. 'history', 'geography', 'factions'
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Channel Lore Tags - Links channels to specific lore tags
+export const channelLoreTags = pgTable('channel_lore_tags', {
+  id: serial('id').primaryKey(),
+  guildId: text('guild_id').notNull(),
+  channelId: text('channel_id').notNull(),
+  tag: text('tag').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  uniqueChannelTag: unique().on(table.guildId, table.channelId) // One tag per channel
+}));
+
 export const characterMemoriesRelations = relations(characterMemories, ({ one }) => ({
   character: one(characterSheets, {
     fields: [characterMemories.characterId],

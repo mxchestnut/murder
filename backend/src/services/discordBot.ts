@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories, prompts, tropes } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories, prompts, tropes, loreEntries, channelLoreTags } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -330,6 +330,16 @@ async function handleCommands(message: Message, content: string, client: Client)
         await handleMemory(message, args);
         break;
 
+      // World Building Lore (RP tier)
+      case 'lore':
+        if (!await checkRpTier(message)) return;
+        await handleLore(message, args);
+        break;
+      case 'set':
+        if (!await checkRpTier(message)) return;
+        await handleSet(message, args);
+        break;
+
       default:
         // Unknown command, no response
         break;
@@ -359,6 +369,7 @@ async function checkRpTier(message: Message): Promise<boolean> {
       `• D&D generation (!feat, !spell)\n` +
       `• RP prompts & tropes\n` +
       `• Character memories\n` +
+      `• World building lore (!lore, !set)\n` +
       `• Daily prompt scheduling\n\n` +
       `Upgrade at https://my1e.party/settings`
     );
@@ -1425,7 +1436,7 @@ async function handleHelp(message: Message, botType: 'free' | 'premium' | 'unifi
         { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards', inline: false },
         { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
         { name: '🛠️ GM Tools', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion', inline: false },
-        { name: '⭐ RP Tier Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n*Requires RP tier subscription at my1e.party*', inline: false },
+        { name: '⭐ RP Tier Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n`!lore <note> <tag>` - World building notes\n`!set <tag>` - Link channel to lore tag\n*Requires RP tier subscription at my1e.party*', inline: false },
         { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel', inline: false }
       )
       .setFooter({ text: 'Visit my1e.party to manage characters and upgrade to RP tier!' });
@@ -2710,6 +2721,250 @@ async function handleCharacterMemoriesView(message: Message, characterName: stri
   } catch (error) {
     console.error('Error viewing character memories:', error);
     await message.reply('❌ Failed to retrieve memories.');
+  }
+}
+
+// === LORE SYSTEM (RP Tier) ===
+
+async function handleLore(message: Message, args: string[]) {
+  try {
+    const guildId = message.guild?.id || '';
+    const channelId = message.channel.id;
+
+    // Subcommands: !lore list [tag], !lore delete <id>, !lore <note> <tag>
+    if (args.length === 0) {
+      // Show lore for current channel's tag
+      const [channelTag] = await db.select()
+        .from(channelLoreTags)
+        .where(and(
+          eq(channelLoreTags.guildId, guildId),
+          eq(channelLoreTags.channelId, channelId)
+        ));
+
+      if (!channelTag) {
+        await message.reply(
+          '📚 **Lore System**\n\n' +
+          'No lore tag set for this channel. Use `!set <tag>` to link this channel to a lore category.\n\n' +
+          '**Commands:**\n' +
+          '• `!lore <note> <tag>` - Add lore entry\n' +
+          '• `!lore list [tag]` - View all lore (or by tag)\n' +
+          '• `!lore delete <id>` - Remove a lore entry\n' +
+          '• `!set <tag>` - Link channel to lore tag\n\n' +
+          '**Example Tags:** history, geography, factions, culture, npcs'
+        );
+        return;
+      }
+
+      // Show lore for this channel's tag
+      const entries = await db.select()
+        .from(loreEntries)
+        .where(and(
+          eq(loreEntries.guildId, guildId),
+          eq(loreEntries.tag, channelTag.tag)
+        ))
+        .orderBy(desc(loreEntries.createdAt));
+
+      if (entries.length === 0) {
+        await message.reply(`📚 No lore entries for tag **${channelTag.tag}** yet.\n\nAdd one with: \`!lore <note> ${channelTag.tag}\``);
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(0x3498db)
+        .setTitle(`📚 ${channelTag.tag.charAt(0).toUpperCase() + channelTag.tag.slice(1)} Lore`)
+        .setDescription(`${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`)
+        .setTimestamp();
+
+      const loreList = entries.map((entry, idx) => {
+        const date = new Date(entry.createdAt).toLocaleDateString();
+        return `**${entry.id}.** ${entry.content}\n*Added ${date}*`;
+      }).join('\n\n');
+
+      embed.addFields({ name: 'Entries', value: loreList.substring(0, 1024) });
+
+      if (loreList.length > 1024) {
+        embed.setFooter({ text: 'Some entries truncated. Use !lore list to see all.' });
+      }
+
+      await message.reply({ embeds: [embed] });
+      return;
+    }
+
+    // !lore list [tag]
+    if (args[0].toLowerCase() === 'list') {
+      const filterTag = args[1]?.toLowerCase();
+
+      let entries;
+      if (filterTag) {
+        entries = await db.select()
+          .from(loreEntries)
+          .where(and(
+            eq(loreEntries.guildId, guildId),
+            eq(loreEntries.tag, filterTag)
+          ))
+          .orderBy(desc(loreEntries.createdAt));
+      } else {
+        entries = await db.select()
+          .from(loreEntries)
+          .where(eq(loreEntries.guildId, guildId))
+          .orderBy(loreEntries.tag, desc(loreEntries.createdAt));
+      }
+
+      if (entries.length === 0) {
+        await message.reply(filterTag
+          ? `📚 No lore entries for tag **${filterTag}**.`
+          : '📚 No lore entries yet. Add one with `!lore <note> <tag>`'
+        );
+        return;
+      }
+
+      // Group by tag
+      const byTag = entries.reduce((acc, entry) => {
+        if (!acc[entry.tag]) acc[entry.tag] = [];
+        acc[entry.tag].push(entry);
+        return acc;
+      }, {} as Record<string, typeof entries>);
+
+      const embed = new EmbedBuilder()
+        .setColor(0x3498db)
+        .setTitle('📚 Server Lore')
+        .setDescription(`${entries.length} total ${entries.length === 1 ? 'entry' : 'entries'}`)
+        .setTimestamp();
+
+      for (const [tag, tagEntries] of Object.entries(byTag)) {
+        const tagList = tagEntries.map(e => `**${e.id}.** ${e.content.substring(0, 100)}${e.content.length > 100 ? '...' : ''}`).join('\n');
+        embed.addFields({
+          name: `${tag} (${tagEntries.length})`,
+          value: tagList.substring(0, 1024),
+          inline: false
+        });
+      }
+
+      await message.reply({ embeds: [embed] });
+      return;
+    }
+
+    // !lore delete <id>
+    if (args[0].toLowerCase() === 'delete') {
+      const loreId = parseInt(args[1]);
+      if (isNaN(loreId)) {
+        await message.reply('Usage: `!lore delete <id>`');
+        return;
+      }
+
+      // Check if entry exists and belongs to this guild
+      const [entry] = await db.select()
+        .from(loreEntries)
+        .where(and(
+          eq(loreEntries.id, loreId),
+          eq(loreEntries.guildId, guildId)
+        ));
+
+      if (!entry) {
+        await message.reply(`❌ Lore entry #${loreId} not found.`);
+        return;
+      }
+
+      await db.delete(loreEntries)
+        .where(eq(loreEntries.id, loreId));
+
+      await message.reply(`✅ Deleted lore entry #${loreId}: "${entry.content.substring(0, 100)}..."`);
+      return;
+    }
+
+    // !lore <note> <tag>
+    // Parse: last word is tag, rest is content
+    if (args.length < 2) {
+      await message.reply(
+        'Usage: `!lore <note> <tag>`\n\n' +
+        'Examples:\n' +
+        '• `!lore The Great War began in 1342 history`\n' +
+        '• `!lore Elves live in Silverwood Forest geography`\n' +
+        '• `!lore The Crimson Guild controls trade factions`'
+      );
+      return;
+    }
+
+    const tag = args[args.length - 1].toLowerCase();
+    const content = args.slice(0, -1).join(' ');
+
+    // Get user from Discord ID
+    const [user] = await db.select()
+      .from(users)
+      .where(eq(users.discordUserId, message.author.id));
+
+    if (!user) {
+      await message.reply('❌ Discord account not linked. Use `!connect <username> <password>` first.');
+      return;
+    }
+
+    const [entry] = await db.insert(loreEntries).values({
+      guildId,
+      userId: user.id,
+      tag,
+      content
+    }).returning();
+
+    await message.reply(`✅ Lore added to **${tag}** (ID: ${entry.id}):\n"${content}"`);
+
+  } catch (error) {
+    console.error('Error in !lore command:', error);
+    await message.reply('❌ Failed to manage lore entry.');
+  }
+}
+
+async function handleSet(message: Message, args: string[]) {
+  try {
+    const guildId = message.guild?.id || '';
+    const channelId = message.channel.id;
+
+    if (args.length === 0) {
+      // Show current tag
+      const [channelTag] = await db.select()
+        .from(channelLoreTags)
+        .where(and(
+          eq(channelLoreTags.guildId, guildId),
+          eq(channelLoreTags.channelId, channelId)
+        ));
+
+      if (!channelTag) {
+        await message.reply(
+          '📚 **Set Lore Tag**\n\n' +
+          'No lore tag set for this channel.\n\n' +
+          'Usage: `!set <tag>`\n\n' +
+          'Examples:\n' +
+          '• `!set history` - This channel will show history lore\n' +
+          '• `!set geography` - This channel will show geography lore\n' +
+          '• `!set factions` - This channel will show faction lore'
+        );
+        return;
+      }
+
+      await message.reply(`📚 This channel is linked to lore tag: **${channelTag.tag}**\n\nUse \`!lore\` to view entries.`);
+      return;
+    }
+
+    const tag = args[0].toLowerCase();
+
+    // Delete existing tag for this channel
+    await db.delete(channelLoreTags)
+      .where(and(
+        eq(channelLoreTags.guildId, guildId),
+        eq(channelLoreTags.channelId, channelId)
+      ));
+
+    // Insert new tag
+    await db.insert(channelLoreTags).values({
+      guildId,
+      channelId,
+      tag
+    });
+
+    await message.reply(`✅ Channel linked to lore tag: **${tag}**\n\nUse \`!lore\` to view entries or \`!lore <note> ${tag}\` to add.`);
+
+  } catch (error) {
+    console.error('Error in !set command:', error);
+    await message.reply('❌ Failed to set lore tag.');
   }
 }
 

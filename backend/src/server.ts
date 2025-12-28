@@ -30,6 +30,7 @@ import hallOfFameRoutes from './routes/hall-of-fame';
 import memoriesRoutes from './routes/memories';
 import publicRoutes from './routes/public';
 import promptsRoutes from './routes/prompts'; // RP tier feature
+import loreRoutes from './routes/lore'; // RP tier feature - world building
 import stripeRoutes, { initializeStripe } from './routes/stripe'; // Stripe billing
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
@@ -246,6 +247,7 @@ app.use('/api/stats', doubleCsrfProtection);
 app.use('/api/hall-of-fame', doubleCsrfProtection);
 app.use('/api/memories', doubleCsrfProtection);
 app.use('/api/prompts', doubleCsrfProtection); // RP tier feature
+app.use('/api/lore', doubleCsrfProtection); // RP tier feature
 app.use('/api/stripe', doubleCsrfProtection); // Stripe billing (except webhook)
 
 // API Routes
@@ -263,6 +265,7 @@ app.use('/api/hall-of-fame', hallOfFameRoutes);
 app.use('/api/memories', memoriesRoutes);
 app.use('/api/public', publicRoutes); // No auth required for public profiles
 app.use('/api/prompts', promptsRoutes); // RP tier feature
+app.use('/api/lore', loreRoutes); // RP tier feature - world building
 app.use('/api/stripe', stripeRoutes); // Stripe billing
 
 // Health check
