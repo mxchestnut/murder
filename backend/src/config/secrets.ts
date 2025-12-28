@@ -5,8 +5,7 @@ const client = new SecretsManagerClient({ region: 'us-east-1' });
 interface Secrets {
   DATABASE_URL: string;
   SESSION_SECRET: string;
-  DISCORD_BOT_TOKEN: string;
-  WRITEPRETEND_BOT_TOKEN?: string; // Premium bot (optional - may not exist yet)
+  WRITEPRETEND_BOT_TOKEN: string;
   GEMINI_API_KEY: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_PUBLISHABLE_KEY?: string;
@@ -40,23 +39,14 @@ export async function loadSecrets(): Promise<Secrets> {
   console.log('Loading secrets from AWS Secrets Manager...');
 
   // Load required secrets
-  const [databaseUrl, sessionSecret, discordBotToken, geminiApiKey] = await Promise.all([
+  const [databaseUrl, sessionSecret, writePretendBotToken, geminiApiKey] = await Promise.all([
     getSecret('my1eparty/database-url'),
     getSecret('my1eparty/session-secret'),
-    getSecret('my1eparty/discord-bot-token'),
+    getSecret('my1eparty/writepretend-bot-token'),
     getSecret('my1eparty/gemini-api-key')
   ]);
 
-  console.log(`✓ My1e Party Discord bot token loaded: ${discordBotToken ? discordBotToken.substring(0, 20) + '...' : 'EMPTY'}`);
-
-  // Try to load optional Write Pretend bot token
-  let writePretendBotToken: string | undefined;
-  try {
-    writePretendBotToken = await getSecret('my1eparty/writepretend-bot-token');
-    console.log('✓ Write Pretend bot token loaded');
-  } catch (error) {
-    console.warn('⚠ Write Pretend bot token not available - premium bot disabled');
-  }
+  console.log('✓ Write Pretend bot token loaded');
 
   // Try to load optional Stripe secrets
   let stripeSecrets: {
@@ -89,7 +79,6 @@ export async function loadSecrets(): Promise<Secrets> {
     DATABASE_URL: databaseUrl,
     SESSION_SECRET: sessionSecret,
     DISCORD_BOT_TOKEN: discordBotToken,
-    WRITEPRETEND_BOT_TOKEN: writePretendBotToken,
     GEMINI_API_KEY: geminiApiKey,
     ...stripeSecrets
   };
@@ -105,8 +94,7 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
     return {
       DATABASE_URL: process.env.DATABASE_URL || '',
       SESSION_SECRET: process.env.SESSION_SECRET || '',
-      DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
-      WRITEPRETEND_BOT_TOKEN: process.env.WRITEPRETEND_BOT_TOKEN,
+      WRITEPRETEND_BOT_TOKEN: process.env.WRITEPRETEND_BOT_TOKEN || '',
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
       STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
       STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
@@ -123,8 +111,7 @@ export async function getSecretsWithFallback(): Promise<Secrets> {
     return {
       DATABASE_URL: process.env.DATABASE_URL || '',
       SESSION_SECRET: process.env.SESSION_SECRET || '',
-      DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
-      WRITEPRETEND_BOT_TOKEN: process.env.WRITEPRETEND_BOT_TOKEN,
+      WRITEPRETEND_BOT_TOKEN: process.env.WRITEPRETEND_BOT_TOKEN || '',
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
       STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
       STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
