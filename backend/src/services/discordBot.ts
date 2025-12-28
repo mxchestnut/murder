@@ -43,20 +43,13 @@ function isAdmin(message: Message): boolean {
 }
 
 export function initializeDiscordBot(token: string) {
-  console.log(`[BOT DEBUG] initializeDiscordBot called (PID: ${process.pid})`);
-  console.log(`[BOT DEBUG] global.__WRITE_PRETEND_INIT__ = ${global.__WRITE_PRETEND_INIT__}`);
-
   // Prevent duplicate initialization with a strong guard
   if (global.__WRITE_PRETEND_INIT__) {
-    console.log(`[BOT DEBUG] Write Pretend ALREADY initialized (PID: ${process.pid}), returning existing client`);
     return global.__WRITE_PRETEND_CLIENT__ ?? botClient;
   }
 
-  console.log(`[BOT DEBUG] Setting botInitialized = true (PID: ${process.pid})`);
   botInitialized = true;
   global.__WRITE_PRETEND_INIT__ = true;
-
-  console.log(`[BOT DEBUG] Current botClient:`, botClient?.user?.tag || 'null');
 
   if (!token) {
     console.log(`No Discord bot token provided, skipping bot initialization`);
@@ -65,7 +58,6 @@ export function initializeDiscordBot(token: string) {
 
   // Prevent re-initialization - destroy old client if exists
   if (botClient) {
-    console.log(`[BOT DEBUG] Bot already initialized, destroying old client`);
     botClient.destroy();
     botClient = null;
   }
@@ -85,7 +77,6 @@ export function initializeDiscordBot(token: string) {
   global.__WRITE_PRETEND_CLIENT__ = client;
 
   client.on('ready', () => {
-    console.log(`[BOT DEBUG] Ready event fired for Write Pretend bot`);
     console.log(`Write Pretend bot logged in as ${client?.user?.tag}`);
 
     // Start prompt scheduler for RP tier feature
@@ -97,8 +88,6 @@ export function initializeDiscordBot(token: string) {
   });
 
   client.on('messageCreate', async (message: Message) => {
-    const listenerCount = client.listenerCount('messageCreate');
-    console.log(`[BOT DEBUG] messageCreate fired (PID: ${process.pid}, listeners: ${listenerCount}), message: "${message.content.substring(0, 50)}"`);
     if (message.author.bot) return;
 
     // Per-message dedupe guard to avoid double handling
@@ -473,8 +462,6 @@ async function handleShowChar(message: Message) {
 }
 
 async function handleProfile(message: Message, args: string[]) {
-  console.log(`[PROFILE DEBUG] handleProfile called with args:`, args, `from bot:`, message.client.user?.tag);
-
   let character: any;
 
   // Get user by Discord ID first
@@ -483,7 +470,6 @@ async function handleProfile(message: Message, args: string[]) {
     .where(eq(users.discordUserId, message.author.id));
 
   if (!user) {
-    console.log(`[PROFILE DEBUG] Sending reply: user not linked`);
     await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
       '**To link your account:**\n' +
       '1. Use `!connect <username> <password>` in Discord, OR\n' +
@@ -922,12 +908,10 @@ async function handleProfile(message: Message, args: string[]) {
 
   // Send initial message
   let currentTab = 'identity';
-  console.log(`[PROFILE DEBUG] About to send profile reply for ${character.name}`);
   const reply = await message.reply({
     embeds: [await buildEmbed(currentTab)],
     components: [createButtons1(currentTab), createButtons2(currentTab), createButtons3(currentTab)]
   });
-  console.log(`[PROFILE DEBUG] Profile reply sent successfully for ${character.name}`);
 
   // Try to pin the message (requires permissions)
   try {
@@ -1255,16 +1239,12 @@ async function handleConnect(message: Message, args: string[]) {
 
     // Authenticate with backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
-    console.log(`[CONNECT] Attempting authentication for user: ${username}, Discord ID: ${message.author.id}`);
-    console.log(`[CONNECT] API URL: ${API_URL}`);
 
     const response = await axios.post(`${API_URL}/api/discord/login`, {
       username,
       password,
       discordUserId: message.author.id
     });
-
-    console.log(`[CONNECT] Authentication successful for ${username}`);
     const { user, characters } = response.data;
 
     await message.author.send('✅ **Successfully connected!**\n\n' +
@@ -1282,9 +1262,7 @@ async function handleConnect(message: Message, args: string[]) {
     console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Murder user: ${username}`);
 
   } catch (error: any) {
-    console.error('[CONNECT] Discord connect error:', error);
-    console.error('[CONNECT] Error response:', error.response?.data);
-    console.error('[CONNECT] Error status:', error.response?.status);
+    console.error('Discord connect error:', error);
 
     let errorMsg = 'Unknown error occurred';
     if (error.response?.data?.error) {

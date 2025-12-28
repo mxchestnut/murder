@@ -58,8 +58,6 @@ Sentry.init({
 });
 
 async function startServer() {
-  console.log('[SERVER DEBUG] startServer() called');
-
   // Load secrets from AWS Secrets Manager (or .env in development)
   const secrets = await getSecretsWithFallback();
 
@@ -373,11 +371,8 @@ app.get('*', (req, res) => {
 // Start the server
 if (!global.__SERVER_STARTED__) {
   global.__SERVER_STARTED__ = true;
-  console.log('[SERVER DEBUG] Starting server (first time)');
   startServer().catch(error => {
     console.error('Failed to start server:', error);
     process.exit(1);
   });
-} else {
-  console.log('[SERVER DEBUG] Server already started, skipping duplicate execution');
 }
