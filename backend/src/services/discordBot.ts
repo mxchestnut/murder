@@ -347,7 +347,13 @@ async function handleCommands(message: Message, content: string, client: Client)
     }
   } catch (error) {
     console.error('Error handling command:', error);
-    await message.reply('❌ An error occurred processing your command.');
+    // Try to reply with error, but catch if message was deleted (e.g., for security in !connect)
+    try {
+      await message.reply('❌ An error occurred processing your command.');
+    } catch (replyError) {
+      // Message was deleted or reply failed, silently ignore
+      console.log('Could not reply with error message (message may have been deleted)');
+    }
   }
 }
 
