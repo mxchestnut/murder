@@ -192,7 +192,7 @@ async function handleCommands(message: Message, content: string, client: Client)
     const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'stats',
       'leaderboard', 'time', 'note', 'npc', 'music', 'hall', 'botset', 'hc', 'weeklyreport',
       'monthlyreport', 'postleaderboard', 'prompt', 'trope', 'promptsettings',
-      'ask', 'learn', 'learnurl', 'feat', 'spell', 'memory'];
+      'ask', 'learn', 'learnurl', 'feat', 'spell', 'memory', 'lore', 'set'];
     const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
 
     if (!isKnownCommand) {
