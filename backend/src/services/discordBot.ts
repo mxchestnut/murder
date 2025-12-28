@@ -2905,7 +2905,36 @@ async function handleLore(message: Message, args: string[]) {
       content
     }).returning();
 
+    // Check if there's a channel set for this tag
+    const [channelTag] = await db.select()
+      .from(channelLoreTags)
+      .where(and(
+        eq(channelLoreTags.guildId, guildId),
+        eq(channelLoreTags.tag, tag)
+      ));
+
+    // Reply in current channel
     await message.reply(`✅ Lore added to **${tag}** (ID: ${entry.id}):\n"${content}"`);
+
+    // If there's a channel set for this tag, also post there
+    if (channelTag) {
+      try {
+        const targetChannel = await message.guild?.channels.fetch(channelTag.channelId);
+        if (targetChannel && targetChannel.isTextBased()) {
+          const embed = new EmbedBuilder()
+            .setColor(0x3498db)
+            .setTitle(`📚 New ${tag} Lore`)
+            .setDescription(content)
+            .setFooter({ text: `Added by ${message.author.tag} • ID: ${entry.id}` })
+            .setTimestamp();
+
+          await targetChannel.send({ embeds: [embed] });
+        }
+      } catch (channelError) {
+        console.error('Error posting to lore channel:', channelError);
+        // Don't fail the whole operation if we can't post to the channel
+      }
+    }
 
   } catch (error) {
     console.error('Error in !lore command:', error);
