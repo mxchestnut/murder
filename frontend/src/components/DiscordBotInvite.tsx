@@ -12,12 +12,8 @@ export default function DiscordBotInvite() {
   const [loading, setLoading] = useState(true);
 
   // Write Pretend bot OAuth2 invite URL with proper permissions
-  const WRITE_PRETEND_CLIENT_ID = '1324581405509091341'; // Your Write Pretend bot application ID
+  const WRITE_PRETEND_CLIENT_ID = '1324581405509091341';
   const WRITE_PRETEND_INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${WRITE_PRETEND_CLIENT_ID}&permissions=534992595008&scope=bot`;
-
-  // My1e Party bot OAuth2 invite URL (free tier)
-  const MY1E_PARTY_CLIENT_ID = '1453565206226669598'; // Your My1e Party bot application ID
-  const MY1E_PARTY_INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${MY1E_PARTY_CLIENT_ID}&permissions=534992595008&scope=bot`;
 
   useEffect(() => {
     loadProfile();
@@ -63,17 +59,17 @@ export default function DiscordBotInvite() {
           gap: '0.5rem'
         }}>
           <Bot size={32} color="var(--accent-color)" />
-          Discord Bots
+          Write Pretend Discord Bot
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>
-          Invite My1e Party bots to your Discord server
+          Invite Write Pretend to your Discord server for RP tools, dice rolling, and AI features
         </p>
       </div>
 
-      {/* My1e Party Bot - Free Tier */}
+      {/* Write Pretend Bot - Unified */}
       <div style={{
         background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-color)',
+        border: '1px solid var(--accent-color)',
         borderRadius: '12px',
         padding: '1.5rem',
         marginBottom: '1.5rem'
@@ -83,7 +79,7 @@ export default function DiscordBotInvite() {
             width: '60px',
             height: '60px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -93,10 +89,10 @@ export default function DiscordBotInvite() {
           </div>
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-              My1e Party Bot
+              Write Pretend
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Free tier • Character management, dice rolling, stats, and RP tools
+              All-in-one RP bot • Free tier + premium RP tier features
             </p>
           </div>
           <CheckCircle size={24} color="#10b981" />
@@ -109,7 +105,7 @@ export default function DiscordBotInvite() {
           marginBottom: '1rem'
         }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
-            Features:
+            Free Tier Features:
           </h3>
           <ul style={{
             listStyle: 'none',
@@ -117,7 +113,8 @@ export default function DiscordBotInvite() {
             margin: 0,
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            marginBottom: '1rem'
           }}>
             <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: '#10b981' }}>✓</span> Character proxying
@@ -126,26 +123,84 @@ export default function DiscordBotInvite() {
               <span style={{ color: '#10b981' }}>✓</span> Dice rolling
             </li>
             <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#10b981' }}>✓</span> Character stats
+              <span style={{ color: '#10b981' }}>✓</span> Character stats & profiles
             </li>
             <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: '#10b981' }}>✓</span> Leaderboards
             </li>
             <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#10b981' }}>✓</span> Hall of Fame
+              <span style={{ color: '#10b981' }}>✓</span> Hall of Fame (⭐ reactions)
             </li>
             <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#10b981' }}>✓</span> RP prompts & tropes
+              <span style={{ color: '#10b981' }}>✓</span> GM tools (time, notes, NPCs)
             </li>
           </ul>
+
+          {hasActiveSubscription && (
+            <>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.75rem', marginTop: '1rem', color: 'var(--text-secondary)' }}>
+                RP Tier Features (Active):
+              </h3>
+              <ul style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '0.5rem'
+              }}>
+                <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#ff6b6b' }}>✨</span> AI knowledge base
+                </li>
+                <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#ff6b6b' }}>✨</span> RP prompts & tropes
+                </li>
+                <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#ff6b6b' }}>✨</span> Character memories
+                </li>
+                <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#ff6b6b' }}>✨</span> Character relationships
+                </li>
+                <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#ff6b6b' }}>✨</span> World building lore
+                </li>
+                <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#ff6b6b' }}>✨</span> D&D feats & spells
+                </li>
+              </ul>
+            </>
+          )}
         </div>
 
+        {!hasActiveSubscription && (
+          <div style={{
+            background: '#3b82f620',
+            border: '1px solid #3b82f6',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'start',
+            gap: '0.75rem'
+          }}>
+            <Info size={20} color="#3b82f6" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                <strong>Unlock RP Tier features with a subscription!</strong>
+              </p>
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Upgrade to access AI-powered knowledge base, character memories, relationships, lore tracking, and more.
+              </p>
+            </div>
+          </div>
+        )}
+
         <button
-          onClick={() => window.open(MY1E_PARTY_INVITE_URL, '_blank')}
+          onClick={() => window.open(WRITE_PRETEND_INVITE_URL, '_blank')}
           style={{
             width: '100%',
             padding: '0.75rem',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -162,155 +217,43 @@ export default function DiscordBotInvite() {
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           <ExternalLink size={20} />
-          Invite My1e Party Bot
+          Invite Write Pretend Bot
         </button>
       </div>
 
-      {/* Write Pretend Bot - Premium Tier */}
-      <div style={{
-        background: hasActiveSubscription
-          ? 'var(--bg-secondary)'
-          : 'var(--bg-secondary)',
-        border: hasActiveSubscription
-          ? '1px solid var(--accent-color)'
-          : '1px solid var(--border-color)',
-        borderRadius: '12px',
-        padding: '1.5rem',
-        opacity: hasActiveSubscription ? 1 : 0.6
-      }}>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '1rem', marginBottom: '1rem' }}>
-          <div style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <Bot size={32} color="white" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              Write Pretend Bot
-              <span style={{
-                fontSize: '0.75rem',
-                padding: '0.25rem 0.5rem',
-                background: hasActiveSubscription ? '#10b98120' : '#f59e0b20',
-                color: hasActiveSubscription ? '#10b981' : '#f59e0b',
-                borderRadius: '4px',
-                fontWeight: '600'
-              }}>
-                {hasActiveSubscription ? 'ACTIVE' : 'RP TIER REQUIRED'}
-              </span>
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Premium tier • AI-powered knowledge base, character memories, and advanced features
-            </p>
-          </div>
-          {hasActiveSubscription && <CheckCircle size={24} color="#10b981" />}
-        </div>
-
+      {!hasActiveSubscription && (
         <div style={{
-          background: 'var(--bg-primary)',
-          padding: '1rem',
-          borderRadius: '8px',
-          marginBottom: '1rem'
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '12px',
+          padding: '1.5rem',
+          marginBottom: '1.5rem',
+          textAlign: 'center'
         }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
-            Premium Features:
-          </h3>
-          <ul style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '0.5rem'
-          }}>
-            <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#ff6b6b' }}>✨</span> AI knowledge base
-            </li>
-            <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#ff6b6b' }}>✨</span> Ask AI anything
-            </li>
-            <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#ff6b6b' }}>✨</span> Web scraping (!learnurl)
-            </li>
-            <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#ff6b6b' }}>✨</span> Character memories
-            </li>
-            <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#ff6b6b' }}>✨</span> D&D lookups
-            </li>
-            <li style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: '#ff6b6b' }}>✨</span> Spell database
-            </li>
-          </ul>
+          <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Want RP Tier Features?</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Upgrade to unlock AI knowledge base, character memories, lore tracking, and more!
+          </p>
+          <button
+            onClick={() => window.location.href = '/settings?tab=subscription'}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'var(--accent-color)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'transform 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            View Subscription Plans
+          </button>
         </div>
-
-        {!hasActiveSubscription && (
-          <div style={{
-            background: '#f59e0b20',
-            border: '1px solid #f59e0b',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'start',
-            gap: '0.75rem'
-          }}>
-            <Info size={20} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                <strong>Upgrade to RP tier to unlock Write Pretend bot!</strong>
-              </p>
-              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Get access to AI-powered features, character memories, and advanced knowledge base tools.
-              </p>
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={() => {
-            if (hasActiveSubscription) {
-              window.open(WRITE_PRETEND_INVITE_URL, '_blank');
-            } else {
-              window.location.href = '/settings?tab=subscription';
-            }
-          }}
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            background: hasActiveSubscription
-              ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)'
-              : 'var(--border-color)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: hasActiveSubscription ? 'pointer' : 'not-allowed',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'transform 0.2s',
-            opacity: hasActiveSubscription ? 1 : 0.7
-          }}
-          onMouseEnter={(e) => {
-            if (hasActiveSubscription) {
-              e.currentTarget.style.transform = 'scale(1.02)';
-            }
-          }}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <ExternalLink size={20} />
-          {hasActiveSubscription ? 'Invite Write Pretend Bot' : 'Upgrade to RP Tier'}
-        </button>
-      </div>
+      )}
 
       {/* Info Section */}
       <div style={{
