@@ -78,7 +78,7 @@ export async function loadSecrets(): Promise<Secrets> {
   cachedSecrets = {
     DATABASE_URL: databaseUrl,
     SESSION_SECRET: sessionSecret,
-    DISCORD_BOT_TOKEN: discordBotToken,
+    WRITEPRETEND_BOT_TOKEN: writePretendBotToken,
     GEMINI_API_KEY: geminiApiKey,
     ...stripeSecrets
   };
